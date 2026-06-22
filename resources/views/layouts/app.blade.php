@@ -58,19 +58,19 @@
             [
                 'label' => 'Home',
                 'href' => route('news.index'),
-                'active' => request()->routeIs('news.index') && !request()->is('admin/*'),
+                'active' => request()->routeIs('news.index'),
                 'icon' => 'home',
             ],
             [
                 'label' => 'Fixtures',
-                'href' => route('news.index') . '#fixtures',
-                'active' => false,
+                'href' => route('news.fixtures'),
+                'active' => request()->routeIs('news.fixtures'),
                 'icon' => 'calendar',
             ],
             [
                 'label' => 'Live',
-                'href' => route('news.index') . '#live-score',
-                'active' => false,
+                'href' => route('news.scores'),
+                'active' => request()->routeIs('news.scores'),
                 'icon' => 'pulse',
             ],
             [
@@ -115,15 +115,15 @@
             <div class="flex items-center justify-between h-16 gap-4">
                 <nav class="flex items-center gap-2 overflow-x-auto whitespace-nowrap pr-2">
                     <a href="{{ route('news.index') }}"
-                       class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 transition-colors hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700">
+                       class="inline-flex items-center rounded-full border px-3.5 py-2 text-xs font-bold transition-colors {{ request()->routeIs('news.index') ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700' }}">
                         Home
                     </a>
-                    <a href="{{ route('news.index') }}#fixtures"
-                       class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 transition-colors hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700">
+                    <a href="{{ route('news.fixtures') }}"
+                       class="inline-flex items-center rounded-full border px-3.5 py-2 text-xs font-bold transition-colors {{ request()->routeIs('news.fixtures') ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700' }}">
                         Fixtures
                     </a>
-                    <a href="{{ route('news.index') }}#live-score"
-                       class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 transition-colors hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700">
+                    <a href="{{ route('news.scores') }}"
+                       class="inline-flex items-center rounded-full border px-3.5 py-2 text-xs font-bold transition-colors {{ request()->routeIs('news.scores') ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700' }}">
                         Live
                     </a>
                 </nav>

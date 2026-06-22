@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Cache;
 use Symfony\Component\Process\Process;
+use Throwable;
 
 class HeadlessPageRenderer
 {
@@ -33,9 +34,16 @@ class HeadlessPageRenderer
                 $url,
             ]);
 
-            $process->setTimeout(40);
+            // Keep this well under typical PHP-FPM max_execution_time values.
+            $process->setTimeout(12);
+            $process->setIdleTimeout(12);
             $process->setEnv(['TZ' => 'UTC']);
-            $process->run();
+
+            try {
+                $process->run();
+            } catch (Throwable) {
+                return null;
+            }
 
             if (!$process->isSuccessful()) {
                 return null;

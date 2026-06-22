@@ -4,21 +4,14 @@
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="rounded-3xl border border-slate-200 bg-white/90 p-3 sm:p-4 shadow-sm mb-8 backdrop-blur">
-        <div class="flex flex-wrap gap-2">
-            <button type="button" data-tab-trigger="news" class="tab-trigger rounded-2xl px-4 py-3 text-sm font-extrabold bg-emerald-500 text-slate-950">
-                News
-            </button>
-            <button type="button" data-tab-trigger="fixtures" class="tab-trigger rounded-2xl px-4 py-3 text-sm font-bold border border-slate-200 text-slate-600">
-                Fixtures
-            </button>
-            <button type="button" data-tab-trigger="scores" class="tab-trigger rounded-2xl px-4 py-3 text-sm font-bold border border-slate-200 text-slate-600">
-                Live Score
-            </button>
+    @unless($schemaReady)
+        <div class="mb-8 rounded-3xl border border-amber-200 bg-amber-50 px-5 py-4 shadow-sm">
+            <p class="text-sm font-bold text-amber-900">News data is not ready on this server yet.</p>
+            <p class="mt-1 text-xs text-amber-800/80">Run `php artisan migrate` and then start a sync from admin to populate the public homepage.</p>
         </div>
-    </div>
+    @endunless
 
-    <section id="home" data-tab-panel="news">
+    <section id="home">
         <!-- Search and Filters Section -->
         <div class="bg-white border border-slate-200/80 rounded-[1.75rem] p-4 mb-8 shadow-sm">
             <form action="{{ route('news.index') }}" method="GET" class="flex flex-col gap-4">
@@ -117,7 +110,7 @@
 
         @if($showSectionLanding)
             <div class="space-y-8">
-                @foreach($homepageSections as $section)
+                @foreach($homepageSections as $sectionIndex => $section)
                     @php($leadArticle = $section->latestArticles->first())
                     @php($supportingArticles = $section->latestArticles->slice(1))
                     <section class="rounded-[2rem] border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
@@ -181,6 +174,36 @@
                             </div>
                         @endif
                     </section>
+
+                    @if($sectionIndex === 0)
+                        <section class="rounded-[2rem] border border-emerald-200 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-5 text-white shadow-lg shadow-slate-950/10">
+                            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                                <div class="max-w-2xl">
+                                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-300">Sponsored</p>
+                                    <h2 class="mt-2 text-2xl font-extrabold">Start with $10 on Quotex</h2>
+                                    <p class="mt-3 text-sm leading-6 text-slate-200">Premium trading signals promotion placed between the homepage news sections.</p>
+                                </div>
+                                <div class="flex flex-wrap gap-3">
+                                    @if(!empty($homepagePromo['quotex_url']))
+                                        <a href="{{ $homepagePromo['quotex_url'] }}" target="_blank" rel="noopener noreferrer sponsored" class="inline-flex items-center rounded-full bg-emerald-400 px-5 py-3 text-sm font-black text-slate-950 transition hover:bg-emerald-300">
+                                            Start With $10
+                                        </a>
+                                    @endif
+                                    @if(!empty($homepagePromo['signals_url']))
+                                        <a href="{{ $homepagePromo['signals_url'] }}" target="_blank" rel="noopener noreferrer sponsored" class="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/15">
+                                            Premium Signals
+                                        </a>
+                                    @endif
+                                    @if(empty($homepagePromo['quotex_url']) && empty($homepagePromo['signals_url']))
+                                        <span class="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-5 py-3 text-sm font-bold text-slate-200">
+                                            Add `PROMO_QUOTEX_URL` to enable this CTA
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                            <p class="mt-4 text-[11px] text-slate-300">Trading involves risk. Sponsored promotion.</p>
+                        </section>
+                    @endif
                 @endforeach
             </div>
         @else
@@ -228,100 +251,17 @@
             @endif
         @endif
     </section>
-
-    <section id="fixtures" data-tab-panel="fixtures" class="hidden">
-        <div id="fixtures-panel-content">
-            @include('news.partials.fixtures')
-        </div>
-        @if($adsense['client'] && $adsense['infeed_slot'])
-            <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                <ins class="adsbygoogle block"
-                     style="display:block"
-                     data-ad-client="{{ $adsense['client'] }}"
-                     data-ad-slot="{{ $adsense['infeed_slot'] }}"
-                     data-ad-format="auto"
-                     data-full-width-responsive="true"></ins>
-            </div>
-        @endif
-    </section>
-
-    <section id="live-score" data-tab-panel="scores" class="hidden">
-        <div id="scores-panel-content">
-            @include('news.partials.scores')
-        </div>
-    </section>
 </div>
 @endsection
 
 @section('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const tabTriggers = document.querySelectorAll('[data-tab-trigger]');
-        const tabPanels = document.querySelectorAll('[data-tab-panel]');
         const loadMoreBtn = document.getElementById('load-more-btn');
         const loadMoreContainer = document.getElementById('load-more-container');
         const newsGrid = document.getElementById('news-grid');
         const btnText = document.getElementById('btn-text');
         const btnLoading = document.getElementById('btn-loading');
-        const fixturesPanelContent = document.getElementById('fixtures-panel-content');
-        const scoresPanelContent = document.getElementById('scores-panel-content');
-
-        function localizeKickoffs(scope = document) {
-            scope.querySelectorAll('.js-local-kickoff').forEach(node => {
-                const iso = node.dataset.kickoff;
-
-                if (!iso) {
-                    return;
-                }
-
-                const date = new Date(iso);
-                node.textContent = new Intl.DateTimeFormat(undefined, {
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                }).format(date);
-            });
-        }
-
-        function activateTab(tabName) {
-            tabTriggers.forEach(trigger => {
-                const active = trigger.dataset.tabTrigger === tabName;
-                trigger.classList.toggle('bg-emerald-500', active);
-                trigger.classList.toggle('text-slate-950', active);
-                trigger.classList.toggle('border', !active);
-                trigger.classList.toggle('border-slate-200', !active);
-                trigger.classList.toggle('text-slate-600', !active);
-                trigger.classList.toggle('font-extrabold', active);
-                trigger.classList.toggle('font-bold', !active);
-            });
-
-            tabPanels.forEach(panel => {
-                panel.classList.toggle('hidden', panel.dataset.tabPanel !== tabName);
-            });
-        }
-
-        tabTriggers.forEach(trigger => {
-            trigger.addEventListener('click', () => {
-                const tabName = trigger.dataset.tabTrigger;
-                activateTab(tabName);
-
-                const sectionId = tabName === 'news'
-                    ? 'home'
-                    : (tabName === 'fixtures' ? 'fixtures' : 'live-score');
-
-                if (window.location.hash !== `#${sectionId}`) {
-                    history.replaceState(null, '', `#${sectionId}`);
-                }
-            });
-        });
-
-        const initialHash = window.location.hash.replace('#', '');
-        const initialTab = initialHash === 'fixtures'
-            ? 'fixtures'
-            : (initialHash === 'live-score' ? 'scores' : 'news');
-
-        activateTab(initialTab);
-
-        localizeKickoffs();
 
         const region = (navigator.language || '').split('-')[1] || '';
         const countryNode = document.getElementById('viewer-country');
@@ -361,50 +301,6 @@
 
         sendVisitorHeartbeat();
         window.setInterval(sendVisitorHeartbeat, 60000);
-
-        document.addEventListener('click', async (event) => {
-            const refreshButton = event.target.closest('[data-scoreboard-refresh]');
-
-            if (!refreshButton) {
-                return;
-            }
-
-            event.preventDefault();
-
-            const originalText = refreshButton.textContent.trim();
-            refreshButton.disabled = true;
-            refreshButton.textContent = 'Refreshing...';
-
-            try {
-                const response = await fetch(`{{ route('news.scoreboard.refresh') }}`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                });
-
-                if (!response.ok) {
-                    throw new Error('Refresh failed');
-                }
-
-                const data = await response.json();
-
-                if (fixturesPanelContent) {
-                    fixturesPanelContent.innerHTML = data.fixtures_html;
-                    localizeKickoffs(fixturesPanelContent);
-                }
-
-                if (scoresPanelContent) {
-                    scoresPanelContent.innerHTML = data.scores_html;
-                }
-            } catch (error) {
-                alert('Could not refresh fixtures and live scores. Check whether Chrome/Chromium is installed on the VPS.');
-            } finally {
-                refreshButton.disabled = false;
-                refreshButton.textContent = originalText;
-            }
-        });
 
         if (window.adsbygoogle) {
             document.querySelectorAll('.adsbygoogle').forEach(() => {

@@ -45,4 +45,9 @@ return [
         'tab_slot' => env('ADSENSE_TAB_SLOT'),
     ],
 
+    'promotions' => [
+        'quotex_url' => env('PROMO_QUOTEX_URL'),
+        'signals_url' => env('PROMO_SIGNALS_URL'),
+    ],
+
 ];

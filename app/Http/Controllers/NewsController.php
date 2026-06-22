@@ -29,7 +29,7 @@ class NewsController extends Controller
     public function index(Request $request, VisitorMetricsService $visitorMetrics, FifaMatchService $fifaMatchService)
     {
         if (!$this->publicNewsSchemaReady()) {
-            return $this->renderUnavailableHomepage($request, $fifaMatchService);
+            return $this->renderUnavailableHomepage($request);
         }
 
         $search = $request->input('search');
@@ -104,24 +104,7 @@ class NewsController extends Controller
             ]);
         }
 
-        $visitStats = $visitorMetrics->recordPublicVisit($request);
-        $scoreboard = $fifaMatchService->getScoreboard();
-        $tickerArticles = NewsItem::visible()
-            ->orderByDesc('published_at')
-            ->orderByDesc('id')
-            ->take(8)
-            ->get(['id', 'title']);
-        $adsense = [
-            'client' => config('services.adsense.client'),
-            'infeed_slot' => config('services.adsense.infeed_slot'),
-            'tab_slot' => config('services.adsense.tab_slot'),
-        ];
-        $fetchStats = [
-            'total_runs' => (int) Setting::get('news_sync_total_runs', '0'),
-            'last_success_at' => Setting::get('news_sync_last_success_at'),
-            'interval_minutes' => 10,
-            'next_scheduled_at' => $this->nextScheduledFetchAt(10)->toIso8601String(),
-        ];
+        $sharedPublicData = $this->publicPageContext($request, $visitorMetrics);
         $homepageSections = $sections->map(function (NewsSection $section) {
             $section->setRelation('latestArticles', NewsItem::query()
                 ->visible()
@@ -135,7 +118,7 @@ class NewsController extends Controller
             return $section;
         })->filter(fn (NewsSection $section) => $section->latestArticles->isNotEmpty())->values();
 
-        return view('news.index', compact('articles', 'sections', 'topics', 'selectedTopicId', 'selectedSection', 'search', 'featuredCount', 'visitStats', 'scoreboard', 'tickerArticles', 'adsense', 'fetchStats', 'homepageSections', 'showSectionLanding'));
+        return view('news.index', array_merge($sharedPublicData, compact('articles', 'sections', 'topics', 'selectedTopicId', 'selectedSection', 'search', 'featuredCount', 'homepageSections', 'showSectionLanding')));
     }
 
     protected function publicNewsSchemaReady(): bool
@@ -149,7 +132,7 @@ class NewsController extends Controller
         return true;
     }
 
-    protected function renderUnavailableHomepage(Request $request, FifaMatchService $fifaMatchService)
+    protected function renderUnavailableHomepage(Request $request)
     {
         $articles = new LengthAwarePaginator([], 0, 12, LengthAwarePaginator::resolveCurrentPage(), [
             'path' => $request->url(),
@@ -164,28 +147,88 @@ class NewsController extends Controller
         $search = $request->input('search');
         $featuredCount = 0;
         $showSectionLanding = false;
-        $scoreboard = $fifaMatchService->getScoreboard();
-        $visitStats = [
-            'total' => 0,
-            'today' => 0,
-            'unique_today' => 0,
-            'unique_total' => 0,
-            'live_now' => 0,
-            'last_seen_at' => null,
-        ];
-        $adsense = [
-            'client' => config('services.adsense.client'),
-            'infeed_slot' => config('services.adsense.infeed_slot'),
-            'tab_slot' => config('services.adsense.tab_slot'),
-        ];
-        $fetchStats = [
-            'total_runs' => 0,
-            'last_success_at' => null,
-            'interval_minutes' => 10,
-            'next_scheduled_at' => $this->nextScheduledFetchAt(10)->toIso8601String(),
-        ];
+        return view('news.index', array_merge($this->publicFallbackContext(), compact('articles', 'sections', 'topics', 'selectedTopicId', 'selectedSection', 'search', 'featuredCount', 'homepageSections', 'showSectionLanding')));
+    }
 
-        return view('news.index', compact('articles', 'sections', 'topics', 'selectedTopicId', 'selectedSection', 'search', 'featuredCount', 'visitStats', 'scoreboard', 'tickerArticles', 'adsense', 'fetchStats', 'homepageSections', 'showSectionLanding'));
+    public function fixtures(Request $request, VisitorMetricsService $visitorMetrics, FifaMatchService $fifaMatchService)
+    {
+        return view('news.fixtures', array_merge(
+            $this->publicPageContext($request, $visitorMetrics),
+            ['scoreboard' => $this->safeScoreboard($fifaMatchService)]
+        ));
+    }
+
+    public function scores(Request $request, VisitorMetricsService $visitorMetrics, FifaMatchService $fifaMatchService)
+    {
+        return view('news.scores', array_merge(
+            $this->publicPageContext($request, $visitorMetrics),
+            ['scoreboard' => $this->safeScoreboard($fifaMatchService)]
+        ));
+    }
+
+    protected function safeScoreboard(FifaMatchService $fifaMatchService): array
+    {
+        try {
+            return $fifaMatchService->getScoreboard();
+        } catch (Throwable) {
+            return [
+                'recent' => [],
+                'upcoming' => [],
+                'source_url' => 'https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/scores-fixtures',
+                'synced_at' => null,
+                'diagnostics' => [
+                    'chrome_available' => false,
+                    'chrome_binary' => null,
+                ],
+                'message' => 'Fixtures and live scores are temporarily unavailable on this server.',
+            ];
+        }
+    }
+
+    protected function publicPageContext(Request $request, VisitorMetricsService $visitorMetrics): array
+    {
+        $visitStats = $visitorMetrics->recordPublicVisit($request);
+
+        return array_merge($this->publicFallbackContext(), [
+            'visitStats' => $visitStats,
+            'tickerArticles' => NewsItem::visible()
+                ->orderByDesc('published_at')
+                ->orderByDesc('id')
+                ->take(8)
+                ->get(['id', 'title']),
+            'schemaReady' => true,
+        ]);
+    }
+
+    protected function publicFallbackContext(): array
+    {
+        return [
+            'visitStats' => [
+                'total' => 0,
+                'today' => 0,
+                'unique_today' => 0,
+                'unique_total' => 0,
+                'live_now' => 0,
+                'last_seen_at' => null,
+            ],
+            'tickerArticles' => collect(),
+            'adsense' => [
+                'client' => config('services.adsense.client'),
+                'infeed_slot' => config('services.adsense.infeed_slot'),
+                'tab_slot' => config('services.adsense.tab_slot'),
+            ],
+            'fetchStats' => [
+                'total_runs' => (int) Setting::get('news_sync_total_runs', '0'),
+                'last_success_at' => Setting::get('news_sync_last_success_at'),
+                'interval_minutes' => 10,
+                'next_scheduled_at' => $this->nextScheduledFetchAt(10)->toIso8601String(),
+            ],
+            'homepagePromo' => [
+                'quotex_url' => config('services.promotions.quotex_url'),
+                'signals_url' => config('services.promotions.signals_url'),
+            ],
+            'schemaReady' => false,
+        ];
     }
 
     public function placeholderImage(string $seed, FifaPlaceholderImageService $placeholderImageService): Response

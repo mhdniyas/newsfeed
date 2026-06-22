@@ -151,6 +151,30 @@ class AdminController extends Controller
         ));
     }
 
+    public function promotions()
+    {
+        $fetchStats = $this->fetchStats();
+        $promotions = [
+            'quotex_url' => Setting::get('promo_quotex_url', config('services.promotions.quotex_url')),
+            'signals_url' => Setting::get('promo_signals_url', config('services.promotions.signals_url')),
+        ];
+
+        return view('admin.promotions', compact('promotions', 'fetchStats'));
+    }
+
+    public function updatePromotions(Request $request)
+    {
+        $request->validate([
+            'quotex_url' => 'nullable|url|max:1000',
+            'signals_url' => 'nullable|url|max:1000',
+        ]);
+
+        Setting::set('promo_quotex_url', $request->input('quotex_url') ?: null);
+        Setting::set('promo_signals_url', $request->input('signals_url') ?: null);
+
+        return back()->with('success', 'Promotion links updated successfully.');
+    }
+
     public function storeSection(Request $request)
     {
         $request->validate([

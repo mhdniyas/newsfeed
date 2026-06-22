@@ -224,8 +224,8 @@ class NewsController extends Controller
                 'next_scheduled_at' => $this->nextScheduledFetchAt(10)->toIso8601String(),
             ],
             'homepagePromo' => [
-                'quotex_url' => config('services.promotions.quotex_url'),
-                'signals_url' => config('services.promotions.signals_url'),
+                'quotex_url' => Setting::get('promo_quotex_url', config('services.promotions.quotex_url')),
+                'signals_url' => Setting::get('promo_signals_url', config('services.promotions.signals_url')),
             ],
             'schemaReady' => false,
         ];

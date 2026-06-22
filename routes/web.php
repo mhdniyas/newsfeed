@@ -27,6 +27,7 @@ Route::middleware(\App\Http\Middleware\AdminAuth::class)->group(function () {
     Route::get('/admin', [AdminController::class, 'index'])->name('admin.dashboard');
     Route::get('/admin/analytics', [AdminController::class, 'analytics'])->name('admin.analytics');
     Route::get('/admin/destroy', [AdminController::class, 'destroyPage'])->name('admin.destroy');
+    Route::get('/admin/promotions', [AdminController::class, 'promotions'])->name('admin.promotions');
     Route::get('/admin/sync-status', [AdminController::class, 'syncStatus'])->name('admin.sync-status');
     
     // Section Management
@@ -48,6 +49,7 @@ Route::middleware(\App\Http\Middleware\AdminAuth::class)->group(function () {
     
     // Profile & Credentials
     Route::post('/admin/profile', [AdminController::class, 'updateProfile'])->name('admin.profile.update');
+    Route::post('/admin/promotions', [AdminController::class, 'updatePromotions'])->name('admin.promotions.update');
 
     // Manual Fetch
     Route::post('/admin/fetch-news', [AdminController::class, 'fetchNewsNow'])->name('admin.fetch-news');

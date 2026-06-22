@@ -136,6 +136,9 @@
                         <a href="{{ route('admin.analytics') }}" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-700 border border-amber-500/20 hover:bg-amber-500/20 transition-all duration-200">
                             Analytics
                         </a>
+                        <a href="{{ route('admin.promotions') }}" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-sky-500/10 text-sky-700 border border-sky-500/20 hover:bg-sky-500/20 transition-all duration-200">
+                            Promotions
+                        </a>
                         <a href="{{ route('admin.destroy') }}" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-700 border border-rose-500/20 hover:bg-rose-500/20 transition-all duration-200">
                             Destroy
                         </a>

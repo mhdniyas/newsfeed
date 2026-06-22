@@ -176,32 +176,37 @@
                     </section>
 
                     @if($sectionIndex === 0)
-                        <section class="rounded-[2rem] border border-emerald-200 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-5 text-white shadow-lg shadow-slate-950/10">
-                            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                                <div class="max-w-2xl">
-                                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-300">Sponsored</p>
-                                    <h2 class="mt-2 text-2xl font-extrabold">Start with $10 on Quotex</h2>
-                                    <p class="mt-3 text-sm leading-6 text-slate-200">Premium trading signals promotion placed between the homepage news sections.</p>
+                        <section class="overflow-hidden rounded-[2.25rem] border border-emerald-300/40 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.34),_transparent_34%),linear-gradient(135deg,_#020617_0%,_#0f172a_48%,_#052e2b_100%)] p-6 sm:p-7 text-white shadow-[0_24px_60px_rgba(2,6,23,0.18)]">
+                            <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                                <div class="max-w-3xl">
+                                    <p class="inline-flex rounded-full border border-emerald-300/30 bg-emerald-400/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-200">Sponsored</p>
+                                    <h2 class="mt-4 text-3xl sm:text-4xl font-black tracking-tight">Start with $10 on Quotex</h2>
+                                    <p class="mt-4 max-w-2xl text-base leading-7 text-slate-200">Premium trading signals promotion placed between the homepage news sections, with direct referral actions for your audience.</p>
+                                    <div class="mt-5 flex flex-wrap gap-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">
+                                        <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Fast Signup</span>
+                                        <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Premium Signals</span>
+                                        <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">Sponsored Placement</span>
+                                    </div>
                                 </div>
-                                <div class="flex flex-wrap gap-3">
+                                <div class="flex flex-col gap-3 sm:min-w-[260px]">
                                     @if(!empty($homepagePromo['quotex_url']))
-                                        <a href="{{ $homepagePromo['quotex_url'] }}" target="_blank" rel="noopener noreferrer sponsored" class="inline-flex items-center rounded-full bg-emerald-400 px-5 py-3 text-sm font-black text-slate-950 transition hover:bg-emerald-300">
+                                        <a href="{{ $homepagePromo['quotex_url'] }}" target="_blank" rel="noopener noreferrer sponsored" class="inline-flex items-center justify-center rounded-2xl bg-emerald-400 px-6 py-4 text-base font-black text-slate-950 transition hover:bg-emerald-300">
                                             Start With $10
                                         </a>
                                     @endif
                                     @if(!empty($homepagePromo['signals_url']))
-                                        <a href="{{ $homepagePromo['signals_url'] }}" target="_blank" rel="noopener noreferrer sponsored" class="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/15">
+                                        <a href="{{ $homepagePromo['signals_url'] }}" target="_blank" rel="noopener noreferrer sponsored" class="inline-flex items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-6 py-4 text-base font-bold text-white transition hover:bg-white/15">
                                             Premium Signals
                                         </a>
                                     @endif
                                     @if(empty($homepagePromo['quotex_url']) && empty($homepagePromo['signals_url']))
-                                        <span class="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-5 py-3 text-sm font-bold text-slate-200">
+                                        <span class="inline-flex items-center justify-center rounded-2xl border border-white/15 bg-white/10 px-6 py-4 text-sm font-bold text-slate-200">
                                             Add `PROMO_QUOTEX_URL` to enable this CTA
                                         </span>
                                     @endif
                                 </div>
                             </div>
-                            <p class="mt-4 text-[11px] text-slate-300">Trading involves risk. Sponsored promotion.</p>
+                            <p class="mt-5 text-xs text-slate-300">Trading involves risk. Sponsored promotion.</p>
                         </section>
                     @endif
                 @endforeach

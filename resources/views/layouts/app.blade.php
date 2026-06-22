@@ -332,7 +332,7 @@
 
         .ticker-track {
             width: max-content;
-            animation: ticker-scroll 44s linear infinite;
+            animation: ticker-scroll 88s linear infinite;
         }
 
         .ticker-track:hover {

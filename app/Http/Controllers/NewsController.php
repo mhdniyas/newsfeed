@@ -15,7 +15,10 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Throwable;
 
 class NewsController extends Controller
@@ -25,6 +28,10 @@ class NewsController extends Controller
      */
     public function index(Request $request, VisitorMetricsService $visitorMetrics, FifaMatchService $fifaMatchService)
     {
+        if (!$this->publicNewsSchemaReady()) {
+            return $this->renderUnavailableHomepage($request, $fifaMatchService);
+        }
+
         $search = $request->input('search');
         $selectedTopicId = $request->input('topic');
         $selectedSectionFilter = $request->input('section');
@@ -127,6 +134,56 @@ class NewsController extends Controller
 
             return $section;
         })->filter(fn (NewsSection $section) => $section->latestArticles->isNotEmpty())->values();
+
+        return view('news.index', compact('articles', 'sections', 'topics', 'selectedTopicId', 'selectedSection', 'search', 'featuredCount', 'visitStats', 'scoreboard', 'tickerArticles', 'adsense', 'fetchStats', 'homepageSections', 'showSectionLanding'));
+    }
+
+    protected function publicNewsSchemaReady(): bool
+    {
+        foreach (['news_items', 'news_sections', 'news_topics', 'settings', 'visitor_analytics'] as $table) {
+            if (!Schema::hasTable($table)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    protected function renderUnavailableHomepage(Request $request, FifaMatchService $fifaMatchService)
+    {
+        $articles = new LengthAwarePaginator([], 0, 12, LengthAwarePaginator::resolveCurrentPage(), [
+            'path' => $request->url(),
+            'query' => $request->query(),
+        ]);
+        $sections = collect();
+        $topics = collect();
+        $homepageSections = collect();
+        $tickerArticles = collect();
+        $selectedTopicId = $request->input('topic');
+        $selectedSection = null;
+        $search = $request->input('search');
+        $featuredCount = 0;
+        $showSectionLanding = false;
+        $scoreboard = $fifaMatchService->getScoreboard();
+        $visitStats = [
+            'total' => 0,
+            'today' => 0,
+            'unique_today' => 0,
+            'unique_total' => 0,
+            'live_now' => 0,
+            'last_seen_at' => null,
+        ];
+        $adsense = [
+            'client' => config('services.adsense.client'),
+            'infeed_slot' => config('services.adsense.infeed_slot'),
+            'tab_slot' => config('services.adsense.tab_slot'),
+        ];
+        $fetchStats = [
+            'total_runs' => 0,
+            'last_success_at' => null,
+            'interval_minutes' => 10,
+            'next_scheduled_at' => $this->nextScheduledFetchAt(10)->toIso8601String(),
+        ];
 
         return view('news.index', compact('articles', 'sections', 'topics', 'selectedTopicId', 'selectedSection', 'search', 'featuredCount', 'visitStats', 'scoreboard', 'tickerArticles', 'adsense', 'fetchStats', 'homepageSections', 'showSectionLanding'));
     }

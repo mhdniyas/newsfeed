@@ -53,6 +53,34 @@
     @yield('styles')
 </head>
 <body class="flex flex-col min-h-screen bg-slate-50 text-slate-800 antialiased overflow-x-hidden">
+    @php
+        $mobileNavItems = [
+            [
+                'label' => 'Home',
+                'href' => route('news.index'),
+                'active' => request()->routeIs('news.index') && !request()->is('admin/*'),
+                'icon' => 'home',
+            ],
+            [
+                'label' => 'Fixtures',
+                'href' => route('news.index') . '#fixtures',
+                'active' => false,
+                'icon' => 'calendar',
+            ],
+            [
+                'label' => 'Live',
+                'href' => route('news.index') . '#live-score',
+                'active' => false,
+                'icon' => 'pulse',
+            ],
+            [
+                'label' => session('admin_authenticated') ? 'Admin' : 'Login',
+                'href' => session('admin_authenticated') ? route('admin.dashboard') : route('admin.login'),
+                'active' => request()->routeIs('admin.*'),
+                'icon' => 'admin',
+            ],
+        ];
+    @endphp
 
     @if(isset($tickerArticles) && $tickerArticles->isNotEmpty())
         <div class="sticky top-0 z-[60] border-b border-slate-900/80 bg-slate-950 text-white shadow-lg">
@@ -121,7 +149,7 @@
     </header>
 
     <!-- Main Content Area -->
-    <main class="flex-grow">
+    <main class="flex-grow pb-24 md:pb-0">
         @yield('content')
     </main>
 
@@ -189,6 +217,44 @@
             @endif
         </div>
     </footer>
+
+    <nav class="fixed inset-x-0 bottom-0 z-[70] px-4 pb-[calc(env(safe-area-inset-bottom)+0.9rem)] pt-3 md:hidden">
+        <div class="mx-auto flex max-w-sm items-center justify-between rounded-[2rem] border border-white/80 bg-white/95 px-3 py-2 shadow-[0_18px_40px_rgba(15,23,42,0.12)] backdrop-blur-xl">
+            @foreach($mobileNavItems as $item)
+                <a href="{{ $item['href'] }}"
+                   aria-label="{{ $item['label'] }}"
+                   class="group flex h-14 items-center justify-center rounded-[1.6rem] px-3 text-sm font-semibold transition-all duration-200 {{ $item['active'] ? 'min-w-[4.8rem] gap-2 bg-slate-950 text-white shadow-[0_10px_24px_rgba(15,23,42,0.22)]' : 'min-w-[3.2rem] text-slate-400 hover:bg-slate-100 hover:text-slate-700' }}">
+                    <span class="flex h-11 w-11 items-center justify-center rounded-[1.4rem] {{ $item['active'] ? 'bg-transparent' : 'bg-transparent' }}">
+                        @if($item['icon'] === 'home')
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M3 10.5 12 3l9 7.5"></path>
+                                <path d="M5 9.5V21h14V9.5"></path>
+                            </svg>
+                        @elseif($item['icon'] === 'calendar')
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M7 3v3"></path>
+                                <path d="M17 3v3"></path>
+                                <rect x="3" y="5" width="18" height="16" rx="3"></rect>
+                                <path d="M3 10h18"></path>
+                            </svg>
+                        @elseif($item['icon'] === 'pulse')
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M3 12h4l2.5-5 4 10 2.5-5H21"></path>
+                            </svg>
+                        @else
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z"></path>
+                                <path d="M4 20a8 8 0 0 1 16 0"></path>
+                            </svg>
+                        @endif
+                    </span>
+                    @if($item['active'])
+                        <span class="pr-1 text-[13px] font-medium tracking-tight">{{ $item['label'] }}</span>
+                    @endif
+                </a>
+            @endforeach
+        </div>
+    </nav>
 
 
     @yield('scripts')

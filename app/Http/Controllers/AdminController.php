@@ -165,14 +165,40 @@ class AdminController extends Controller
     public function updatePromotions(Request $request)
     {
         $request->validate([
-            'quotex_url' => 'nullable|url|max:1000',
-            'signals_url' => 'nullable|url|max:1000',
+            'quotex_url' => 'nullable|string|max:1000',
+            'signals_url' => 'nullable|string|max:1000',
         ]);
 
-        Setting::set('promo_quotex_url', $request->input('quotex_url') ?: null);
-        Setting::set('promo_signals_url', $request->input('signals_url') ?: null);
+        $quotexUrl = $this->normalizePromotionUrl($request->input('quotex_url'));
+        $signalsUrl = $this->normalizePromotionUrl($request->input('signals_url'));
+
+        validator([
+            'quotex_url' => $quotexUrl,
+            'signals_url' => $signalsUrl,
+        ], [
+            'quotex_url' => 'nullable|url|max:1000',
+            'signals_url' => 'nullable|url|max:1000',
+        ])->validate();
+
+        Setting::set('promo_quotex_url', $quotexUrl);
+        Setting::set('promo_signals_url', $signalsUrl);
 
         return back()->with('success', 'Promotion links updated successfully.');
+    }
+
+    protected function normalizePromotionUrl(?string $value): ?string
+    {
+        $value = trim((string) $value);
+
+        if ($value === '') {
+            return null;
+        }
+
+        if (!preg_match('#^https?://#i', $value)) {
+            $value = 'https://' . ltrim($value, '/');
+        }
+
+        return $value;
     }
 
     public function storeSection(Request $request)

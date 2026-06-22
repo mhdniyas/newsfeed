@@ -32,7 +32,7 @@
 
             <div>
                 <label class="block text-xs font-semibold text-slate-450 mb-1.5 uppercase tracking-wider">Quotex Referral URL</label>
-                <input type="url" name="quotex_url" value="{{ old('quotex_url', $promotions['quotex_url']) }}" placeholder="https://example.com/your-quotex-link" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-emerald-500 rounded-xl px-3.5 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all">
+                <input type="text" name="quotex_url" value="{{ old('quotex_url', $promotions['quotex_url']) }}" placeholder="broker-qx.pro/sign-up/?lid=1748398" spellcheck="false" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-emerald-500 rounded-xl px-3.5 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all">
                 @error('quotex_url')
                     <p class="mt-1 text-xs font-semibold text-red-600">{{ $message }}</p>
                 @enderror
@@ -40,14 +40,14 @@
 
             <div>
                 <label class="block text-xs font-semibold text-slate-450 mb-1.5 uppercase tracking-wider">Premium Signals URL</label>
-                <input type="url" name="signals_url" value="{{ old('signals_url', $promotions['signals_url']) }}" placeholder="https://example.com/your-signals-link" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-emerald-500 rounded-xl px-3.5 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all">
+                <input type="text" name="signals_url" value="{{ old('signals_url', $promotions['signals_url']) }}" placeholder="broker-qx.pro/sign-up/?lid=1748398" spellcheck="false" class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-emerald-500 rounded-xl px-3.5 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all">
                 @error('signals_url')
                     <p class="mt-1 text-xs font-semibold text-red-600">{{ $message }}</p>
                 @enderror
             </div>
 
             <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-500">
-                The homepage sponsored card uses these links first. If they are empty, it falls back to the configured environment values.
+                You can paste referral links with or without `https://`. The form will automatically save them as full URLs.
             </div>
 
             <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-emerald-400 px-5 py-3 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-emerald-500">

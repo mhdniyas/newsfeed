@@ -170,8 +170,15 @@
 
                 <div class="space-y-4">
                     <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                        <h3 class="text-sm font-bold text-slate-900">Recovered Media</h3>
-                        <p class="mt-1 text-xs text-slate-500">Fallback image extraction and FIFA official feed results.</p>
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-900">Recovered Media</h3>
+                                <p class="mt-1 text-xs text-slate-500">Fallback image extraction and FIFA official feed results.</p>
+                            </div>
+                            <a href="{{ route('news.gallery') }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center rounded-full border border-emerald-200 bg-white px-3 py-2 text-[11px] font-bold text-emerald-700 transition hover:bg-emerald-50">
+                                News Gallery
+                            </a>
+                        </div>
                         <div class="mt-4 grid grid-cols-2 gap-3">
                             <div class="rounded-2xl bg-white px-4 py-3 border border-slate-200">
                                 <p class="text-[10px] uppercase tracking-[0.16em] text-slate-400">Recovered Images</p>

@@ -12,7 +12,15 @@
     <meta property="og:type" content="website">
     <meta property="og:title" content="@yield('title', 'FIFA World Cup 2026 News Explorer')">
     <meta property="og:description" content="@yield('meta_description', 'Get the latest FIFA World Cup 2026 news, fixtures, team updates, player news, and live football stories.')">
-    <meta property="og:image" content="{{ asset('og-image.png') }}">
+    <meta property="og:image" content="{{ asset('app-icon-512.png') }}">
+    <meta name="theme-color" content="#020617">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Newsfeed">
+    <link rel="manifest" href="{{ asset('site.webmanifest') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('app-icon-192.png') }}">
+    <link rel="icon" type="image/png" sizes="512x512" href="{{ asset('app-icon-512.png') }}">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -74,10 +82,10 @@
                 'icon' => 'calendar',
             ],
             [
-                'label' => 'Live',
-                'href' => route('news.scores'),
-                'active' => request()->routeIs('news.scores'),
-                'icon' => 'pulse',
+                'label' => 'AI',
+                'href' => route('news.ai'),
+                'active' => request()->routeIs('news.ai'),
+                'icon' => 'ai',
             ],
             [
                 'label' => session('admin_authenticated') ? 'Admin' : 'Contact',
@@ -227,6 +235,31 @@
         </div>
     </footer>
 
+    <div id="install-shortcut-popup" class="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+6.25rem)] z-[75] px-4 opacity-0 transition-all duration-300 md:hidden">
+        <div class="mx-auto max-w-sm rounded-[2rem] border border-slate-200/90 bg-white/95 p-4 shadow-[0_24px_60px_rgba(15,23,42,0.18)] backdrop-blur-xl">
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-600">Add Shortcut</p>
+                    <h3 class="mt-1 text-lg font-black text-slate-950">Add Newsfeed to your home screen</h3>
+                    <p id="install-shortcut-copy" class="mt-2 text-sm leading-6 text-slate-500">Open this site faster like an app from your phone home screen.</p>
+                </div>
+                <button id="install-shortcut-close" type="button" disabled class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-400 transition disabled:cursor-not-allowed disabled:opacity-50">
+                    <span class="sr-only">Close popup</span>
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M18 6 6 18"></path>
+                        <path d="m6 6 12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="mt-4 flex items-center gap-3">
+                <button id="install-shortcut-action" type="button" class="inline-flex flex-1 items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 text-sm font-black text-white transition hover:bg-slate-800">
+                    Add To Home Screen
+                </button>
+                <span id="install-shortcut-timer" class="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">X in 3s</span>
+            </div>
+        </div>
+    </div>
+
     <nav class="fixed inset-x-0 bottom-0 z-[70] px-4 pb-[calc(env(safe-area-inset-bottom)+0.9rem)] pt-3 md:hidden">
         <div class="mx-auto flex max-w-sm items-center justify-between rounded-[2rem] border border-white/80 bg-white/95 px-3 py-2 shadow-[0_18px_40px_rgba(15,23,42,0.12)] backdrop-blur-xl">
             @foreach($mobileNavItems as $item)
@@ -246,9 +279,15 @@
                                 <rect x="3" y="5" width="18" height="16" rx="3"></rect>
                                 <path d="M3 10h18"></path>
                             </svg>
-                        @elseif($item['icon'] === 'pulse')
+                        @elseif($item['icon'] === 'ai')
                             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M3 12h4l2.5-5 4 10 2.5-5H21"></path>
+                                <rect x="4" y="4" width="16" height="16" rx="4"></rect>
+                                <path d="M9 15v-6"></path>
+                                <path d="M15 15v-6"></path>
+                                <path d="M8 12h2"></path>
+                                <path d="M14 12h2"></path>
+                                <path d="M8 9h2"></path>
+                                <path d="M14 9h2"></path>
                             </svg>
                         @elseif($item['icon'] === 'contact')
                             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -311,6 +350,89 @@
 
             updateCountdown();
             window.setInterval(updateCountdown, 1000);
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const popup = document.getElementById('install-shortcut-popup');
+            const actionButton = document.getElementById('install-shortcut-action');
+            const closeButton = document.getElementById('install-shortcut-close');
+            const timerBadge = document.getElementById('install-shortcut-timer');
+            const copy = document.getElementById('install-shortcut-copy');
+
+            if (!popup || !actionButton || !closeButton || !timerBadge || !copy) {
+                return;
+            }
+
+            const isMobile = window.matchMedia('(max-width: 767px)').matches;
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            const dismissedKey = 'newsfeed-install-shortcut-dismissed';
+            const eventKey = 'newsfeed-install-shortcut-installed';
+            const dismissedRecently = localStorage.getItem(dismissedKey) === '1';
+
+            if (!isMobile || isStandalone || dismissedRecently) {
+                return;
+            }
+
+            let deferredPrompt = null;
+
+            const closePopup = () => {
+                popup.classList.remove('pointer-events-auto', 'translate-y-0', 'opacity-100');
+                popup.classList.add('pointer-events-none', 'translate-y-4', 'opacity-0');
+                localStorage.setItem(dismissedKey, '1');
+            };
+
+            const showPopup = () => {
+                popup.classList.remove('pointer-events-none', 'translate-y-4', 'opacity-0');
+                popup.classList.add('pointer-events-auto', 'translate-y-0', 'opacity-100');
+            };
+
+            let countdown = 3;
+            timerBadge.textContent = `X in ${countdown}s`;
+            closeButton.disabled = true;
+
+            const countdownTimer = window.setInterval(() => {
+                countdown -= 1;
+
+                if (countdown <= 0) {
+                    window.clearInterval(countdownTimer);
+                    timerBadge.textContent = 'Close';
+                    closeButton.disabled = false;
+                    closeButton.classList.remove('text-slate-400');
+                    closeButton.classList.add('text-slate-700', 'hover:bg-slate-100');
+                    return;
+                }
+
+                timerBadge.textContent = `X in ${countdown}s`;
+            }, 1000);
+
+            closeButton.addEventListener('click', closePopup);
+
+            window.addEventListener('beforeinstallprompt', (event) => {
+                event.preventDefault();
+                deferredPrompt = event;
+                actionButton.textContent = 'Add To Home Screen';
+                copy.textContent = 'Open this site faster like an app from your phone home screen.';
+            });
+
+            actionButton.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    await deferredPrompt.userChoice.catch(() => null);
+                    deferredPrompt = null;
+                    localStorage.setItem(eventKey, '1');
+                    closePopup();
+                    return;
+                }
+
+                copy.textContent = 'On iPhone tap Share, then Add to Home Screen. On Android open browser menu, then Add to Home screen.';
+            });
+
+            if (localStorage.getItem(eventKey) === '1') {
+                return;
+            }
+
+            popup.classList.add('translate-y-4');
+            window.setTimeout(showPopup, 900);
         });
     </script>
 

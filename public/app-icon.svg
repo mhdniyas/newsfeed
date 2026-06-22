@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Newsfeed App Icon</title>
+  <desc id="desc">Rounded dark square with a green to blue glow and stylized N mark.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#020617"/>
+      <stop offset="55%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#082f49"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="18" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="url(#bg)"/>
+  <circle cx="392" cy="120" r="76" fill="#22c55e" opacity="0.18"/>
+  <circle cx="128" cy="404" r="92" fill="#38bdf8" opacity="0.16"/>
+  <path d="M136 360V152h44l152 139V152h44v208h-42L180 220v140z" fill="url(#accent)" filter="url(#glow)"/>
+  <rect x="116" y="132" width="280" height="248" rx="78" fill="none" stroke="rgba(255,255,255,0.09)"/>
+</svg>

@@ -167,6 +167,59 @@ class NewsController extends Controller
         ));
     }
 
+    public function gallery(Request $request, VisitorMetricsService $visitorMetrics)
+    {
+        $articles = NewsItem::visible()
+            ->whereNotNull('image_url')
+            ->where('image_url', '!=', '')
+            ->with(['newsTopic', 'newsSection'])
+            ->orderByDesc('published_at')
+            ->orderByDesc('id')
+            ->paginate(24);
+
+        $galleryStats = [
+            'recovered_images' => NewsItem::visible()
+                ->whereNotNull('image_url')
+                ->where('image_url', '!=', '')
+                ->count(),
+        ];
+
+        return view('news.gallery', array_merge(
+            $this->publicPageContext($request, $visitorMetrics),
+            compact('articles', 'galleryStats')
+        ));
+    }
+
+    public function aiNews(Request $request, VisitorMetricsService $visitorMetrics)
+    {
+        $aiSection = NewsSection::query()
+            ->where('slug', 'ai')
+            ->orWhere('name', 'AI')
+            ->first();
+
+        $articles = NewsItem::visible()
+            ->with(['newsTopic', 'newsSection'])
+            ->when($aiSection, fn ($query) => $query->where('news_section_id', $aiSection->id))
+            ->orderByDesc('published_at')
+            ->orderByDesc('id')
+            ->paginate(18);
+
+        $aiTopics = $aiSection
+            ? NewsTopic::query()
+                ->where('news_section_id', $aiSection->id)
+                ->where('is_active', true)
+                ->withCount(['newsItems' => fn ($query) => $query->visible()])
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->get()
+            : collect();
+
+        return view('news.ai', array_merge(
+            $this->publicPageContext($request, $visitorMetrics),
+            compact('articles', 'aiSection', 'aiTopics')
+        ));
+    }
+
     protected function safeScoreboard(FifaMatchService $fifaMatchService): array
     {
         try {

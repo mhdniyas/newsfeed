@@ -68,6 +68,13 @@
                         <span>Status</span>
                     </span>
                     <span id="sync-progress-label" class="text-sm font-black text-slate-900">0%</span>
+                    <label class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600 shadow-sm">
+                        <input id="sync-failsafe-toggle" type="checkbox" class="peer sr-only">
+                        <span class="relative h-5 w-9 rounded-full bg-slate-200 transition peer-checked:bg-emerald-500">
+                            <span class="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white transition peer-checked:translate-x-4"></span>
+                        </span>
+                        <span>Failsafe Auto Trigger</span>
+                    </label>
                 </div>
             </div>
         </div>
@@ -86,7 +93,7 @@
                 <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3">
                     <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Next Auto Fetch</p>
                     <p id="sync-auto-next-at" class="mt-1 text-sm font-bold text-slate-900">Calculating...</p>
-                    <p class="mt-1 text-xs text-slate-500">Laravel scheduler watches this every minute.</p>
+                    <p id="sync-auto-note" class="mt-1 text-xs text-slate-500">Laravel scheduler watches this every minute.</p>
                 </div>
                 <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3">
                     <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Fetch Runs</p>
@@ -584,10 +591,12 @@
         let syncState = JSON.parse(monitor.dataset.initialSync || '{}');
         let poller = null;
         let pollDelay = null;
+        let lastFailsafeTrigger = null;
 
         const els = {
             badge: document.getElementById('sync-status-badge'),
             startButton: document.getElementById('sync-start-button'),
+            startForm: document.getElementById('sync-start-form'),
             restartForm: document.getElementById('sync-restart-form'),
             progressLabel: document.getElementById('sync-progress-label'),
             progressBar: document.getElementById('sync-progress-bar'),
@@ -608,10 +617,16 @@
             autoCountdown: document.getElementById('sync-auto-countdown'),
             autoStatus: document.getElementById('sync-auto-status'),
             autoNextAt: document.getElementById('sync-auto-next-at'),
+            autoNote: document.getElementById('sync-auto-note'),
             autoRuns: document.getElementById('sync-auto-runs'),
             autoLastAt: document.getElementById('sync-auto-last-at'),
             autoInterval: document.getElementById('sync-auto-interval'),
+            failsafeToggle: document.getElementById('sync-failsafe-toggle'),
         };
+
+        const FAILSAFE_STORAGE_KEY = 'admin-sync-failsafe-enabled';
+        const FAILSAFE_SLOT_KEY = 'admin-sync-failsafe-last-slot';
+        const FAILSAFE_GRACE_SECONDS = 20;
 
         const formatTime = (iso) => {
             if (!iso) {
@@ -657,6 +672,64 @@
 
         const shouldPoll = (state) => ['queued', 'running'].includes(state.status);
 
+        const failsafeEnabled = () => els.failsafeToggle?.checked === true;
+
+        const activeSlotKey = (state) => {
+            const nextFetch = state.fetch_stats?.next_scheduled_at;
+            return nextFetch || null;
+        };
+
+        const restoreFailsafeState = () => {
+            if (!els.failsafeToggle) {
+                return;
+            }
+
+            els.failsafeToggle.checked = localStorage.getItem(FAILSAFE_STORAGE_KEY) === '1';
+            lastFailsafeTrigger = localStorage.getItem(FAILSAFE_SLOT_KEY);
+        };
+
+        const rememberFailsafeTrigger = (slotKey) => {
+            lastFailsafeTrigger = slotKey;
+            localStorage.setItem(FAILSAFE_SLOT_KEY, slotKey);
+        };
+
+        const maybeTriggerFailsafe = () => {
+            if (!failsafeEnabled() || !els.startForm || shouldPoll(syncState)) {
+                return;
+            }
+
+            const nextFetch = syncState.fetch_stats?.next_scheduled_at;
+
+            if (!nextFetch) {
+                return;
+            }
+
+            const diffMs = new Date(nextFetch).getTime() - Date.now();
+
+            if (Number.isNaN(diffMs)) {
+                return;
+            }
+
+            const overdueSeconds = Math.floor(Math.abs(diffMs) / 1000);
+            const slotKey = activeSlotKey(syncState);
+
+            if (diffMs > 0 || overdueSeconds < FAILSAFE_GRACE_SECONDS || !slotKey) {
+                return;
+            }
+
+            if (lastFailsafeTrigger === slotKey) {
+                return;
+            }
+
+            rememberFailsafeTrigger(slotKey);
+
+            if (els.autoStatus) {
+                els.autoStatus.textContent = 'Failsafe triggered. Starting manual sync because the scheduler missed this window.';
+            }
+
+            els.startForm.requestSubmit();
+        };
+
         const pollingDelayFor = (state) => {
             const seconds = secondsUntilNextFetch(state);
 
@@ -695,17 +768,31 @@
                 } else if (seconds === null) {
                     els.autoStatus.textContent = 'Waiting for scheduler data.';
                 } else if (seconds === 0) {
-                    els.autoStatus.textContent = 'Due now. Waiting for Laravel to queue the job.';
+                    els.autoStatus.textContent = failsafeEnabled()
+                        ? 'Due now. Failsafe will trigger if Laravel does not queue the job.'
+                        : 'Due now. Waiting for Laravel to queue the job.';
                 } else if (seconds <= 90) {
-                    els.autoStatus.textContent = 'Scheduler window is near. Polling faster.';
+                    els.autoStatus.textContent = failsafeEnabled()
+                        ? 'Scheduler window is near. Failsafe is armed and polling faster.'
+                        : 'Scheduler window is near. Polling faster.';
                 } else {
-                    els.autoStatus.textContent = 'Countdown to the next automatic fetch.';
+                    els.autoStatus.textContent = failsafeEnabled()
+                        ? 'Countdown to the next automatic fetch. Failsafe is armed.'
+                        : 'Countdown to the next automatic fetch.';
                 }
+            }
+
+            if (els.autoNote) {
+                els.autoNote.textContent = failsafeEnabled()
+                    ? `If Laravel scheduler misses the slot, this page will auto-submit Sync & Fetch News Now after ${FAILSAFE_GRACE_SECONDS} seconds.`
+                    : 'Laravel scheduler watches this every minute.';
             }
 
             if (seconds !== null && seconds <= 90 && !shouldPoll(syncState)) {
                 setPollingDelay(2500);
             }
+
+            maybeTriggerFailsafe();
         };
 
         const statusTheme = (status) => {
@@ -856,11 +943,19 @@
         };
 
         render(syncState);
+        restoreFailsafeState();
+        updateAutoCountdown();
         window.setInterval(updateAutoCountdown, 1000);
 
-        const fetchForm = document.querySelector('form[action="{{ route('admin.fetch-news') }}"]');
-        if (fetchForm) {
-            fetchForm.addEventListener('submit', () => {
+        if (els.failsafeToggle) {
+            els.failsafeToggle.addEventListener('change', () => {
+                localStorage.setItem(FAILSAFE_STORAGE_KEY, els.failsafeToggle.checked ? '1' : '0');
+                updateAutoCountdown();
+            });
+        }
+
+        if (els.startForm) {
+            els.startForm.addEventListener('submit', () => {
                 setPollingDelay(2500);
                 window.setTimeout(() => {
                     fetchState().catch(() => {});

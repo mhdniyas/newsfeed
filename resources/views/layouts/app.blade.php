@@ -74,10 +74,10 @@
                 'icon' => 'pulse',
             ],
             [
-                'label' => session('admin_authenticated') ? 'Admin' : 'Login',
-                'href' => session('admin_authenticated') ? route('admin.dashboard') : route('admin.login'),
+                'label' => session('admin_authenticated') ? 'Admin' : 'Contact',
+                'href' => session('admin_authenticated') ? route('admin.dashboard') : 'https://wa.me/918301867613',
                 'active' => request()->routeIs('admin.*'),
-                'icon' => 'admin',
+                'icon' => session('admin_authenticated') ? 'admin' : 'contact',
             ],
         ];
     @endphp
@@ -240,6 +240,11 @@
                         @elseif($item['icon'] === 'pulse')
                             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="M3 12h4l2.5-5 4 10 2.5-5H21"></path>
+                            </svg>
+                        @elseif($item['icon'] === 'contact')
+                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M21 11.5a8.38 8.38 0 0 1-1.1 4.2L21 21l-5.5-1.1A8.5 8.5 0 1 1 21 11.5Z"></path>
+                                <path d="M9.8 9.3c.2-.5.4-.5.7-.5h.6c.2 0 .4 0 .5.4l.7 1.8c.1.2.1.4 0 .6l-.4.6c-.1.2-.2.3 0 .5.4.7 1 1.3 1.7 1.7.2.1.3.1.5 0l.6-.4c.2-.1.4-.1.6 0l1.8.7c.3.1.4.3.4.5v.6c0 .3 0 .5-.5.7-.5.2-1.6.3-3.2-.5-1.1-.5-2.1-1.4-2.9-2.3-.8-.8-1.7-1.8-2.3-2.9-.8-1.6-.7-2.7-.5-3.2Z"></path>
                             </svg>
                         @else
                             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

@@ -202,6 +202,19 @@ class NewsController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    public function refreshScoreboard(FifaMatchService $fifaMatchService): JsonResponse
+    {
+        $scoreboard = $fifaMatchService->getScoreboard(true);
+
+        return response()->json([
+            'fixtures_html' => view('news.partials.fixtures', compact('scoreboard'))->render(),
+            'scores_html' => view('news.partials.scores', compact('scoreboard'))->render(),
+            'synced_at' => optional($scoreboard['synced_at'])->toIso8601String(),
+            'message' => $scoreboard['message'],
+            'diagnostics' => $scoreboard['diagnostics'] ?? [],
+        ]);
+    }
+
     protected function trackArticleViews(array $articleIds): void
     {
         $articleIds = array_values(array_filter($articleIds));

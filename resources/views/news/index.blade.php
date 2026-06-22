@@ -230,69 +230,24 @@
     </section>
 
     <section id="fixtures" data-tab-panel="fixtures" class="hidden">
-        <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div class="flex items-center justify-between gap-3 mb-5">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Fixtures</p>
-                    <h2 class="text-xl font-extrabold text-slate-900">Upcoming games in your local time</h2>
-                </div>
-                <a href="{{ $scoreboard['source_url'] }}" target="_blank" rel="noopener noreferrer" class="text-xs font-bold text-emerald-600 hover:text-emerald-700">Open FIFA.com</a>
-            </div>
-            <div class="space-y-3">
-                @forelse($scoreboard['upcoming'] as $match)
-                    <a href="{{ $match['match_url'] }}" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 hover:border-amber-200 hover:bg-amber-50/40 transition-colors">
-                        <div class="min-w-0">
-                            <p class="text-sm font-bold text-slate-900 truncate">{{ $match['home_team'] }} vs {{ $match['away_team'] }}</p>
-                            <p class="text-xs text-slate-500 truncate">{{ $match['group'] }} · {{ $match['stadium'] }}</p>
-                        </div>
-                        <div class="shrink-0 text-right">
-                            <p class="text-sm font-extrabold text-amber-500 js-local-kickoff" data-kickoff="{{ optional($match['kickoff_at'])->toIso8601String() }}">{{ $match['kickoff'] ?? 'TBD' }}</p>
-                            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{{ $match['stage'] }}</p>
-                        </div>
-                    </a>
-                @empty
-                    <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
-                        Fixture data is only shown when FIFA.com schedule data is available.
-                    </div>
-                @endforelse
-            </div>
-            @if($adsense['client'] && $adsense['infeed_slot'])
-                <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                    <ins class="adsbygoogle block"
-                         style="display:block"
-                         data-ad-client="{{ $adsense['client'] }}"
-                         data-ad-slot="{{ $adsense['infeed_slot'] }}"
-                         data-ad-format="auto"
-                         data-full-width-responsive="true"></ins>
-                </div>
-            @endif
+        <div id="fixtures-panel-content">
+            @include('news.partials.fixtures')
         </div>
+        @if($adsense['client'] && $adsense['infeed_slot'])
+            <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                <ins class="adsbygoogle block"
+                     style="display:block"
+                     data-ad-client="{{ $adsense['client'] }}"
+                     data-ad-slot="{{ $adsense['infeed_slot'] }}"
+                     data-ad-format="auto"
+                     data-full-width-responsive="true"></ins>
+            </div>
+        @endif
     </section>
 
     <section id="live-score" data-tab-panel="scores" class="hidden">
-        <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div class="flex items-center justify-between gap-3 mb-5">
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Live Score</p>
-                    <h2 class="text-xl font-extrabold text-slate-900">Latest completed matches</h2>
-                </div>
-                <span class="text-xs font-medium text-slate-400">Official FIFA.com data</span>
-            </div>
-            <div class="space-y-3">
-                @forelse($scoreboard['recent'] as $match)
-                    <a href="{{ $match['match_url'] }}" target="_blank" rel="noopener noreferrer" class="flex items-center justify-between gap-4 rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3 hover:border-emerald-200 hover:bg-emerald-50/40 transition-colors">
-                        <div class="min-w-0">
-                            <p class="text-sm font-bold text-slate-900 truncate">{{ $match['home_team'] }} <span class="text-emerald-600">{{ $match['home_score'] }}</span> - <span class="text-emerald-600">{{ $match['away_score'] }}</span> {{ $match['away_team'] }}</p>
-                            <p class="text-xs text-slate-500 truncate">{{ $match['group'] }} · {{ $match['stadium'] }}</p>
-                        </div>
-                        <span class="shrink-0 rounded-full bg-slate-900 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-[0.18em] text-white">FT</span>
-                    </a>
-                @empty
-                    <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
-                        Live score data is only shown when FIFA.com results are available.
-                    </div>
-                @endforelse
-            </div>
+        <div id="scores-panel-content">
+            @include('news.partials.scores')
         </div>
     </section>
 </div>
@@ -308,6 +263,24 @@
         const newsGrid = document.getElementById('news-grid');
         const btnText = document.getElementById('btn-text');
         const btnLoading = document.getElementById('btn-loading');
+        const fixturesPanelContent = document.getElementById('fixtures-panel-content');
+        const scoresPanelContent = document.getElementById('scores-panel-content');
+
+        function localizeKickoffs(scope = document) {
+            scope.querySelectorAll('.js-local-kickoff').forEach(node => {
+                const iso = node.dataset.kickoff;
+
+                if (!iso) {
+                    return;
+                }
+
+                const date = new Date(iso);
+                node.textContent = new Intl.DateTimeFormat(undefined, {
+                    dateStyle: 'medium',
+                    timeStyle: 'short',
+                }).format(date);
+            });
+        }
 
         function activateTab(tabName) {
             tabTriggers.forEach(trigger => {
@@ -348,19 +321,7 @@
 
         activateTab(initialTab);
 
-        document.querySelectorAll('.js-local-kickoff').forEach(node => {
-            const iso = node.dataset.kickoff;
-
-            if (!iso) {
-                return;
-            }
-
-            const date = new Date(iso);
-            node.textContent = new Intl.DateTimeFormat(undefined, {
-                dateStyle: 'medium',
-                timeStyle: 'short',
-            }).format(date);
-        });
+        localizeKickoffs();
 
         const region = (navigator.language || '').split('-')[1] || '';
         const countryNode = document.getElementById('viewer-country');
@@ -400,6 +361,50 @@
 
         sendVisitorHeartbeat();
         window.setInterval(sendVisitorHeartbeat, 60000);
+
+        document.addEventListener('click', async (event) => {
+            const refreshButton = event.target.closest('[data-scoreboard-refresh]');
+
+            if (!refreshButton) {
+                return;
+            }
+
+            event.preventDefault();
+
+            const originalText = refreshButton.textContent.trim();
+            refreshButton.disabled = true;
+            refreshButton.textContent = 'Refreshing...';
+
+            try {
+                const response = await fetch(`{{ route('news.scoreboard.refresh') }}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error('Refresh failed');
+                }
+
+                const data = await response.json();
+
+                if (fixturesPanelContent) {
+                    fixturesPanelContent.innerHTML = data.fixtures_html;
+                    localizeKickoffs(fixturesPanelContent);
+                }
+
+                if (scoresPanelContent) {
+                    scoresPanelContent.innerHTML = data.scores_html;
+                }
+            } catch (error) {
+                alert('Could not refresh fixtures and live scores. Check whether Chrome/Chromium is installed on the VPS.');
+            } finally {
+                refreshButton.disabled = false;
+                refreshButton.textContent = originalText;
+            }
+        });
 
         if (window.adsbygoogle) {
             document.querySelectorAll('.adsbygoogle').forEach(() => {

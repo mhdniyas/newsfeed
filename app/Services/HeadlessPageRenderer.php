@@ -7,9 +7,13 @@ use Symfony\Component\Process\Process;
 
 class HeadlessPageRenderer
 {
-    public function render(string $url, int $cacheSeconds = 600): ?string
+    public function render(string $url, int $cacheSeconds = 600, bool $forceRefresh = false): ?string
     {
         $cacheKey = 'headless-page:' . md5($url);
+
+        if ($forceRefresh) {
+            Cache::forget($cacheKey);
+        }
 
         return Cache::remember($cacheKey, $cacheSeconds, function () use ($url) {
             $binary = $this->chromeBinary();
@@ -41,6 +45,14 @@ class HeadlessPageRenderer
 
             return str_contains($output, '<html') ? $output : null;
         });
+    }
+
+    public function diagnostics(): array
+    {
+        return [
+            'chrome_available' => $this->chromeBinary() !== null,
+            'chrome_binary' => $this->chromeBinary(),
+        ];
     }
 
     protected function chromeBinary(): ?string

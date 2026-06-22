@@ -15,9 +15,10 @@ class FifaMatchService
     {
     }
 
-    public function getScoreboard(): array
+    public function getScoreboard(bool $forceRefresh = false): array
     {
-        $html = $this->renderer->render($this->scoresUrl, 600);
+        $html = $this->renderer->render($this->scoresUrl, 600, $forceRefresh);
+        $diagnostics = $this->renderer->diagnostics();
 
         if (!$html) {
             return [
@@ -25,6 +26,10 @@ class FifaMatchService
                 'upcoming' => [],
                 'source_url' => $this->scoresUrl,
                 'synced_at' => null,
+                'diagnostics' => $diagnostics,
+                'message' => $diagnostics['chrome_available']
+                    ? 'FIFA scoreboard page did not return parsable match data.'
+                    : 'Chrome/Chromium is not installed on this server, so FIFA fixtures and live scores cannot be rendered.',
             ];
         }
 
@@ -51,6 +56,8 @@ class FifaMatchService
             'upcoming' => $upcoming,
             'source_url' => $this->scoresUrl,
             'synced_at' => now(),
+            'diagnostics' => $diagnostics,
+            'message' => null,
         ];
     }
 

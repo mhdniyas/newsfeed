@@ -48,6 +48,7 @@ return [
     'promotions' => [
         'quotex_url' => env('PROMO_QUOTEX_URL'),
         'signals_url' => env('PROMO_SIGNALS_URL'),
+        'whatsapp_message' => env('PROMO_WHATSAPP_MESSAGE', 'Newsfeed: I want premium trading signals.'),
     ],
 
 ];

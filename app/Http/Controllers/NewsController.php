@@ -6,6 +6,7 @@ use App\Models\NewsItem;
 use App\Models\NewsSection;
 use App\Models\NewsTopic;
 use App\Models\Setting;
+use App\Services\AutomaticNewsSyncService;
 use App\Services\FifaMatchService;
 use App\Services\FifaPlaceholderImageService;
 use App\Services\VisitorMetricsService;
@@ -187,6 +188,8 @@ class NewsController extends Controller
 
     protected function publicPageContext(Request $request, VisitorMetricsService $visitorMetrics): array
     {
+        app(AutomaticNewsSyncService::class)->maybeTriggerDueSync('Automatic fallback sync triggered from public page request.');
+
         $visitStats = $visitorMetrics->recordPublicVisit($request);
 
         return array_merge($this->publicFallbackContext(), [
@@ -226,6 +229,7 @@ class NewsController extends Controller
             'homepagePromo' => [
                 'quotex_url' => Setting::get('promo_quotex_url', config('services.promotions.quotex_url')),
                 'signals_url' => Setting::get('promo_signals_url', config('services.promotions.signals_url')),
+                'whatsapp_message' => Setting::get('promo_whatsapp_message', config('services.promotions.whatsapp_message')),
             ],
             'schemaReady' => false,
         ];

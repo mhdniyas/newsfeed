@@ -46,8 +46,17 @@
                 @enderror
             </div>
 
+            <div>
+                <label class="block text-xs font-semibold text-slate-450 mb-1.5 uppercase tracking-wider">WhatsApp Promotion Message</label>
+                <textarea name="whatsapp_message" rows="4" placeholder="I want premium trading signals from Newsfeed." class="w-full bg-slate-50 border border-slate-200 focus:bg-white focus:border-emerald-500 rounded-xl px-3.5 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all">{{ old('whatsapp_message', $promotions['whatsapp_message']) }}</textarea>
+                <p class="mt-1 text-xs text-slate-500">This message opens first when visitors tap the WhatsApp contact button.</p>
+                @error('whatsapp_message')
+                    <p class="mt-1 text-xs font-semibold text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
             <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-500">
-                You can paste referral links with or without `https://`. The form will automatically save them as full URLs.
+                You can paste referral links with or without `https://`. The form will automatically save them as full URLs, and WhatsApp opens with your saved promo message.
             </div>
 
             <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-emerald-400 px-5 py-3 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-emerald-500">

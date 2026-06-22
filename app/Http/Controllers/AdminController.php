@@ -8,6 +8,7 @@ use App\Models\NewsSection;
 use App\Models\NewsTopic;
 use App\Models\Setting;
 use App\Models\User;
+use App\Services\AutomaticNewsSyncService;
 use App\Services\VisitorMetricsService;
 use Illuminate\Bus\UniqueLock;
 use Illuminate\Http\JsonResponse;
@@ -66,8 +67,10 @@ class AdminController extends Controller
     /**
      * Display the admin dashboard.
      */
-    public function index(Request $request, VisitorMetricsService $visitorMetrics)
+    public function index(Request $request, VisitorMetricsService $visitorMetrics, AutomaticNewsSyncService $automaticNewsSync)
     {
+        $automaticNewsSync->maybeTriggerDueSync('Automatic fallback sync triggered from admin dashboard request.');
+
         $sections = NewsSection::withCount([
                 'newsTopics',
                 'newsItems',
@@ -151,12 +154,15 @@ class AdminController extends Controller
         ));
     }
 
-    public function promotions()
+    public function promotions(AutomaticNewsSyncService $automaticNewsSync)
     {
-        $fetchStats = $this->fetchStats();
+        $automaticNewsSync->maybeTriggerDueSync('Automatic fallback sync triggered from admin promotions request.');
+
+        $fetchStats = $automaticNewsSync->fetchStats();
         $promotions = [
             'quotex_url' => Setting::get('promo_quotex_url', config('services.promotions.quotex_url')),
             'signals_url' => Setting::get('promo_signals_url', config('services.promotions.signals_url')),
+            'whatsapp_message' => Setting::get('promo_whatsapp_message', config('services.promotions.whatsapp_message')),
         ];
 
         return view('admin.promotions', compact('promotions', 'fetchStats'));
@@ -167,6 +173,7 @@ class AdminController extends Controller
         $request->validate([
             'quotex_url' => 'nullable|string|max:1000',
             'signals_url' => 'nullable|string|max:1000',
+            'whatsapp_message' => 'nullable|string|max:1000',
         ]);
 
         $quotexUrl = $this->normalizePromotionUrl($request->input('quotex_url'));
@@ -182,6 +189,7 @@ class AdminController extends Controller
 
         Setting::set('promo_quotex_url', $quotexUrl);
         Setting::set('promo_signals_url', $signalsUrl);
+        Setting::set('promo_whatsapp_message', trim((string) $request->input('whatsapp_message')) ?: null);
 
         return back()->with('success', 'Promotion links updated successfully.');
     }
@@ -379,9 +387,11 @@ class AdminController extends Controller
             : $message);
     }
 
-    public function syncStatus(): JsonResponse
+    public function syncStatus(AutomaticNewsSyncService $automaticNewsSync): JsonResponse
     {
-        return response()->json($this->syncState());
+        $automaticNewsSync->maybeTriggerDueSync('Automatic fallback sync triggered from admin sync monitor.');
+
+        return response()->json($this->syncState($automaticNewsSync));
     }
 
     /**
@@ -408,13 +418,14 @@ class AdminController extends Controller
         return back()->with('success', 'Admin profile details updated successfully!');
     }
 
-    protected function syncState(): array
+    protected function syncState(?AutomaticNewsSyncService $automaticNewsSync = null): array
     {
         $status = Setting::get('news_sync_status', 'idle');
         $requestedAt = Setting::get('news_sync_requested_at');
         $startedAt = Setting::get('news_sync_started_at');
         $finishedAt = Setting::get('news_sync_finished_at');
         $isStale = $this->syncIsStale($status, $requestedAt, $startedAt, $finishedAt);
+        $automaticNewsSync ??= app(AutomaticNewsSyncService::class);
 
         return [
             'status' => $isStale ? 'stalled' : $status,
@@ -426,19 +437,15 @@ class AdminController extends Controller
             'last_output' => Setting::get('news_sync_last_output'),
             'meta' => json_decode(Setting::get('news_sync_meta', '{}') ?: '{}', true) ?: [],
             'log' => json_decode(Setting::get('news_sync_log', '[]') ?: '[]', true) ?: [],
-            'fetch_stats' => $this->fetchStats(),
+            'fetch_stats' => $automaticNewsSync->fetchStats(),
         ];
     }
 
-    protected function fetchStats(): array
+    protected function fetchStats(?AutomaticNewsSyncService $automaticNewsSync = null): array
     {
-        return [
-            'total_runs' => (int) Setting::get('news_sync_total_runs', '0'),
-            'last_success_at' => Setting::get('news_sync_last_success_at'),
-            'interval_minutes' => 10,
-            'section_count' => (int) NewsSection::where('is_active', true)->count(),
-            'next_scheduled_at' => $this->nextScheduledFetchAt(10)?->toIso8601String(),
-        ];
+        $automaticNewsSync ??= app(AutomaticNewsSyncService::class);
+
+        return $automaticNewsSync->fetchStats();
     }
 
     protected function buildArticleQuery($selectedSectionId, $selectedTopicId, ?string $search, string $sort)

@@ -96,12 +96,14 @@
                 <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3">
                     <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Next Auto Fetch</p>
                     <p id="sync-auto-next-at" class="mt-1 text-sm font-bold text-slate-900">Calculating...</p>
-                    <p id="sync-auto-note" class="mt-1 text-xs text-slate-500">Laravel scheduler watches this every minute.</p>
+                    <p id="sync-auto-note" class="mt-1 text-xs text-slate-500">Laravel scheduler watches this every minute, and web fallback can recover missed slots.</p>
                 </div>
                 <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3">
                     <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Fetch Runs</p>
                     <p id="sync-auto-runs" class="mt-1 text-lg font-black text-slate-900">{{ number_format($fetchStats['total_runs']) }}</p>
                     <p id="sync-auto-last-at" class="mt-1 text-xs font-semibold text-slate-500">Last refresh pending.</p>
+                    <p id="sync-auto-health" class="mt-2 text-xs font-bold {{ ($fetchStats['content_health'] ?? null) === 'stale' ? 'text-rose-600' : (($fetchStats['content_health'] ?? null) === 'healthy' ? 'text-emerald-600' : 'text-amber-600') }}">{{ $fetchStats['content_health_label'] ?? 'Monitoring' }}</p>
+                    <p id="sync-auto-health-note" class="mt-1 text-xs text-slate-500">{{ $fetchStats['content_health_message'] ?? 'Waiting for the first 15-minute comparison window.' }} Current total: {{ number_format($fetchStats['news_total'] ?? 0) }}.</p>
                 </div>
                 <div class="rounded-2xl border border-slate-200 bg-slate-950 px-4 py-3 text-white">
                     <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Run Type</p>
@@ -624,6 +626,8 @@
             autoRuns: document.getElementById('sync-auto-runs'),
             autoLastAt: document.getElementById('sync-auto-last-at'),
             autoInterval: document.getElementById('sync-auto-interval'),
+            autoHealth: document.getElementById('sync-auto-health'),
+            autoHealthNote: document.getElementById('sync-auto-health-note'),
             failsafeToggle: document.getElementById('sync-failsafe-toggle'),
         };
 
@@ -879,6 +883,23 @@
 
             if (els.autoInterval) {
                 els.autoInterval.textContent = `Every ${fetchStats.interval_minutes || 10} minutes across ${fetchStats.section_count || 0} active sections, max 60 articles.`;
+            }
+
+            if (els.autoHealth) {
+                els.autoHealth.textContent = fetchStats.content_health_label || 'Monitoring';
+                els.autoHealth.className = `mt-2 text-xs font-bold ${
+                    fetchStats.content_health === 'stale'
+                        ? 'text-rose-600'
+                        : fetchStats.content_health === 'healthy'
+                            ? 'text-emerald-600'
+                            : 'text-amber-600'
+                }`;
+            }
+
+            if (els.autoHealthNote) {
+                const newsTotal = new Intl.NumberFormat().format(Number(fetchStats.news_total || 0));
+                const healthMessage = fetchStats.content_health_message || 'Waiting for the first 15-minute comparison window.';
+                els.autoHealthNote.textContent = `${healthMessage} Current total: ${newsTotal}.`;
             }
 
             updateAutoCountdown();

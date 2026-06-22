@@ -54,6 +54,12 @@
 </head>
 <body class="flex flex-col min-h-screen bg-slate-50 text-slate-800 antialiased overflow-x-hidden">
     @php
+        $whatsAppMessage = \App\Models\Setting::get('promo_whatsapp_message', config('services.promotions.whatsapp_message'));
+        $whatsAppMessage = trim((string) $whatsAppMessage);
+        $whatsAppMessage = $whatsAppMessage !== ''
+            ? (str_starts_with(strtolower($whatsAppMessage), 'newsfeed') ? $whatsAppMessage : 'Newsfeed: ' . $whatsAppMessage)
+            : 'Newsfeed: I want premium trading signals.';
+        $whatsAppHref = 'https://wa.me/918301867613?text=' . rawurlencode($whatsAppMessage);
         $mobileNavItems = [
             [
                 'label' => 'Home',
@@ -75,7 +81,7 @@
             ],
             [
                 'label' => session('admin_authenticated') ? 'Admin' : 'Contact',
-                'href' => session('admin_authenticated') ? route('admin.dashboard') : 'https://wa.me/918301867613',
+                'href' => session('admin_authenticated') ? route('admin.dashboard') : $whatsAppHref,
                 'active' => request()->routeIs('admin.*'),
                 'icon' => session('admin_authenticated') ? 'admin' : 'contact',
             ],

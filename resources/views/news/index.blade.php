@@ -4,39 +4,6 @@
 
 @section('content')
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    
-    <!-- Hero / Header Section -->
-    <div class="rounded-[2rem] border border-slate-200 bg-white p-5 sm:p-6 shadow-sm mb-8">
-        <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-                <span class="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                    Live 10-Minute News Cycle
-                </span>
-                <h1 class="mt-4 max-w-3xl text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-950">
-                    Clean, reader-first news coverage across every major category.
-                </h1>
-                <p class="mt-3 max-w-2xl text-sm sm:text-base leading-7 text-slate-600">
-                    FIFA 2026 stays first, followed by world, politics, business, technology, AI, crypto, sports, cricket, entertainment, health, and science in an ad-friendly layout.
-                </p>
-            </div>
-            <div class="grid grid-cols-3 gap-3 sm:w-[360px]">
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Sections</p>
-                    <p class="mt-2 text-2xl font-black text-slate-950">{{ number_format($sections->count()) }}</p>
-                </div>
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Refresh</p>
-                    <p class="mt-2 text-2xl font-black text-slate-950">{{ $fetchStats['interval_minutes'] }}m</p>
-                </div>
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Runs</p>
-                    <p class="mt-2 text-2xl font-black text-slate-950">{{ number_format($fetchStats['total_runs']) }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div class="rounded-3xl border border-slate-200 bg-white/90 p-3 sm:p-4 shadow-sm mb-8 backdrop-blur">
         <div class="flex flex-wrap gap-2">
             <button type="button" data-tab-trigger="news" class="tab-trigger rounded-2xl px-4 py-3 text-sm font-extrabold bg-emerald-500 text-slate-950">

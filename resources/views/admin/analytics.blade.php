@@ -9,6 +9,13 @@
         ['title' => 'Platforms', 'items' => $visitorSnapshot['platform_breakdown'], 'tone' => 'slate'],
         ['title' => 'Countries', 'items' => $visitorSnapshot['country_breakdown'], 'tone' => 'amber'],
     ];
+
+    $chartCards = [
+        ['key' => 'live_users', 'tone' => 'emerald'],
+        ['key' => 'news_total', 'tone' => 'sky'],
+        ['key' => 'registered_users', 'tone' => 'amber'],
+        ['key' => 'returning_visitors', 'tone' => 'slate'],
+    ];
 @endphp
 
 @section('content')
@@ -60,6 +67,58 @@
             <p class="mt-2 text-3xl font-extrabold text-amber-600">{{ number_format($analyticsSummary['article_clicks']) }}</p>
             <p class="mt-1 text-xs text-slate-500">Outbound news card clicks.</p>
         </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 gap-6 mb-8">
+        @foreach($chartCards as $chartCard)
+            @php
+                $chart = $analyticsCharts[$chartCard['key']];
+                $barTone = match ($chartCard['tone']) {
+                    'emerald' => 'bg-emerald-500',
+                    'sky' => 'bg-sky-500',
+                    'amber' => 'bg-amber-500',
+                    default => 'bg-slate-500',
+                };
+                $badgeTone = match ($chartCard['tone']) {
+                    'emerald' => 'bg-emerald-50 text-emerald-700',
+                    'sky' => 'bg-sky-50 text-sky-700',
+                    'amber' => 'bg-amber-50 text-amber-700',
+                    default => 'bg-slate-100 text-slate-700',
+                };
+            @endphp
+
+            <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900">{{ $chart['title'] }}</h2>
+                        <p class="mt-1 text-xs text-slate-500">{{ $chart['subtitle'] }}</p>
+                    </div>
+                    <span class="rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] {{ $badgeTone }}">
+                        {{ number_format($chart['headline']) }} {{ $chart['headline_label'] }}
+                    </span>
+                </div>
+
+                <div class="mt-5 flex items-end gap-2 h-36">
+                    @foreach($chart['points'] as $point)
+                        @php
+                            $height = max(10, (int) round(($point['value'] / $chart['max']) * 100));
+                        @endphp
+                        <div class="flex-1 min-w-0">
+                            <div class="flex h-28 items-end">
+                                <div class="w-full rounded-t-2xl {{ $barTone }}" style="height: {{ $height }}%;"></div>
+                            </div>
+                            <p class="mt-2 text-center text-[10px] font-bold text-slate-400">{{ $point['label'] }}</p>
+                            <p class="mt-1 text-center text-xs font-bold text-slate-700">{{ number_format($point['value']) }}</p>
+                        </div>
+                    @endforeach
+                </div>
+
+                <div class="mt-4 flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                    <span class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Total</span>
+                    <span class="text-lg font-extrabold text-slate-900">{{ number_format($chart['total']) }}</span>
+                </div>
+            </section>
+        @endforeach
     </div>
 
     <div class="grid grid-cols-1 2xl:grid-cols-[1.15fr_0.85fr] gap-6 mb-8">

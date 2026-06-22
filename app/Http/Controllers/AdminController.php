@@ -7,11 +7,13 @@ use App\Models\NewsItem;
 use App\Models\NewsSection;
 use App\Models\NewsTopic;
 use App\Models\Setting;
+use App\Models\User;
 use App\Services\VisitorMetricsService;
 use Illuminate\Bus\UniqueLock;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
 {
@@ -104,9 +106,15 @@ class AdminController extends Controller
                 ->take(12)
                 ->get(),
         ]);
+        $analyticsCharts = [
+            'live_users' => $this->liveUserChart(),
+            'news_total' => $this->newsTotalChart(),
+            'registered_users' => $this->registeredUsersChart(),
+            'returning_visitors' => $this->returningVisitorsChart(),
+        ];
         $fetchStats = $this->fetchStats();
 
-        return view('admin.analytics', compact('visitStats', 'analyticsSummary', 'visitorSnapshot', 'fetchStats'));
+        return view('admin.analytics', compact('visitStats', 'analyticsSummary', 'visitorSnapshot', 'analyticsCharts', 'fetchStats'));
     }
 
     public function destroyPage(Request $request)
@@ -410,6 +418,141 @@ class AdminController extends Controller
         }
 
         return $articlesQuery;
+    }
+
+    protected function liveUserChart(): array
+    {
+        $points = collect(range(0, 11))
+            ->map(function (int $offset) {
+                $hour = now()->copy()->startOfHour()->subHours(11 - $offset);
+
+                return [
+                    'label' => $hour->format('H:00'),
+                    'value' => DB::table('visitor_analytics')
+                        ->whereDate('visit_date', now()->toDateString())
+                        ->whereBetween('last_seen_at', [$hour, $hour->copy()->endOfHour()])
+                        ->count(),
+                ];
+            })
+            ->values();
+
+        return [
+            'title' => 'Live Users',
+            'subtitle' => 'Hourly active visitor records for today',
+            'total' => (int) $points->sum('value'),
+            'headline' => (int) DB::table('visitor_analytics')
+                ->whereDate('visit_date', now()->toDateString())
+                ->where('last_seen_at', '>=', now()->subMinutes(5))
+                ->count(),
+            'headline_label' => 'active now',
+            'points' => $points->all(),
+            'max' => max(1, (int) $points->max('value')),
+        ];
+    }
+
+    protected function newsTotalChart(): array
+    {
+        $points = collect(range(6, 0))
+            ->reverse()
+            ->map(function (int $daysAgo) {
+                $day = now()->copy()->subDays($daysAgo);
+
+                return [
+                    'label' => $day->format('M d'),
+                    'value' => NewsItem::query()
+                        ->whereDate('published_at', $day->toDateString())
+                        ->count(),
+                ];
+            })
+            ->values();
+
+        return [
+            'title' => 'Total News On Site',
+            'subtitle' => 'Stories published over the last 7 days',
+            'total' => NewsItem::query()->count(),
+            'headline' => NewsItem::query()->count(),
+            'headline_label' => 'stories total',
+            'points' => $points->all(),
+            'max' => max(1, (int) $points->max('value')),
+        ];
+    }
+
+    protected function registeredUsersChart(): array
+    {
+        $points = collect(range(6, 0))
+            ->reverse()
+            ->map(function (int $daysAgo) {
+                $day = now()->copy()->subDays($daysAgo);
+
+                return [
+                    'label' => $day->format('M d'),
+                    'value' => User::query()
+                        ->whereDate('created_at', $day->toDateString())
+                        ->count(),
+                ];
+            })
+            ->values();
+
+        return [
+            'title' => 'Registered Users',
+            'subtitle' => 'New accounts created over the last 7 days',
+            'total' => User::query()->count(),
+            'headline' => User::query()->count(),
+            'headline_label' => 'accounts total',
+            'points' => $points->all(),
+            'max' => max(1, (int) $points->max('value')),
+        ];
+    }
+
+    protected function returningVisitorsChart(): array
+    {
+        $points = collect(range(6, 0))
+            ->reverse()
+            ->map(function (int $daysAgo) {
+                $day = now()->copy()->subDays($daysAgo)->toDateString();
+
+                return [
+                    'label' => now()->copy()->subDays($daysAgo)->format('M d'),
+                    'value' => DB::table('visitor_analytics as current_day')
+                        ->whereDate('current_day.visit_date', $day)
+                        ->whereExists(function ($query) use ($day) {
+                            $query->select(DB::raw(1))
+                                ->from('visitor_analytics as prior_day')
+                                ->whereColumn('prior_day.fingerprint', 'current_day.fingerprint')
+                                ->whereDate('prior_day.visit_date', '<', $day);
+                        })
+                        ->count(),
+                ];
+            })
+            ->values();
+
+        $today = now()->toDateString();
+        $returningToday = DB::table('visitor_analytics as current_day')
+            ->whereDate('current_day.visit_date', $today)
+            ->whereExists(function ($query) use ($today) {
+                $query->select(DB::raw(1))
+                    ->from('visitor_analytics as prior_day')
+                    ->whereColumn('prior_day.fingerprint', 'current_day.fingerprint')
+                    ->whereDate('prior_day.visit_date', '<', $today);
+            })
+            ->count();
+
+        $returningOverall = DB::table('visitor_analytics')
+            ->select('fingerprint')
+            ->groupBy('fingerprint')
+            ->havingRaw('COUNT(DISTINCT visit_date) > 1')
+            ->get()
+            ->count();
+
+        return [
+            'title' => 'Returning Visitors',
+            'subtitle' => 'Repeat visitors seen across different days',
+            'total' => $returningOverall,
+            'headline' => $returningToday,
+            'headline_label' => 'returning today',
+            'points' => $points->all(),
+            'max' => max(1, (int) $points->max('value')),
+        ];
     }
 
     protected function startDetachedQueueWorker(): ?string

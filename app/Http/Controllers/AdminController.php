@@ -9,6 +9,7 @@ use App\Models\NewsTopic;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\AutomaticNewsSyncService;
+use App\Services\PromotionHubService;
 use App\Services\VisitorMetricsService;
 use Illuminate\Bus\UniqueLock;
 use Illuminate\Http\JsonResponse;
@@ -176,59 +177,55 @@ class AdminController extends Controller
         ));
     }
 
-    public function promotions(AutomaticNewsSyncService $automaticNewsSync)
+    public function promotions(AutomaticNewsSyncService $automaticNewsSync, PromotionHubService $promotionHub)
     {
         $automaticNewsSync->maybeTriggerDueSync('Automatic fallback sync triggered from admin promotions request.');
 
         $fetchStats = $automaticNewsSync->fetchStats();
         $promotions = [
-            'quotex_url' => Setting::get('promo_quotex_url', config('services.promotions.quotex_url')),
-            'signals_url' => Setting::get('promo_signals_url', config('services.promotions.signals_url')),
+            'cards' => $promotionHub->cards(),
+            'labels' => $promotionHub->labels(),
             'whatsapp_message' => Setting::get('promo_whatsapp_message', config('services.promotions.whatsapp_message')),
         ];
+        $previewPromo = $promotionHub->publicPayload();
 
-        return view('admin.promotions', compact('promotions', 'fetchStats'));
+        return view('admin.promotions', compact('promotions', 'previewPromo', 'fetchStats'));
     }
 
-    public function updatePromotions(Request $request)
+    public function updatePromotions(Request $request, PromotionHubService $promotionHub)
     {
         $request->validate([
-            'quotex_url' => 'nullable|string|max:1000',
-            'signals_url' => 'nullable|string|max:1000',
+            'cards' => 'required|array',
+            'cards.*.enabled' => 'nullable',
+            'cards.*.badge' => 'nullable|string|max:80',
+            'cards.*.title' => 'nullable|string|max:160',
+            'cards.*.body' => 'nullable|string|max:600',
+            'cards.*.primary_label' => 'nullable|string|max:80',
+            'cards.*.primary_url' => 'nullable|string|max:1000',
+            'cards.*.secondary_label' => 'nullable|string|max:80',
+            'cards.*.secondary_url' => 'nullable|string|max:1000',
+            'cards.*.note' => 'nullable|string|max:160',
             'whatsapp_message' => 'nullable|string|max:1000',
         ]);
 
-        $quotexUrl = $this->normalizePromotionUrl($request->input('quotex_url'));
-        $signalsUrl = $this->normalizePromotionUrl($request->input('signals_url'));
+        $cards = $promotionHub->sanitizeInput($request->input('cards', []));
 
-        validator([
-            'quotex_url' => $quotexUrl,
-            'signals_url' => $signalsUrl,
-        ], [
-            'quotex_url' => 'nullable|url|max:1000',
-            'signals_url' => 'nullable|url|max:1000',
-        ])->validate();
-
-        Setting::set('promo_quotex_url', $quotexUrl);
-        Setting::set('promo_signals_url', $signalsUrl);
-        Setting::set('promo_whatsapp_message', trim((string) $request->input('whatsapp_message')) ?: null);
-
-        return back()->with('success', 'Promotion links updated successfully.');
-    }
-
-    protected function normalizePromotionUrl(?string $value): ?string
-    {
-        $value = trim((string) $value);
-
-        if ($value === '') {
-            return null;
+        foreach ($cards as $key => $card) {
+            validator([
+                'primary_url' => $card['primary_url'] ?: null,
+                'secondary_url' => $card['secondary_url'] ?: null,
+            ], [
+                'primary_url' => 'nullable|url|max:1000',
+                'secondary_url' => 'nullable|url|max:1000',
+            ], [], [
+                'primary_url' => $promotionHub->labels()[$key] . ' primary URL',
+                'secondary_url' => $promotionHub->labels()[$key] . ' secondary URL',
+            ])->validate();
         }
 
-        if (!preg_match('#^https?://#i', $value)) {
-            $value = 'https://' . ltrim($value, '/');
-        }
+        $promotionHub->save($cards, $request->input('whatsapp_message'));
 
-        return $value;
+        return back()->with('success', 'Promotion hub updated successfully.');
     }
 
     public function storeSection(Request $request)

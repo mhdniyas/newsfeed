@@ -9,6 +9,7 @@ use App\Models\Setting;
 use App\Services\AutomaticNewsSyncService;
 use App\Services\FifaMatchService;
 use App\Services\FifaPlaceholderImageService;
+use App\Services\PromotionHubService;
 use App\Services\VisitorMetricsService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -360,6 +361,8 @@ class NewsController extends Controller
 
     protected function publicFallbackContext(): array
     {
+        $homepagePromo = app(PromotionHubService::class)->publicPayload();
+
         return [
             'visitStats' => [
                 'total' => 0,
@@ -381,11 +384,7 @@ class NewsController extends Controller
                 'interval_minutes' => 10,
                 'next_scheduled_at' => $this->nextScheduledFetchAt(10)->toIso8601String(),
             ],
-            'homepagePromo' => [
-                'quotex_url' => Setting::get('promo_quotex_url', config('services.promotions.quotex_url')),
-                'signals_url' => Setting::get('promo_signals_url', config('services.promotions.signals_url')),
-                'whatsapp_message' => Setting::get('promo_whatsapp_message', config('services.promotions.whatsapp_message')),
-            ],
+            'homepagePromo' => $homepagePromo,
             'schemaReady' => false,
         ];
     }

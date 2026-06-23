@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\NewsItem;
+use App\Models\NewsSection;
+use App\Models\Setting;
 use App\Models\NewsTopic;
 use App\Models\VisitorAnalytic;
 use App\Services\FifaMatchService;
@@ -252,6 +254,182 @@ class NewsTest extends TestCase
         $response->assertSee('aria-label="Trending"', false);
         $response->assertSee('aria-label="Admin"', false);
         $response->assertDontSee('aria-label="FIFA"', false);
+    }
+
+    public function test_public_pages_render_configured_promotion_cards()
+    {
+        $section = NewsSection::query()->where('slug', 'sports')->firstOrFail();
+
+        $topic = NewsTopic::create([
+            'news_section_id' => $section->id,
+            'name' => 'Promo Topic',
+            'keyword' => 'promo-topic',
+        ]);
+
+        NewsItem::create([
+            'news_topic_id' => $topic->id,
+            'news_section_id' => $section->id,
+            'title' => 'Promo Test Story',
+            'source_name' => 'FIFA',
+            'url' => 'https://example.com/promo-story',
+            'hash' => 'promo-story',
+            'published_at' => now(),
+            'is_visible' => true,
+        ]);
+
+        Setting::set('promotion_hub_cards', json_encode([
+            'hero' => [
+                'enabled' => true,
+                'badge' => 'Sponsored',
+                'title' => 'Hero Sponsor Preview',
+                'body' => 'Hero body',
+                'primary_label' => 'Hero CTA',
+                'primary_url' => 'https://example.com/hero',
+                'secondary_label' => 'Hero Second',
+                'secondary_url' => 'https://example.com/hero-second',
+                'note' => 'Hero note',
+            ],
+            'desktop_left' => [
+                'enabled' => true,
+                'badge' => 'Left',
+                'title' => 'Desktop Left Sponsor',
+                'body' => 'Left body',
+                'primary_label' => 'Left CTA',
+                'primary_url' => 'https://example.com/left',
+                'secondary_label' => '',
+                'secondary_url' => '',
+                'note' => 'Left note',
+            ],
+            'desktop_right' => [
+                'enabled' => true,
+                'badge' => 'Right',
+                'title' => 'Desktop Right Sponsor',
+                'body' => 'Right body',
+                'primary_label' => 'Right CTA',
+                'primary_url' => 'https://example.com/right',
+                'secondary_label' => '',
+                'secondary_url' => '',
+                'note' => 'Right note',
+            ],
+            'mobile_primary' => [
+                'enabled' => true,
+                'badge' => 'Mobile',
+                'title' => 'Mobile Sponsor One',
+                'body' => 'Mobile body',
+                'primary_label' => 'Mobile CTA',
+                'primary_url' => 'https://example.com/mobile',
+                'secondary_label' => '',
+                'secondary_url' => '',
+                'note' => 'Mobile note',
+            ],
+            'mobile_secondary' => [
+                'enabled' => true,
+                'badge' => 'Mobile',
+                'title' => 'Mobile Sponsor Two',
+                'body' => 'Mobile body two',
+                'primary_label' => 'Mobile CTA Two',
+                'primary_url' => 'https://example.com/mobile-two',
+                'secondary_label' => '',
+                'secondary_url' => '',
+                'note' => 'Mobile note two',
+            ],
+        ], JSON_UNESCAPED_SLASHES));
+
+        $homepageResponse = $this->get(route('news.index'));
+        $homepageResponse->assertOk();
+        $homepageResponse->assertSee('Hero Sponsor Preview');
+        $homepageResponse->assertSee('Desktop Left Sponsor');
+        $homepageResponse->assertSee('Desktop Right Sponsor');
+        $homepageResponse->assertSee('Mobile Sponsor One');
+        $homepageResponse->assertSee('Mobile Sponsor Two');
+
+        $feedResponse = $this->get(route('news.top'));
+        $feedResponse->assertOk();
+        $feedResponse->assertSee('Desktop Left Sponsor');
+        $feedResponse->assertSee('Desktop Right Sponsor');
+        $feedResponse->assertSee('Mobile Sponsor One');
+        $feedResponse->assertSee('Mobile Sponsor Two');
+    }
+
+    public function test_admin_can_update_promotion_hub_and_legacy_links()
+    {
+        $response = $this->withSession(['admin_authenticated' => true])
+            ->post(route('admin.promotions.update'), [
+                'cards' => [
+                    'hero' => [
+                        'enabled' => '1',
+                        'badge' => 'Sponsored',
+                        'title' => 'Closer Campaign',
+                        'body' => 'Professional revenue card.',
+                        'primary_label' => 'Start Now',
+                        'primary_url' => 'example.com/start',
+                        'secondary_label' => 'Learn More',
+                        'secondary_url' => 'https://example.com/learn',
+                        'note' => 'Risk applies.',
+                    ],
+                    'desktop_left' => [
+                        'enabled' => '1',
+                        'badge' => 'Left Rail',
+                        'title' => 'Left Offer',
+                        'body' => 'Left side ad.',
+                        'primary_label' => 'Buy',
+                        'primary_url' => 'https://example.com/buy',
+                        'secondary_label' => '',
+                        'secondary_url' => '',
+                        'note' => '',
+                    ],
+                    'desktop_right' => [
+                        'enabled' => '1',
+                        'badge' => 'Right Rail',
+                        'title' => 'Right Offer',
+                        'body' => 'Right side ad.',
+                        'primary_label' => 'Join',
+                        'primary_url' => 'https://example.com/join',
+                        'secondary_label' => '',
+                        'secondary_url' => '',
+                        'note' => '',
+                    ],
+                    'mobile_primary' => [
+                        'enabled' => '1',
+                        'badge' => 'Mobile',
+                        'title' => 'Mobile One',
+                        'body' => 'Mobile one.',
+                        'primary_label' => 'Tap',
+                        'primary_url' => 'https://example.com/tap',
+                        'secondary_label' => '',
+                        'secondary_url' => '',
+                        'note' => '',
+                    ],
+                    'mobile_secondary' => [
+                        'enabled' => '1',
+                        'badge' => 'Mobile',
+                        'title' => 'Mobile Two',
+                        'body' => 'Mobile two.',
+                        'primary_label' => 'Open',
+                        'primary_url' => 'https://example.com/open',
+                        'secondary_label' => '',
+                        'secondary_url' => '',
+                        'note' => '',
+                    ],
+                ],
+                'whatsapp_message' => 'Premium signals please',
+            ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success', 'Promotion hub updated successfully.');
+
+        $stored = json_decode((string) Setting::get('promotion_hub_cards'), true);
+
+        $this->assertSame('Closer Campaign', $stored['hero']['title']);
+        $this->assertSame('https://example.com/start', Setting::get('promo_quotex_url'));
+        $this->assertSame('https://example.com/learn', Setting::get('promo_signals_url'));
+        $this->assertSame('Premium signals please', Setting::get('promo_whatsapp_message'));
+
+        $page = $this->withSession(['admin_authenticated' => true])->get(route('admin.promotions'));
+        $page->assertOk();
+        $page->assertSee('Ad Creation Hub');
+        $page->assertSee('Closer Campaign');
+        $page->assertSee('How sponsors appear on the site');
     }
 
     /**

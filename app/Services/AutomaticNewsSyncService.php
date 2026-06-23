@@ -11,9 +11,9 @@ use Illuminate\Support\Carbon;
 
 class AutomaticNewsSyncService
 {
-    public const SYNC_INTERVAL_MINUTES = 10;
+    public const SYNC_INTERVAL_MINUTES = 2;
     public const SECTION_BATCH_SIZE = 12;
-    public const CYCLE_ARTICLE_LIMIT = 60;
+    public const CYCLE_ARTICLE_LIMIT = 120;
 
     public function maybeTriggerDueSync(string $message = 'Automatic fallback sync triggered from web request.'): bool
     {

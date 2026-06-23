@@ -9,8 +9,8 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::job(new RunNewsSyncCycle('Automatic 10-minute scheduler sync'))
-    ->everyTenMinutes()
+Schedule::job(new RunNewsSyncCycle('Automatic 2-minute scheduler sync'))
+    ->everyTwoMinutes()
     ->withoutOverlapping();
 
 Schedule::command('queue:work --stop-when-empty --queue=syncs,default --tries=1 --timeout=900')

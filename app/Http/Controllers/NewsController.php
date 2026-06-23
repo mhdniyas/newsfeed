@@ -382,8 +382,8 @@ class NewsController extends Controller
             'fetchStats' => [
                 'total_runs' => (int) Setting::get('news_sync_total_runs', '0'),
                 'last_success_at' => Setting::get('news_sync_last_success_at'),
-                'interval_minutes' => 10,
-                'next_scheduled_at' => $this->nextScheduledFetchAt(10)->toIso8601String(),
+                'interval_minutes' => AutomaticNewsSyncService::SYNC_INTERVAL_MINUTES,
+                'next_scheduled_at' => $this->nextScheduledFetchAt(AutomaticNewsSyncService::SYNC_INTERVAL_MINUTES)->toIso8601String(),
             ],
             'homepagePromo' => $homepagePromo,
             'schemaReady' => false,

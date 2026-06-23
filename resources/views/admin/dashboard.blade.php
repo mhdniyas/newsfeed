@@ -9,7 +9,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
             <h1 class="text-2xl font-extrabold text-slate-900">Admin Dashboard</h1>
-            <p class="text-xs text-slate-500 mt-1">Manage homepage sections, nested fetch keywords, visibility, and the 10-minute multi-category sync cycle.</p>
+            <p class="text-xs text-slate-500 mt-1">Manage homepage sections, nested fetch keywords, visibility, and the 2-minute multi-category sync cycle.</p>
         </div>
         
         <div class="flex items-center space-x-3">
@@ -889,7 +889,7 @@
             }
 
             if (els.autoInterval) {
-                els.autoInterval.textContent = `Every ${fetchStats.interval_minutes || 10} minutes fetch ${fetchStats.section_batch_size || 12} of ${fetchStats.section_count || 0} active sections. Full rotation in ${fetchStats.cycles_to_cover_all_sections || 1} runs.`;
+                els.autoInterval.textContent = `Every ${fetchStats.interval_minutes || 2} minutes fetch ${fetchStats.section_batch_size || 12} of ${fetchStats.section_count || 0} active sections. Full rotation in ${fetchStats.cycles_to_cover_all_sections || 1} runs.`;
             }
 
             if (els.autoHealth) {

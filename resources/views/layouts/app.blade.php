@@ -6,7 +6,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>@yield('title', 'FIFA World Cup 2026 News Explorer')</title>
-    <meta name="description" content="@yield('meta_description', 'Get the latest FIFA World Cup 2026 news, fixtures, team updates, player news, and live football stories updated every 10 minutes.')">
+    <meta name="description" content="@yield('meta_description', 'Get the latest FIFA World Cup 2026 news, fixtures, team updates, player news, and live football stories updated every 2 minutes.')">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">

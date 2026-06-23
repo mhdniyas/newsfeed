@@ -73,4 +73,8 @@ Route::middleware(\App\Http\Middleware\AdminAuth::class)->group(function () {
     // Manual Fetch
     Route::post('/admin/fetch-news', [AdminController::class, 'fetchNewsNow'])->name('admin.fetch-news');
     Route::post('/admin/fetch-news/restart', [AdminController::class, 'stopAndResync'])->name('admin.fetch-news.restart');
+
+    // Lottery Admin
+    Route::post('/admin/lottery/sync', [KeralaLotteryController::class, 'adminSync'])->name('admin.lottery.sync');
+    Route::post('/admin/lottery/reparse', [KeralaLotteryController::class, 'adminReparse'])->name('admin.lottery.reparse');
 });

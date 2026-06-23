@@ -207,7 +207,89 @@
         </div>
     </div>
 
+    {{-- ── Kerala Lottery Admin Panel ── --}}
+    @if(\Illuminate\Support\Facades\Schema::hasTable('lottery_results'))
+    <div class="mb-8 rounded-3xl border border-emerald-200/80 bg-white shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-emerald-100 bg-emerald-50/60">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-600/80">Kerala State Lotteries</p>
+                    <h2 class="mt-1 text-lg font-extrabold text-slate-900">Lottery Results Admin</h2>
+                    <p class="mt-1 text-xs text-slate-500">Sync latest PDFs from keralalotteries.com or re-parse existing ones.</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <form action="{{ route('admin.lottery.sync') }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="limit" value="10">
+                        <button type="submit" class="inline-flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-500 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-600">
+                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17"/></svg>
+                            Sync Latest (10)
+                        </button>
+                    </form>
+                    <form action="{{ route('admin.lottery.reparse') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-bold text-indigo-700 shadow-sm transition hover:bg-indigo-100">
+                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                            Re-parse Failed
+                        </button>
+                    </form>
+                    <form action="{{ route('admin.lottery.reparse') }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="scope" value="all">
+                        <button type="submit" class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-100">
+                            Re-parse All
+                        </button>
+                    </form>
+                    <a href="{{ route('kerala-lottery.index') }}" target="_blank" class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 shadow-sm transition hover:bg-slate-50">
+                        View Public Page ↗
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="p-5">
+            @php
+                $lotteryStats = [
+                    'total'       => \App\Models\LotteryResult::count(),
+                    'parsed'      => \App\Models\LotteryResult::where('status', 'parsed')->count(),
+                    'failed'      => \App\Models\LotteryResult::where('status', 'parse_failed')->count(),
+                    'waiting'     => \App\Models\LotteryResult::whereIn('status', ['waiting', 'pdf_available'])->count(),
+                    'latest'      => \App\Models\LotteryResult::latest('result_date')->first(),
+                ];
+            @endphp
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Total Results</p>
+                    <p class="mt-1 text-2xl font-black text-slate-900">{{ $lotteryStats['total'] }}</p>
+                </div>
+                <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700/80">Parsed ✓</p>
+                    <p class="mt-1 text-2xl font-black text-emerald-700">{{ $lotteryStats['parsed'] }}</p>
+                </div>
+                <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3">
+                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-red-700/80">Parse Failed</p>
+                    <p class="mt-1 text-2xl font-black text-red-700">{{ $lotteryStats['failed'] }}</p>
+                </div>
+                <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-700/80">Waiting</p>
+                    <p class="mt-1 text-2xl font-black text-amber-700">{{ $lotteryStats['waiting'] }}</p>
+                </div>
+            </div>
+            @if($lotteryStats['latest'])
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                    <span class="font-bold text-slate-800">Latest:</span>
+                    {{ $lotteryStats['latest']->lottery_name }} · {{ $lotteryStats['latest']->draw_number }} ·
+                    {{ optional($lotteryStats['latest']->result_date)->format('d M Y') }} ·
+                    <span class="{{ $lotteryStats['latest']->status === 'parsed' ? 'text-emerald-600 font-bold' : 'text-red-600 font-bold' }}">
+                        {{ str_replace('_', ' ', $lotteryStats['latest']->status) }}
+                    </span>
+                </div>
+            @endif
+        </div>
+    </div>
+    @endif
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
         
         <!-- Left Side: Section and Topic Management -->
         <div class="space-y-8 lg:col-span-1">

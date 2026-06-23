@@ -79,6 +79,77 @@ class KeralaLotteryController extends Controller
             ->first();
     }
 
+    public function adminSync(Request $request, KeralaLotteryService $service)
+    {
+        $limit = max(1, min(50, (int) $request->input('limit', 10)));
+
+        try {
+            $stats = $service->syncLatest($limit);
+            return back()->with('success', "Lottery sync complete. Saved {$stats['saved']} of {$stats['rows']} rows fetched.");
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Lottery sync failed: ' . $e->getMessage());
+        }
+    }
+
+    public function adminReparse(Request $request, KeralaLotteryService $service)
+    {
+        $query = LotteryResult::query()->whereNotNull('local_pdf_path');
+
+        if ($request->input('scope') === 'all') {
+            // reparse everything
+        } else {
+            $query->whereIn('status', ['parse_failed', 'pdf_available', 'waiting']);
+        }
+
+        $results = $query->orderByDesc('result_date')->get();
+        $fixed = 0;
+
+        foreach ($results as $result) {
+            $pdfPath = Storage::disk(KeralaLotteryService::STORAGE_DISK)->path($result->local_pdf_path);
+
+            if (!is_file($pdfPath)) {
+                continue;
+            }
+
+            $rawText = filled($result->raw_text) ? $result->raw_text : null;
+            if (!$rawText) {
+                // Try to extract from PDF
+                $binary = trim((string) shell_exec('command -v pdftotext 2>/dev/null'));
+                if ($binary !== '') {
+                    $txtPath = tempnam(sys_get_temp_dir(), 'kerala-');
+                    shell_exec(escapeshellarg($binary) . ' -layout ' . escapeshellarg($pdfPath) . ' ' . escapeshellarg($txtPath) . ' 2>/dev/null');
+                    $rawText = is_file($txtPath) ? file_get_contents($txtPath) : null;
+                    @unlink($txtPath ?? '');
+                }
+            }
+
+            if (!filled($rawText)) {
+                continue;
+            }
+
+            $parsed = $service->parseRawText($rawText, [
+                'lottery_name' => $result->lottery_name,
+                'lottery_code' => $result->lottery_code,
+                'draw_number'  => $result->draw_number,
+                'result_date'  => $result->result_date,
+            ]);
+
+            $result->fill($parsed);
+            $result->raw_text  = $rawText;
+            $result->parsed_at = now();
+
+            $hasPrizes = $result->hasParsedPrizes()
+                || !empty($result->other_prizes)
+                || !empty($result->consolation_prizes);
+
+            $result->status = $hasPrizes ? 'parsed' : 'parse_failed';
+            $result->save();
+            $fixed++;
+        }
+
+        return back()->with('success', "Re-parsed {$fixed} lottery result(s) from {$results->count()} candidates.");
+    }
+
     protected function schemaReady(): bool
     {
         return Schema::hasTable('lottery_results');

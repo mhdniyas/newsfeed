@@ -128,7 +128,11 @@ class KeralaLotteryService
                 $parsed = $this->parseRawText($rawText, $row);
                 $result->fill($parsed);
                 $result->parsed_at = now();
-                $result->status = $result->hasParsedPrizes() ? 'parsed' : 'parse_failed';
+                // Mark as parsed if ANY prize data was extracted (including other_prizes)
+                $hasPrizes = $result->hasParsedPrizes()
+                    || !empty($result->other_prizes)
+                    || !empty($result->consolation_prizes);
+                $result->status = $hasPrizes ? 'parsed' : 'parse_failed';
             } else {
                 $result->status = 'parse_failed';
             }
@@ -146,17 +150,18 @@ class KeralaLotteryService
         $normalized = preg_replace('/\s+/', ' ', str_replace(["\r", "\n"], ' ', $rawText)) ?? $rawText;
 
         $parsed = [
-            'lottery_name' => $fallback['lottery_name'] ?? 'Kerala Lottery',
-            'lottery_code' => $fallback['lottery_code'] ?? null,
-            'draw_number' => $fallback['draw_number'] ?? null,
-            'result_date' => $fallback['result_date'] ?? null,
-            'first_prize_ticket' => null,
-            'first_prize_amount' => null,
+            'lottery_name'        => $fallback['lottery_name'] ?? 'Kerala Lottery',
+            'lottery_code'        => $fallback['lottery_code'] ?? null,
+            'draw_number'         => $fallback['draw_number'] ?? null,
+            'result_date'         => $fallback['result_date'] ?? null,
+            'first_prize_ticket'  => null,
+            'first_prize_amount'  => null,
             'second_prize_ticket' => null,
             'second_prize_amount' => null,
-            'third_prize_ticket' => null,
-            'third_prize_amount' => null,
-            'consolation_prizes' => null,
+            'third_prize_ticket'  => null,
+            'third_prize_amount'  => null,
+            'consolation_prizes'  => null,
+            'other_prizes'        => null,
         ];
 
         if (preg_match('/\b([A-Z][A-Z\-\s]+?)\s+LOTTERY NO\.?\s*([A-Z]{1,4}-\d+)/', $normalized, $match)) {
@@ -169,26 +174,63 @@ class KeralaLotteryService
             $parsed['result_date'] = Carbon::createFromFormat('d/m/Y', $dateMatch[1])?->startOfDay();
         }
 
+        // Parse 1st, 2nd, 3rd prizes (full ticket numbers)
         foreach ([
-            'first' => '1st',
+            'first'  => '1st',
             'second' => '2nd',
-            'third' => '3rd',
+            'third'  => '3rd',
         ] as $key => $label) {
-            $ticket = $this->extractPrizeTicket($normalized, $label);
-            $amount = $this->extractPrizeAmount($normalized, $label);
-
-            $parsed["{$key}_prize_ticket"] = $ticket;
-            $parsed["{$key}_prize_amount"] = $amount;
+            $parsed["{$key}_prize_ticket"] = $this->extractPrizeTicket($normalized, $label);
+            $parsed["{$key}_prize_amount"] = $this->extractPrizeAmount($normalized, $label);
         }
 
-        if (preg_match('/Cons(?:olation)? Prize(?:-Rs\s*:?\s*([\d,\/-]+))?\s*(.*?)(?:\d{1,2}(?:st|nd|rd|th)\s+Prize|Agent Prize|$)/i', $normalized, $match)) {
-            preg_match_all('/([A-Z]{1,3}\s?-?\s?\d{6})/', $match[2], $ticketMatches);
-            $parsed['consolation_prizes'] = collect($ticketMatches[1] ?? [])
-                ->map(fn ($ticket) => $this->normalizeTicket($ticket))
+        // Parse consolation prizes (full ticket numbers)
+        if (preg_match('/Cons(?:olation)?\s+Prize(?:-Rs\s*:?\s*[\d,\/-]+)?\s+(.*?)(?=\d{1,2}(?:st|nd|rd|th)\s+Prize|Agent Prize|FOR THE TICKETS|$)/i', $normalized, $consMatch)) {
+            preg_match_all('/([A-Z]{1,3}\s?-?\s?\d{6})/', $consMatch[1], $ticketMatches);
+            $consolation = collect($ticketMatches[1] ?? [])
+                ->map(fn ($t) => $this->normalizeTicket($t))
                 ->filter()
                 ->values()
-                ->all() ?: null;
+                ->all();
+            $parsed['consolation_prizes'] = $consolation ?: null;
         }
+
+        // Parse 4th-8th prizes (4-digit ending numbers)
+        // Use section-splitting: find each prize block between ordinal labels
+        $otherPrizes = [];
+        $prizeOrdinals = [
+            '4th' => 4, '5th' => 5, '6th' => 6, '7th' => 7, '8th' => 8,
+        ];
+        $nextOrdinals = ['5th', '6th', '7th', '8th', 'Agent Prize', 'The prize', 'prize winners'];
+        foreach ($prizeOrdinals as $ordinal => $num) {
+            // Build lookahead for "next section" boundary
+            $lookahead = implode('|', array_map(fn ($n) => preg_quote($n, '/'), $nextOrdinals));
+            // Extract the section for this prize
+            $sectionPattern = sprintf(
+                '/%s\\s+Prize(?:-Rs\\s*:?\\s*([\\d,]+)\\s*\\/-)?(.+?)(?=%s|$)/is',
+                preg_quote($ordinal, '/'),
+                $lookahead
+            );
+            if (!preg_match($sectionPattern, $normalized, $pm)) {
+                // Remove current ordinal from the lookahead for next iteration
+                array_shift($nextOrdinals);
+                continue;
+            }
+            $amount = filled($pm[1] ?? '') ? $this->formatIndianAmount((int) str_replace(',', '', $pm[1])) : null;
+            $section = $pm[2] ?? '';
+            // Extract only standalone 4-digit numbers (not part of 5+ digit sequences)
+            preg_match_all('/(?<!\d)(\d{4})(?!\d)/', $section, $numMatches);
+            $numbers = array_values(array_unique($numMatches[1] ?? []));
+            if (!empty($numbers)) {
+                $otherPrizes[] = [
+                    'label'   => $ordinal . ' Prize',
+                    'amount'  => $amount,
+                    'numbers' => $numbers,
+                ];
+            }
+            array_shift($nextOrdinals);
+        }
+        $parsed['other_prizes'] = $otherPrizes ?: null;
 
         return $parsed;
     }

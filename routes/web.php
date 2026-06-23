@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Route;
 // Public News Explorer Routes
 Route::get('/', [NewsController::class, 'index'])->name('news.index');
 Route::redirect('/world-cup-news', '/');
+Route::get('/news/article/{article:slug}', [NewsController::class, 'showArticle'])->name('news.article');
+Route::get('/trends/{slug}', [NewsController::class, 'trendPage'])->name('news.trend-page');
 Route::get('/world-cup-news/top-stories', [NewsController::class, 'topStories'])->name('news.top');
 Route::get('/world-cup-news/trending', [NewsController::class, 'trending'])->name('news.trending');
 Route::get('/world-cup-news/fifa', [NewsController::class, 'fifa'])->name('news.fifa');
@@ -34,6 +36,7 @@ Route::middleware(\App\Http\Middleware\AdminAuth::class)->group(function () {
     Route::get('/admin/trends', [AdminController::class, 'trends'])->name('admin.trends');
     Route::get('/admin/trends/sync-status', [AdminController::class, 'trendsSyncStatus'])->name('admin.trends.sync-status');
     Route::get('/admin/destroy', [AdminController::class, 'destroyPage'])->name('admin.destroy');
+    Route::post('/admin/destroy/run', [AdminController::class, 'runDestroyProcess'])->name('admin.destroy.run');
     Route::get('/admin/promotions', [AdminController::class, 'promotions'])->name('admin.promotions');
     Route::get('/admin/sync-status', [AdminController::class, 'syncStatus'])->name('admin.sync-status');
     

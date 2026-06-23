@@ -35,7 +35,7 @@
             <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 @foreach($articles as $article)
                     <article class="group overflow-hidden rounded-[1.8rem] border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-lg hover:shadow-slate-200/70">
-                        <a href="{{ route('news.visit', $article) }}" target="_blank" rel="noopener noreferrer" class="block">
+                        <a href="{{ route('news.article', ['article' => $article->slug]) }}" class="block">
                             <div class="relative aspect-[4/3] overflow-hidden bg-slate-100">
                                 <img src="{{ route('media.news-image', $article) }}"
                                      alt="{{ $article->title }}"

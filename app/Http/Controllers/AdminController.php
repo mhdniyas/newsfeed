@@ -109,8 +109,6 @@ class AdminController extends Controller
         $analyticsCharts = [
             'live_users' => $this->liveUserChart(),
             'news_total' => $this->newsTotalChart(),
-            'registered_users' => $this->registeredUsersChart(),
-            'returning_visitors' => $this->returningVisitorsChart(),
         ];
         $fetchStats = $this->fetchStats();
 
@@ -194,6 +192,15 @@ class AdminController extends Controller
         $previewPromo = $promotionHub->publicPayload();
 
         return view('admin.promotions', compact('promotions', 'previewPromo', 'fetchStats'));
+    }
+
+    public function runDestroyProcess(Request $request, NewsRetentionService $newsRetention)
+    {
+        $result = $newsRetention->prune();
+
+        return redirect()
+            ->route('admin.destroy', $request->only(['section', 'topic', 'search', 'sort']))
+            ->with('success', "Destroy process completed. Deleted {$result['deleted_count']} article(s), protected {$result['protected_count']}, favorites protected {$result['favorite_protected_count']}.");
     }
 
     public function trends(Request $request, AutomaticNewsSyncService $automaticNewsSync, AutomaticTrendSyncService $automaticTrendSync, TrendingNewsService $trendingNewsService)

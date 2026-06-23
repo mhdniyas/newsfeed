@@ -14,6 +14,7 @@ class VisitorMetricsService
     protected int $liveWindowMinutes = 5;
     protected int $visitDedupSeconds = 90;
     protected int $articleViewDedupSeconds = 1800;
+    protected int $articleDetailDedupSeconds = 1800;
 
     public function recordPublicVisit(Request $request): array
     {
@@ -308,6 +309,33 @@ class VisitorMetricsService
 
             $metric->increment('clicks_count');
         });
+    }
+
+    public function trackArticleDetailView(Request $request, int $articleId): void
+    {
+        $fingerprint = $this->fingerprint($request);
+        $cacheKey = "article-detail:{$fingerprint}:{$articleId}";
+
+        if (!Cache::add($cacheKey, now()->toIso8601String(), now()->addSeconds($this->articleDetailDedupSeconds))) {
+            return;
+        }
+
+        DB::table('news_items')
+            ->where('id', $articleId)
+            ->increment('detail_views_count');
+
+        DB::table('news_items')
+            ->where('id', $articleId)
+            ->update(['last_detail_viewed_at' => now()]);
+    }
+
+    public function trackTrendPageView(string $slug): void
+    {
+        $todayKey = 'trend_page_views_' . now()->toDateString() . '_' . $slug;
+        $totalKey = 'trend_page_views_total_' . $slug;
+
+        Setting::set($todayKey, (string) (((int) Setting::get($todayKey, '0')) + 1));
+        Setting::set($totalKey, (string) (((int) Setting::get($totalKey, '0')) + 1));
     }
 
     public function fingerprintForRequest(Request $request): string

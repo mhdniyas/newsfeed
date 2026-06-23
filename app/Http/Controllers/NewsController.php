@@ -7,9 +7,11 @@ use App\Models\NewsSection;
 use App\Models\NewsTopic;
 use App\Models\Setting;
 use App\Services\AutomaticNewsSyncService;
+use App\Services\ArticleContentExtractionService;
 use App\Services\FifaMatchService;
 use App\Services\FifaPlaceholderImageService;
 use App\Services\PromotionHubService;
+use App\Services\TrendLandingService;
 use App\Services\VisitorMetricsService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -120,8 +122,9 @@ class NewsController extends Controller
 
             return $section;
         })->filter(fn (NewsSection $section) => $section->latestArticles->isNotEmpty())->values();
+        $trendPages = app(TrendLandingService::class)->homepagePages();
 
-        return view('news.index', array_merge($sharedPublicData, compact('articles', 'sections', 'topics', 'selectedTopicId', 'selectedSection', 'search', 'featuredCount', 'homepageSections', 'showSectionLanding')));
+        return view('news.index', array_merge($sharedPublicData, compact('articles', 'sections', 'topics', 'selectedTopicId', 'selectedSection', 'search', 'featuredCount', 'homepageSections', 'showSectionLanding', 'trendPages')));
     }
 
     protected function publicNewsSchemaReady(): bool
@@ -144,13 +147,59 @@ class NewsController extends Controller
         $sections = collect();
         $topics = collect();
         $homepageSections = collect();
+        $trendPages = collect();
         $tickerArticles = collect();
         $selectedTopicId = $request->input('topic');
         $selectedSection = null;
         $search = $request->input('search');
         $featuredCount = 0;
         $showSectionLanding = false;
-        return view('news.index', array_merge($this->publicFallbackContext(), compact('articles', 'sections', 'topics', 'selectedTopicId', 'selectedSection', 'search', 'featuredCount', 'homepageSections', 'showSectionLanding')));
+        return view('news.index', array_merge($this->publicFallbackContext(), compact('articles', 'sections', 'topics', 'selectedTopicId', 'selectedSection', 'search', 'featuredCount', 'homepageSections', 'showSectionLanding', 'trendPages')));
+    }
+
+    public function showArticle(Request $request, NewsItem $article, VisitorMetricsService $visitorMetrics, ArticleContentExtractionService $extractionService)
+    {
+        if (!$this->publicNewsSchemaReady() || !$article->is_visible) {
+            abort(404);
+        }
+
+        if ($article->extraction_status !== 'extracted' || $article->excerptParagraphs() === []) {
+            $extractionService->extractForArticle($article->fresh());
+            $article = $article->fresh(['newsTopic', 'newsSection']);
+        } else {
+            $article->loadMissing(['newsTopic', 'newsSection']);
+        }
+
+        $pageContext = $this->publicPageContext($request, $visitorMetrics);
+        $visitorMetrics->trackArticleDetailView($request, $article->id);
+        $relatedArticles = NewsItem::visible()
+            ->with(['newsTopic', 'newsSection'])
+            ->where('id', '!=', $article->id)
+            ->where(function ($query) use ($article): void {
+                $query->where('news_topic_id', $article->news_topic_id)
+                    ->orWhere('news_section_id', $article->news_section_id);
+            })
+            ->orderByDesc('published_at')
+            ->limit(6)
+            ->get();
+
+        return view('news.article', array_merge($pageContext, compact('article', 'relatedArticles')));
+    }
+
+    public function trendPage(string $slug, Request $request, VisitorMetricsService $visitorMetrics, TrendLandingService $trendLandingService)
+    {
+        $page = $trendLandingService->resolve($slug);
+
+        if (!$page) {
+            abort(404);
+        }
+
+        $articles = $trendLandingService->articlesFor($page);
+        $this->trackArticleViews($request, $articles->pluck('id')->all());
+        $pageContext = $this->publicPageContext($request, $visitorMetrics);
+        $visitorMetrics->trackTrendPageView($slug);
+
+        return view('news.trend-page', array_merge($pageContext, compact('page', 'articles')));
     }
 
     public function fixtures(Request $request, VisitorMetricsService $visitorMetrics, FifaMatchService $fifaMatchService)
@@ -358,7 +407,7 @@ class NewsController extends Controller
                 ->orderByDesc('published_at')
                 ->orderByDesc('id')
                 ->take(8)
-                ->get(['id', 'title']),
+                ->get(['id', 'title', 'slug']),
             'schemaReady' => true,
         ]);
     }
@@ -411,20 +460,22 @@ class NewsController extends Controller
             'Cache-Control' => 'public, max-age=86400',
         ]);
 
-        if (!$this->isSafeRemoteImageUrl((string) $article->image_url)) {
+        $remoteImage = (string) ($article->extracted_image_url ?: $article->image_url);
+
+        if (!$this->isSafeRemoteImageUrl($remoteImage)) {
             return $fallback();
         }
 
         try {
-            $cacheKey = 'news-card-image:' . $article->id . ':' . md5((string) $article->image_url);
-            $image = Cache::remember($cacheKey, now()->addHours(6), function () use ($article) {
+            $cacheKey = 'news-card-image:' . $article->id . ':' . md5($remoteImage);
+            $image = Cache::remember($cacheKey, now()->addHours(6), function () use ($remoteImage) {
                 $response = Http::timeout(8)
                     ->connectTimeout(4)
                     ->withHeaders([
                         'Accept' => 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
                         'User-Agent' => 'Mozilla/5.0 FIFA2026NewsBot/1.0',
                     ])
-                    ->get($article->image_url);
+                    ->get($remoteImage);
 
                 $contentType = strtolower((string) $response->header('content-type', ''));
 

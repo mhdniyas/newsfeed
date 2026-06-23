@@ -23,6 +23,10 @@ Schedule::command('news:prune-old')
     ->daily()
     ->withoutOverlapping();
 
+Schedule::command('news:extract-articles --limit=10')
+    ->everyTenMinutes()
+    ->withoutOverlapping();
+
 Schedule::job(new RunTrendSyncCycle('Automatic 5-minute scheduler trend sync'))
     ->everyFiveMinutes()
     ->withoutOverlapping();

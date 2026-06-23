@@ -60,7 +60,7 @@
             <h2 class="text-base font-bold text-slate-900">Auto-delete report</h2>
             <p class="mt-1 text-xs text-slate-500">Every day the scheduler removes articles older than {{ $autoDeleteReport['days'] }} days when clicks stay below {{ number_format($autoDeleteReport['click_threshold']) }}. High-click posts and favorites stay protected.</p>
         </div>
-        <div class="grid gap-3 px-5 py-4 md:grid-cols-4">
+        <div class="grid gap-3 px-5 py-4 md:grid-cols-2 xl:grid-cols-5">
             <div class="rounded-2xl border border-amber-200 bg-white p-4">
                 <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Eligible Now</p>
                 <p class="mt-2 text-3xl font-extrabold text-rose-600">{{ number_format($autoDeleteReport['eligible_now']) }}</p>
@@ -90,6 +90,21 @@
                     Protected: {{ number_format($autoDeleteReport['last_protected_count']) }}.
                     Favorites: {{ number_format($autoDeleteReport['last_favorite_protected_count']) }}.
                 </p>
+            </div>
+            <div class="rounded-2xl border border-rose-200 bg-gradient-to-br from-rose-50 to-white p-4">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-rose-600">Destroy Process</p>
+                <p class="mt-2 text-lg font-extrabold text-slate-950">Run manual cleanup now</p>
+                <p class="mt-1 text-xs text-slate-500">Execute the same automatic destroy routine immediately using the live 3-day and click threshold rules.</p>
+                <form action="{{ route('admin.destroy.run') }}" method="POST" class="mt-4">
+                    @csrf
+                    <input type="hidden" name="section" value="{{ $selectedSectionId }}">
+                    <input type="hidden" name="topic" value="{{ $selectedTopicId }}">
+                    <input type="hidden" name="search" value="{{ $search }}">
+                    <input type="hidden" name="sort" value="{{ $sort }}">
+                    <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl bg-rose-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-rose-700" onclick="return confirm('Run the destroy process now?');">
+                        Destroy Now
+                    </button>
+                </form>
             </div>
         </div>
     </div>

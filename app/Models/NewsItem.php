@@ -7,23 +7,37 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 
 #[Fillable([
     'news_topic_id',
     'news_section_id',
     'title',
     'source_name',
+    'source_domain',
+    'source_courtesy',
     'description',
+    'extracted_body',
+    'extracted_author',
     'url',
+    'canonical_url',
     'image_url',
+    'extracted_image_url',
     'hash',
+    'slug',
     'published_at',
     'is_visible',
     'is_featured',
     'is_favorite',
+    'extraction_status',
+    'extracted_at',
+    'extraction_error',
+    'extraction_retry_after',
     'views_count',
+    'detail_views_count',
     'clicks_count',
     'last_viewed_at',
+    'last_detail_viewed_at',
     'last_clicked_at',
 ])]
 class NewsItem extends Model
@@ -36,6 +50,12 @@ class NewsItem extends Model
             if (!$item->news_section_id && $item->news_topic_id) {
                 $item->news_section_id = NewsTopic::query()->whereKey($item->news_topic_id)->value('news_section_id');
             }
+
+            $item->slug = $item->slug ?: $item->makeSlug();
+            $item->canonical_url = $item->canonical_url ?: $item->url;
+            $item->source_domain = $item->source_domain ?: $item->resolveSourceDomain();
+            $item->source_courtesy = $item->source_courtesy ?: $item->resolveSourceCourtesy();
+            $item->extraction_status = $item->extraction_status ?: 'pending';
 
             // Set as featured if it belongs to Google Trends section
             if ($item->news_section_id) {
@@ -61,7 +81,11 @@ class NewsItem extends Model
             'is_visible' => 'boolean',
             'is_featured' => 'boolean',
             'is_favorite' => 'boolean',
+            'extracted_body' => 'array',
+            'extracted_at' => 'datetime',
+            'extraction_retry_after' => 'datetime',
             'last_viewed_at' => 'datetime',
+            'last_detail_viewed_at' => 'datetime',
             'last_clicked_at' => 'datetime',
         ];
     }
@@ -108,10 +132,40 @@ class NewsItem extends Model
      */
     public function displayImageUrl(): string
     {
+        if ($this->extracted_image_url) {
+            return $this->extracted_image_url;
+        }
+
         if ($this->image_url) {
             return $this->image_url;
         }
 
         return '/media/fifa-placeholder/' . rawurlencode($this->hash ?: (string) $this->id) . '.svg';
+    }
+
+    public function excerptParagraphs(): array
+    {
+        return array_values(array_filter(array_map('trim', $this->extracted_body ?? [])));
+    }
+
+    public function makeSlug(): string
+    {
+        $base = Str::slug(Str::limit(trim((string) $this->title), 80, ''));
+
+        return ($base !== '' ? $base : 'news-item') . '-' . substr((string) $this->hash, 0, 8);
+    }
+
+    public function resolveSourceDomain(): ?string
+    {
+        $host = parse_url((string) ($this->canonical_url ?: $this->url), PHP_URL_HOST);
+
+        return is_string($host) && $host !== '' ? strtolower($host) : null;
+    }
+
+    public function resolveSourceCourtesy(): ?string
+    {
+        $domain = $this->resolveSourceDomain();
+
+        return $domain ? preg_replace('/^www\./', '', $domain) : ($this->source_name ?: null);
     }
 }

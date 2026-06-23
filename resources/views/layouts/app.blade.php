@@ -70,11 +70,50 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
+        .admin-sidebar-shell {
+            width: 18rem;
+            transition: width 0.25s ease;
+        }
+        .admin-content-offset {
+            transition: margin-left 0.25s ease;
+        }
+        @media (min-width: 1024px) {
+            body.admin-page.admin-sidebar-expanded .admin-sidebar-shell {
+                width: 20rem;
+            }
+            body.admin-page.admin-sidebar-collapsed .admin-sidebar-shell {
+                width: 6.25rem;
+            }
+            body.admin-page.admin-sidebar-expanded .admin-content-offset {
+                margin-left: 20rem;
+            }
+            body.admin-page.admin-sidebar-collapsed .admin-content-offset {
+                margin-left: 6.25rem;
+            }
+            body.admin-page.admin-sidebar-collapsed .admin-sidebar-label,
+            body.admin-page.admin-sidebar-collapsed .admin-sidebar-copy,
+            body.admin-page.admin-sidebar-collapsed .admin-sidebar-footer {
+                display: none;
+            }
+            body.admin-page.admin-sidebar-collapsed .admin-sidebar-search,
+            body.admin-page.admin-sidebar-collapsed .admin-sidebar-section-heading {
+                display: none;
+            }
+            body.admin-page.admin-sidebar-collapsed .admin-sidebar-brand {
+                justify-content: center;
+            }
+            body.admin-page.admin-sidebar-collapsed .admin-sidebar-link {
+                justify-content: center;
+            }
+            body.admin-page.admin-sidebar-collapsed .admin-sidebar-user-meta {
+                display: none;
+            }
+        }
     </style>
 
     @yield('styles')
 </head>
-<body class="flex flex-col min-h-screen bg-slate-50 text-slate-800 antialiased overflow-x-hidden">
+<body class="flex flex-col min-h-screen bg-slate-50 text-slate-800 antialiased overflow-x-hidden {{ session('admin_authenticated') && request()->routeIs('admin.*') ? 'admin-page admin-sidebar-expanded' : '' }}">
     @php
         $whatsAppMessage = \App\Models\Setting::get('promo_whatsapp_message', config('services.promotions.whatsapp_message'));
         $whatsAppMessage = trim((string) $whatsAppMessage);
@@ -115,6 +154,16 @@
                     'icon' => 'fifa',
                 ],
         ];
+        $showAdminSidebar = session('admin_authenticated') && request()->routeIs('admin.*');
+        $adminSidebarItems = [
+            ['label' => 'Dashboard', 'href' => route('admin.dashboard'), 'active' => request()->routeIs('admin.dashboard'), 'tone' => 'emerald'],
+            ['label' => 'Analytics', 'href' => route('admin.analytics'), 'active' => request()->routeIs('admin.analytics') || request()->routeIs('admin.analytics.ranking'), 'tone' => 'amber'],
+            ['label' => 'Ranking', 'href' => route('admin.analytics.ranking'), 'active' => request()->routeIs('admin.analytics.ranking'), 'tone' => 'amber'],
+            ['label' => 'Trends', 'href' => route('admin.trends'), 'active' => request()->routeIs('admin.trends*'), 'tone' => 'sky'],
+            ['label' => 'Promotions', 'href' => route('admin.promotions'), 'active' => request()->routeIs('admin.promotions*'), 'tone' => 'violet'],
+            ['label' => 'Destroy', 'href' => route('admin.destroy'), 'active' => request()->routeIs('admin.destroy*'), 'tone' => 'rose'],
+            ['label' => 'View Site', 'href' => route('news.index'), 'active' => false, 'tone' => 'slate'],
+        ];
     @endphp
 
     @if(isset($tickerArticles) && $tickerArticles->isNotEmpty())
@@ -127,13 +176,13 @@
                 <div class="ticker-mask relative min-w-0 flex-1 overflow-hidden">
                     <div class="ticker-track flex items-center gap-8 whitespace-nowrap">
                         @foreach($tickerArticles as $tickerArticle)
-                            <a href="{{ route('news.visit', $tickerArticle) }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-3 text-sm font-medium text-slate-200 transition-colors hover:text-white">
+                            <a href="{{ route('news.article', ['article' => $tickerArticle->slug]) }}" class="inline-flex items-center gap-3 text-sm font-medium text-slate-200 transition-colors hover:text-white">
                                 <span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
                                 <span>{{ $tickerArticle->title }}</span>
                             </a>
                         @endforeach
                         @foreach($tickerArticles as $tickerArticle)
-                            <a href="{{ route('news.visit', $tickerArticle) }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-3 text-sm font-medium text-slate-200 transition-colors hover:text-white" aria-hidden="true" tabindex="-1">
+                            <a href="{{ route('news.article', ['article' => $tickerArticle->slug]) }}" class="inline-flex items-center gap-3 text-sm font-medium text-slate-200 transition-colors hover:text-white" aria-hidden="true" tabindex="-1">
                                 <span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
                                 <span>{{ $tickerArticle->title }}</span>
                             </a>
@@ -144,29 +193,125 @@
         </div>
     @endif
 
+    @if($showAdminSidebar)
+        <div id="admin-sidebar-overlay" class="fixed inset-0 z-[88] hidden bg-slate-950/45 backdrop-blur-sm lg:hidden"></div>
+
+        <aside id="admin-sidebar" class="admin-sidebar-shell fixed inset-y-0 left-0 z-[90] hidden flex-col p-4 lg:flex">
+            <div class="flex h-full flex-col overflow-hidden rounded-[2rem] border border-slate-200 bg-white/95 shadow-[0_24px_64px_rgba(15,23,42,0.10)] backdrop-blur-xl">
+            <div class="admin-sidebar-brand flex items-center justify-between gap-3 px-5 pb-4 pt-5">
+                <a href="{{ route('news.index') }}" class="flex min-w-0 items-center gap-3">
+                    <span class="inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-gradient-to-br from-slate-100 to-white text-sm font-black tracking-[0.18em] text-slate-700 shadow-sm">SZ</span>
+                    <div class="admin-sidebar-user-meta min-w-0">
+                        <p class="admin-sidebar-label truncate text-base font-medium text-slate-900">Signalz Online</p>
+                        <p class="admin-sidebar-copy truncate text-[11px] font-medium text-slate-400">Admin Workspace</p>
+                    </div>
+                </a>
+                <button id="admin-sidebar-collapse" type="button" class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 transition hover:bg-slate-100" aria-label="Collapse sidebar">
+                    <svg id="admin-sidebar-collapse-icon" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M18 6 6 18"></path>
+                        <path d="m6 6 12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="px-5 pb-4">
+                <div class="admin-sidebar-search flex items-center gap-3 rounded-[1.45rem] border border-slate-200 bg-white px-4 py-3 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+                    <svg class="h-5 w-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7"></circle>
+                        <path d="m20 20-3.5-3.5"></path>
+                    </svg>
+                    <span class="min-w-0 flex-1 truncate text-sm font-medium text-slate-400">Search admin pages…</span>
+                    <span class="text-xs font-medium text-slate-300">⌘F</span>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto px-4 py-3">
+                <p class="admin-sidebar-section-heading px-3 pb-2 text-[11px] font-semibold text-slate-400">Workspace</p>
+                <nav class="space-y-1.5">
+                    @foreach($adminSidebarItems as $item)
+                        @php
+                            $itemClasses = $item['active']
+                                ? 'border-slate-200 bg-slate-100 text-slate-900 shadow-none'
+                                : 'border-transparent bg-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-900';
+                        @endphp
+                        <a href="{{ $item['href'] }}" class="admin-sidebar-link flex items-center gap-3 rounded-[1.2rem] border px-4 py-3 text-sm font-medium transition-all duration-200 {{ $itemClasses }}">
+                            <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl {{ $item['active'] ? 'bg-white text-slate-900 border border-slate-200' : 'bg-slate-50 text-slate-600 border border-transparent' }}">
+                                @if($item['tone'] === 'emerald')
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 9.5V21h14V9.5"></path></svg>
+                                @elseif($item['tone'] === 'amber')
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16"></path><path d="M7 15V9"></path><path d="M12 15V5"></path><path d="M17 15v-3"></path></svg>
+                                @elseif($item['tone'] === 'sky')
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15 9 10l4 4 7-8"></path><path d="M20 10V6h-4"></path></svg>
+                                @elseif($item['tone'] === 'violet')
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="2"></rect><path d="M8 10h8"></path><path d="M8 14h5"></path></svg>
+                                @elseif($item['tone'] === 'rose')
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"></path><path d="M9 7V4h6v3"></path></svg>
+                                @else
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M5 5v14h14"></path></svg>
+                                @endif
+                            </span>
+                            <span class="admin-sidebar-label truncate">{{ $item['label'] }}</span>
+                        </a>
+                    @endforeach
+                </nav>
+            </div>
+
+            <div class="admin-sidebar-footer mt-auto border-t border-slate-100 px-4 py-4">
+                <p class="admin-sidebar-section-heading px-2 pb-3 text-[11px] font-semibold text-slate-400">Account</p>
+                <a href="{{ route('admin.logout') }}" class="inline-flex w-full items-center justify-center rounded-[1.2rem] border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-bold text-rose-700 transition hover:bg-rose-100">
+                    Logout
+                </a>
+            </div>
+            </div>
+        </aside>
+
+        <aside id="admin-sidebar-mobile" class="fixed inset-y-0 left-0 z-[90] flex w-[18rem] -translate-x-full flex-col border-r border-slate-200 bg-white/95 shadow-[0_24px_64px_rgba(15,23,42,0.16)] backdrop-blur-xl transition-transform duration-300 lg:hidden">
+            <div class="flex items-center justify-between border-b border-slate-200 px-5 py-5">
+                <a href="{{ route('news.index') }}" class="min-w-0">
+                    <p class="truncate text-sm font-black text-slate-950">Signalz Online</p>
+                    <p class="truncate text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">Admin Console</p>
+                </a>
+                <button id="admin-sidebar-close" type="button" class="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-600">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto px-4 py-5">
+                <nav class="space-y-2">
+                    @foreach($adminSidebarItems as $item)
+                        <a href="{{ $item['href'] }}" class="flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-bold transition-all duration-200 {{ $item['active'] ? 'border-slate-950 bg-slate-950 text-white' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+                            <span class="truncate">{{ $item['label'] }}</span>
+                        </a>
+                    @endforeach
+                </nav>
+            </div>
+            <div class="border-t border-slate-200 px-4 py-4">
+                <a href="{{ route('admin.logout') }}" class="inline-flex w-full items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-bold text-rose-700 transition hover:bg-rose-100">
+                    Logout
+                </a>
+            </div>
+        </aside>
+    @endif
+
+    <div class="{{ $showAdminSidebar ? 'admin-content-offset' : '' }}">
     <!-- Navigation Header -->
     <header class="sticky {{ isset($tickerArticles) && $tickerArticles->isNotEmpty() ? 'top-11' : 'top-0' }} z-50 backdrop-blur-md bg-white/90 border-b border-slate-200/80 transition-all duration-300 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16 gap-4">
                 <div class="flex min-w-0 items-center">
-                    <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700 shadow-sm">
+                    @if($showAdminSidebar)
+                        <button id="admin-sidebar-open" type="button" class="mr-3 inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm lg:hidden">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"></path><path d="M4 12h16"></path><path d="M4 17h16"></path></svg>
+                        </button>
+                    @endif
+                    <a href="{{ route('news.index') }}" class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700 shadow-sm hover:bg-slate-50">
                         Signalz Online
-                    </span>
+                    </a>
                 </div>
 
                 <div class="flex items-center space-x-4 shrink-0">
-                    @if(session('admin_authenticated'))
-                        <a href="{{ route('admin.dashboard') }}" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all duration-200">
-                            Dashboard
-                        </a>
-                        <a href="{{ route('admin.analytics') }}" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-700 border border-amber-500/20 hover:bg-amber-500/20 transition-all duration-200">
-                            Analytics
-                        </a>
-                        <a href="{{ route('admin.promotions') }}" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-sky-500/10 text-sky-700 border border-sky-500/20 hover:bg-sky-500/20 transition-all duration-200">
-                            Promotions
-                        </a>
-                        <a href="{{ route('admin.destroy') }}" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-700 border border-rose-500/20 hover:bg-rose-500/20 transition-all duration-200">
-                            Destroy
+                    @if(session('admin_authenticated') && !$showAdminSidebar)
+                        <a href="{{ route('admin.dashboard') }}" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-950 text-white border border-slate-950 transition-all duration-200 hover:bg-slate-800">
+                            Admin
                         </a>
                         <a href="{{ route('admin.logout') }}" class="text-xs font-medium text-slate-500 hover:text-slate-800">
                             Logout
@@ -246,7 +391,9 @@
             @endif
         </div>
     </footer>
+    </div>
 
+    @unless($showAdminSidebar)
     <div id="install-shortcut-popup" class="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+6.25rem)] z-[75] px-4 opacity-0 transition-all duration-300 md:hidden">
         <div class="mx-auto max-w-sm rounded-[2rem] border border-slate-200/90 bg-white/95 p-4 shadow-[0_24px_60px_rgba(15,23,42,0.18)] backdrop-blur-xl">
             <div class="flex items-start justify-between gap-3">
@@ -313,6 +460,7 @@
             @endforeach
         </div>
     </nav>
+    @endunless
 
 
     @yield('scripts')
@@ -438,6 +586,73 @@
 
             popup.classList.add('translate-y-4');
             window.setTimeout(showPopup, 900);
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const body = document.body;
+            const collapseButton = document.getElementById('admin-sidebar-collapse');
+            const collapseIcon = document.getElementById('admin-sidebar-collapse-icon');
+            const mobileSidebar = document.getElementById('admin-sidebar-mobile');
+            const mobileOpenButton = document.getElementById('admin-sidebar-open');
+            const mobileCloseButton = document.getElementById('admin-sidebar-close');
+            const overlay = document.getElementById('admin-sidebar-overlay');
+            const storageKey = 'signalz-admin-sidebar-collapsed';
+
+            if (!body.classList.contains('admin-page')) {
+                return;
+            }
+
+            const setDesktopState = (collapsed) => {
+                body.classList.toggle('admin-sidebar-collapsed', collapsed);
+                body.classList.toggle('admin-sidebar-expanded', !collapsed);
+
+                if (collapseButton) {
+                    collapseButton.setAttribute('aria-label', collapsed ? 'Show sidebar' : 'Collapse sidebar');
+                }
+
+                if (collapseIcon) {
+                    collapseIcon.innerHTML = collapsed
+                        ? '<path d="M4 7h16"></path><path d="M4 12h16"></path><path d="M4 17h16"></path>'
+                        : '<path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>';
+                }
+            };
+
+            const openMobileSidebar = () => {
+                if (!mobileSidebar || !overlay) {
+                    return;
+                }
+
+                mobileSidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+                body.classList.add('overflow-hidden');
+            };
+
+            const closeMobileSidebar = () => {
+                if (!mobileSidebar || !overlay) {
+                    return;
+                }
+
+                mobileSidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+                body.classList.remove('overflow-hidden');
+            };
+
+            setDesktopState(localStorage.getItem(storageKey) === '1');
+
+            collapseButton?.addEventListener('click', () => {
+                const willCollapse = !body.classList.contains('admin-sidebar-collapsed');
+                setDesktopState(willCollapse);
+                localStorage.setItem(storageKey, willCollapse ? '1' : '0');
+            });
+
+            mobileOpenButton?.addEventListener('click', openMobileSidebar);
+            mobileCloseButton?.addEventListener('click', closeMobileSidebar);
+            overlay?.addEventListener('click', closeMobileSidebar);
+            window.addEventListener('resize', () => {
+                if (window.innerWidth >= 1024) {
+                    closeMobileSidebar();
+                }
+            });
         });
     </script>
 

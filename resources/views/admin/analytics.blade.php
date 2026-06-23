@@ -185,95 +185,74 @@
         </div>
     </section>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 gap-6 mb-8">
-        @foreach($chartCards as $chartCard)
-            @php
-                $chart = $analyticsCharts[$chartCard['key']];
-                $barTone = match ($chartCard['tone']) {
-                    'emerald' => 'bg-emerald-500',
-                    'sky' => 'bg-sky-500',
-                    'amber' => 'bg-amber-500',
-                    default => 'bg-slate-500',
-                };
-                $badgeTone = match ($chartCard['tone']) {
-                    'emerald' => 'bg-emerald-50 text-emerald-700',
-                    'sky' => 'bg-sky-50 text-sky-700',
-                    'amber' => 'bg-amber-50 text-amber-700',
-                    default => 'bg-slate-100 text-slate-700',
-                };
-            @endphp
+    <section class="mb-8 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+        <div class="flex flex-col gap-4 border-b border-slate-200 bg-slate-50/70 px-5 py-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+                <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">Daily Graph Switch</p>
+                <h2 class="mt-1 text-xl font-extrabold text-slate-950">Mobile-friendly daily activity charts</h2>
+                <p class="mt-1 text-xs text-slate-500">Switch between active users and published stories without stacking extra cards.</p>
+            </div>
+            <div class="flex flex-wrap gap-2" id="analytics-graph-switch">
+                @foreach($chartCards as $chartCard)
+                    @php
+                        $chart = $analyticsCharts[$chartCard['key']];
+                    @endphp
+                    <button type="button" data-graph-target="{{ $chartCard['key'] }}" class="analytics-graph-tab inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-100 {{ $loop->first ? 'bg-slate-950 text-white hover:bg-slate-800' : '' }}">
+                        {{ $chart['title'] }}
+                    </button>
+                @endforeach
+            </div>
+        </div>
 
-            <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                <div class="flex items-start justify-between gap-3">
-                    <div>
-                        <h2 class="text-base font-bold text-slate-900">{{ $chart['title'] }}</h2>
-                        <p class="mt-1 text-xs text-slate-500">{{ $chart['subtitle'] }}</p>
-                    </div>
-                    <span class="rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] {{ $badgeTone }}">
-                        {{ number_format($chart['headline']) }} {{ $chart['headline_label'] }}
-                    </span>
-                </div>
-
-                <div class="mt-5 flex items-end gap-2 h-36">
-                    @foreach($chart['points'] as $point)
-                        @php
-                            $height = max(10, (int) round(($point['value'] / $chart['max']) * 100));
-                        @endphp
-                        <div class="flex-1 min-w-0">
-                            <div class="flex h-28 items-end">
-                                <div class="w-full rounded-t-2xl {{ $barTone }}" style="height: {{ $height }}%;"></div>
+        <div class="p-5 sm:p-6">
+            @foreach($chartCards as $chartCard)
+                @php
+                    $chart = $analyticsCharts[$chartCard['key']];
+                    $barTone = match ($chartCard['tone']) {
+                        'emerald' => 'bg-emerald-500',
+                        'sky' => 'bg-sky-500',
+                        'amber' => 'bg-amber-500',
+                        default => 'bg-slate-500',
+                    };
+                    $badgeTone = match ($chartCard['tone']) {
+                        'emerald' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                        'sky' => 'bg-sky-50 text-sky-700 border-sky-200',
+                        'amber' => 'bg-amber-50 text-amber-700 border-amber-200',
+                        default => 'bg-slate-100 text-slate-700 border-slate-200',
+                    };
+                @endphp
+                <div data-graph-panel="{{ $chartCard['key'] }}" class="{{ $loop->first ? '' : 'hidden' }}">
+                    <div class="grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)] lg:items-start">
+                        <div class="rounded-[1.7rem] border border-slate-200 bg-slate-50 p-5">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">{{ $chart['subtitle'] }}</p>
+                            <p class="mt-4 text-4xl font-black text-slate-950">{{ number_format($chart['headline']) }}</p>
+                            <p class="mt-1 text-sm font-semibold text-slate-500">{{ $chart['headline_label'] }}</p>
+                            <div class="mt-4 inline-flex rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] {{ $badgeTone }}">
+                                {{ number_format($chart['total']) }} total
                             </div>
-                            <p class="mt-2 text-center text-[10px] font-bold text-slate-400">{{ $point['label'] }}</p>
-                            <p class="mt-1 text-center text-xs font-bold text-slate-700">{{ number_format($point['value']) }}</p>
                         </div>
-                    @endforeach
-                </div>
 
-                <div class="mt-4 flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
-                    <span class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Total</span>
-                    <span class="text-lg font-extrabold text-slate-900">{{ number_format($chart['total']) }}</span>
+                        <div class="overflow-hidden rounded-[1.7rem] border border-slate-200 bg-white p-4 sm:p-5">
+                            <div class="flex h-52 items-end gap-2 sm:gap-3">
+                                @foreach($chart['points'] as $point)
+                                    @php
+                                        $height = max(12, (int) round(($point['value'] / $chart['max']) * 100));
+                                    @endphp
+                                    <div class="flex min-w-0 flex-1 flex-col items-center">
+                                        <div class="flex h-36 w-full items-end rounded-[1.25rem] bg-slate-50 px-1.5 pb-1.5">
+                                            <div class="w-full rounded-[1rem] {{ $barTone }}" style="height: {{ $height }}%;"></div>
+                                        </div>
+                                        <p class="mt-3 text-center text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">{{ $point['label'] }}</p>
+                                        <p class="mt-1 text-center text-xs font-extrabold text-slate-700">{{ number_format($point['value']) }}</p>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </section>
-        @endforeach
-
-        @php
-            $registeredUsersChart = $analyticsCharts['registered_users'];
-        @endphp
-        <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div class="flex items-start justify-between gap-3">
-                <div>
-                    <h2 class="text-base font-bold text-slate-900">{{ $registeredUsersChart['title'] }}</h2>
-                    <p class="mt-1 text-xs text-slate-500">{{ $registeredUsersChart['subtitle'] }}</p>
-                </div>
-                <span class="rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] bg-amber-50 text-amber-700">
-                    {{ number_format($registeredUsersChart['headline']) }} {{ $registeredUsersChart['headline_label'] }}
-                </span>
-            </div>
-            <div class="mt-5">
-                <p class="text-3xl font-black text-slate-900">{{ number_format($registeredUsersChart['total']) }}</p>
-                <p class="mt-1 text-xs text-slate-500">Total</p>
-            </div>
-        </section>
-
-        @php
-            $returningVisitorsChart = $analyticsCharts['returning_visitors'];
-        @endphp
-        <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div class="flex items-start justify-between gap-3">
-                <div>
-                    <h2 class="text-base font-bold text-slate-900">{{ $returningVisitorsChart['title'] }}</h2>
-                    <p class="mt-1 text-xs text-slate-500">{{ $returningVisitorsChart['subtitle'] }}</p>
-                </div>
-                <span class="rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] bg-slate-100 text-slate-700">
-                    {{ number_format($returningVisitorsChart['headline']) }} {{ $returningVisitorsChart['headline_label'] }}
-                </span>
-            </div>
-            <div class="mt-5">
-                <p class="text-3xl font-black text-slate-900">{{ number_format($returningVisitorsChart['total']) }}</p>
-                <p class="mt-1 text-xs text-slate-500">Total</p>
-            </div>
-        </section>
-    </div>
+            @endforeach
+        </div>
+    </section>
 
     <div class="grid grid-cols-1 2xl:grid-cols-[1.15fr_0.85fr] gap-6 mb-8">
         <section class="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
@@ -562,6 +541,32 @@
         });
 
         activateTab('overview');
+
+        const graphButtons = Array.from(document.querySelectorAll('.analytics-graph-tab'));
+        const graphPanels = Array.from(document.querySelectorAll('[data-graph-panel]'));
+
+        const activateGraph = (target) => {
+            graphButtons.forEach((button) => {
+                const active = button.dataset.graphTarget === target;
+                button.classList.toggle('bg-slate-950', active);
+                button.classList.toggle('text-white', active);
+                button.classList.toggle('hover:bg-slate-800', active);
+                button.classList.toggle('bg-white', !active);
+                button.classList.toggle('text-slate-700', !active);
+            });
+
+            graphPanels.forEach((panel) => {
+                panel.classList.toggle('hidden', panel.dataset.graphPanel !== target);
+            });
+        };
+
+        graphButtons.forEach((button) => {
+            button.addEventListener('click', () => activateGraph(button.dataset.graphTarget));
+        });
+
+        if (graphButtons.length > 0) {
+            activateGraph(graphButtons[0].dataset.graphTarget);
+        }
     });
 </script>
 @endsection

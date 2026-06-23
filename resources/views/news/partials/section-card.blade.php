@@ -1,5 +1,5 @@
 <article class="section-card-item rounded-[1.5rem] border border-slate-200 bg-slate-50/70 p-3 shadow-sm transition-all duration-200 hover:border-emerald-200 hover:bg-white">
-    <a href="{{ route('news.visit', $article) }}" target="_blank" rel="noopener noreferrer" class="flex items-start gap-3">
+    <a href="{{ route('news.article', ['article' => $article->slug]) }}" class="flex items-start gap-3">
         <img src="{{ $article->image_url ?: route('media.news-image', $article) }}"
              data-proxy-src="{{ route('media.news-image', $article) }}"
              data-placeholder-src="{{ '/media/fifa-placeholder/' . rawurlencode($article->hash ?: (string) $article->id) . '.svg' }}"

@@ -18,11 +18,26 @@ class KeralaLotteryController extends Controller
     {
         $pageContext = $this->publicPageContext($request, $visitorMetrics);
         $todayResult = $this->todayResult();
-        $results = $this->schemaReady()
-            ? LotteryResult::query()->orderByDesc('result_date')->orderByDesc('id')->paginate(12)
-            : collect();
+        $search      = trim((string) $request->input('q', ''));
 
-        return view('lottery.index', array_merge($pageContext, compact('todayResult', 'results')));
+        $query = $this->schemaReady()
+            ? LotteryResult::query()->orderByDesc('result_date')->orderByDesc('id')
+            : null;
+
+        if ($query && $search !== '') {
+            $like = '%' . $search . '%';
+            $query->where(function ($q) use ($like, $search) {
+                $q->where('lottery_name', 'like', $like)
+                  ->orWhere('draw_number',  'like', $like)
+                  ->orWhere('first_prize_ticket',  'like', $like)
+                  ->orWhere('second_prize_ticket', 'like', $like)
+                  ->orWhere('third_prize_ticket',  'like', $like);
+            });
+        }
+
+        $results = $query ? $query->paginate(12)->appends(['q' => $search]) : collect();
+
+        return view('lottery.index', array_merge($pageContext, compact('todayResult', 'results', 'search')));
     }
 
     public function today(Request $request, VisitorMetricsService $visitorMetrics)

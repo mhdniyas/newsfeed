@@ -33,8 +33,9 @@ class KeralaLotteryService
     public function fetchListingRows(int $limit = 10): array
     {
         $response = Http::timeout(20)
+            ->withoutVerifying()
             ->retry(2, 1000)
-            ->withUserAgent('Mozilla/5.0 Signalz Lottery Bot')
+            ->withUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
             ->get(self::LISTING_URL);
 
         $response->throw();
@@ -109,8 +110,9 @@ class KeralaLotteryService
 
         try {
             $pdfResponse = Http::timeout(30)
+                ->withoutVerifying()
                 ->retry(2, 1000)
-                ->withUserAgent('Mozilla/5.0 Signalz Lottery Bot')
+                ->withUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
                 ->get($result->official_pdf_url);
 
             $pdfResponse->throw();
@@ -195,13 +197,13 @@ class KeralaLotteryService
             $parsed['consolation_prizes'] = $consolation ?: null;
         }
 
-        // Parse 4th-8th prizes (4-digit ending numbers)
+        // Parse 4th-10th prizes (4-digit ending numbers)
         // Use section-splitting: find each prize block between ordinal labels
         $otherPrizes = [];
         $prizeOrdinals = [
-            '4th' => 4, '5th' => 5, '6th' => 6, '7th' => 7, '8th' => 8,
+            '4th' => 4, '5th' => 5, '6th' => 6, '7th' => 7, '8th' => 8, '9th' => 9, '10th' => 10,
         ];
-        $nextOrdinals = ['5th', '6th', '7th', '8th', 'Agent Prize', 'The prize', 'prize winners'];
+        $nextOrdinals = ['5th', '6th', '7th', '8th', '9th', '10th', 'Agent Prize', 'The prize', 'prize winners'];
         foreach ($prizeOrdinals as $ordinal => $num) {
             // Build lookahead for "next section" boundary
             $lookahead = implode('|', array_map(fn ($n) => preg_quote($n, '/'), $nextOrdinals));

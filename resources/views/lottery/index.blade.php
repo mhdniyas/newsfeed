@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', $search ? 'Search: "' . $search . '" – Kerala Lottery Results' : 'Kerala Lottery Results Today – Official PDF Results')
-@section('meta_description', 'Search Kerala lottery results by name, draw number, or ticket number. View all prize numbers from 1st to 8th prize with consolation prizes.')
+@section('meta_description', 'Search Kerala lottery results by name, draw number, or ticket number. View all prize numbers from 1st to 10th prize with consolation prizes.')
 
 @section('styles')
 <style>

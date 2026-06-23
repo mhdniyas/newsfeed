@@ -86,6 +86,8 @@ STHREE-SAKTHI LOTTERY NO.SS-525th DRAW held on:- 23/06/2026,3:00 PM
 2nd Prize Rs :3000000/- 1) SS 649010 (KANNUR)
 3rd Prize Rs :500000/- 1) XX 123456 (KOLLAM)
 Cons Prize-Rs :5000/- SA 871122 SB 871122 SC 871122
+4th Prize-Rs :5000/- 1058 1970
+9th Prize-Rs :100/- 1234 5678
 TEXT;
             }
         };
@@ -103,6 +105,16 @@ TEXT;
         $this->assertSame('SS 649010', $result->second_prize_ticket);
         $this->assertSame('XX 123456', $result->third_prize_ticket);
         $this->assertSame(['SA 871122', 'SB 871122', 'SC 871122'], $result->consolation_prizes);
+        
+        $this->assertCount(2, $result->other_prizes);
+        $this->assertSame('4th Prize', $result->other_prizes[0]['label']);
+        $this->assertSame('₹5,000', $result->other_prizes[0]['amount']);
+        $this->assertSame(['1058', '1970'], $result->other_prizes[0]['numbers']);
+        
+        $this->assertSame('9th Prize', $result->other_prizes[1]['label']);
+        $this->assertSame('₹100', $result->other_prizes[1]['amount']);
+        $this->assertSame(['1234', '5678'], $result->other_prizes[1]['numbers']);
+        
         Storage::disk('local')->assertExists($result->local_pdf_path);
     }
 

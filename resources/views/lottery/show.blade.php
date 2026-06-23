@@ -307,9 +307,9 @@
                         <p class="text-sm font-black text-slate-900">Full Ticket Numbers · {{ count($result->consolation_prizes) }} winners</p>
                     </div>
                 </div>
-                <div class="flex flex-wrap gap-2">
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                     @foreach($result->consolation_prizes as $ticket)
-                        <span class="num-chip" style="background:#eef2ff;border-color:#c7d2fe;color:#3730a3;font-size:.78rem;padding:.3rem .7rem;">
+                        <span class="num-chip w-full text-center justify-center" style="background:#eef2ff;border-color:#c7d2fe;color:#3730a3;font-size:.78rem;padding:.3rem .7rem;">
                             {{ $ticket }}
                         </span>
                     @endforeach
@@ -337,9 +337,9 @@
                             </span>
                         </div>
                     </div>
-                    <div class="flex flex-wrap gap-1.5">
+                    <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-1.5">
                         @foreach($prize['numbers'] as $num)
-                            <span class="num-chip">{{ $num }}</span>
+                            <span class="num-chip w-full text-center justify-center">{{ $num }}</span>
                         @endforeach
                     </div>
                 </div>

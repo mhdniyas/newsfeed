@@ -31,7 +31,9 @@ class KeralaLotteryController extends Controller
                   ->orWhere('draw_number',  'like', $like)
                   ->orWhere('first_prize_ticket',  'like', $like)
                   ->orWhere('second_prize_ticket', 'like', $like)
-                  ->orWhere('third_prize_ticket',  'like', $like);
+                  ->orWhere('third_prize_ticket',  'like', $like)
+                  ->orWhere('consolation_prizes',  'like', $like)
+                  ->orWhere('other_prizes',        'like', $like);
             });
         }
 
@@ -63,23 +65,117 @@ class KeralaLotteryController extends Controller
 
     public function viewPdf(LotteryResult $result)
     {
-        abort_unless($result->local_pdf_path && Storage::disk(KeralaLotteryService::STORAGE_DISK)->exists($result->local_pdf_path), 404);
+        // Try to serve local file; if missing, attempt to fetch & cache it
+        $pdf = $this->ensureLocalPdf($result);
 
-        return Response::file(Storage::disk(KeralaLotteryService::STORAGE_DISK)->path($result->local_pdf_path), [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="' . basename($result->local_pdf_path) . '"',
-        ]);
+        if ($pdf) {
+            return Response::file($pdf['path'], [
+                'Content-Type'        => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="' . $pdf['filename'] . '"',
+            ]);
+        }
+
+        // Last resort: redirect to the official URL directly
+        abort_unless($result->official_pdf_url, 404);
+        return redirect($result->official_pdf_url);
     }
 
     public function downloadPdf(LotteryResult $result)
     {
-        abort_unless($result->local_pdf_path && Storage::disk(KeralaLotteryService::STORAGE_DISK)->exists($result->local_pdf_path), 404);
+        // Try to serve local file; if missing, attempt to fetch & cache it
+        $pdf = $this->ensureLocalPdf($result);
 
-        return Storage::disk(KeralaLotteryService::STORAGE_DISK)->download(
-            $result->local_pdf_path,
-            basename($result->local_pdf_path),
-            ['Content-Type' => 'application/pdf']
-        );
+        if ($pdf) {
+            return Response::download($pdf['path'], $pdf['filename'], [
+                'Content-Type' => 'application/pdf',
+            ]);
+        }
+
+        // Last resort: redirect to official URL for browser-native download
+        abort_unless($result->official_pdf_url, 404);
+        return redirect($result->official_pdf_url);
+    }
+
+    /**
+     * Ensure the PDF is available locally.
+     * If already cached → return path.
+     * If missing but official_pdf_url is set → download, store, return path.
+     * Returns null if unavailable.
+     */
+    protected function ensureLocalPdf(LotteryResult $result): ?array
+    {
+        $disk = KeralaLotteryService::STORAGE_DISK;
+
+        // Already exists locally
+        if ($result->local_pdf_path && Storage::disk($disk)->exists($result->local_pdf_path)) {
+            return [
+                'path'     => Storage::disk($disk)->path($result->local_pdf_path),
+                'filename' => basename($result->local_pdf_path),
+            ];
+        }
+
+        // Not cached — try to download from official URL
+        if (!$result->official_pdf_url) {
+            return null;
+        }
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::timeout(20)
+                ->withoutVerifying()
+                ->retry(2, 500)
+                ->withUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+                ->get($result->official_pdf_url);
+
+            if (!$response->successful()) {
+                return null;
+            }
+
+            $body = $response->body();
+
+            // Validate it's actually a PDF
+            if (!str_starts_with($body, '%PDF')) {
+                return null;
+            }
+
+            // Determine storage path
+            $relativePath = $result->local_pdf_path
+                ?? KeralaLotteryService::STORAGE_DIR . '/' . $result->slug . '.pdf';
+
+            Storage::disk($disk)->put($relativePath, $body);
+
+            // Persist the path and try to re-parse
+            $result->local_pdf_path = $relativePath;
+
+            // Attempt text extraction and parse if not already parsed
+            if ($result->status !== 'parsed') {
+                $service = app(KeralaLotteryService::class);
+                $rawText = $service->extractPdfText(Storage::disk($disk)->path($relativePath));
+                if (filled($rawText)) {
+                    $parsed = $service->parseRawText($rawText, [
+                        'lottery_name' => $result->lottery_name,
+                        'lottery_code' => $result->lottery_code,
+                        'draw_number'  => $result->draw_number,
+                        'result_date'  => $result->result_date,
+                    ]);
+                    $result->fill($parsed);
+                    $result->raw_text  = $rawText;
+                    $result->parsed_at = now();
+                    $hasPrizes = $result->hasParsedPrizes()
+                        || !empty($result->other_prizes)
+                        || !empty($result->consolation_prizes);
+                    $result->status = $hasPrizes ? 'parsed' : 'parse_failed';
+                }
+            }
+
+            $result->save();
+
+            return [
+                'path'     => Storage::disk($disk)->path($relativePath),
+                'filename' => basename($relativePath),
+            ];
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     protected function todayResult(): ?LotteryResult

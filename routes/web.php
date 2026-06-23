@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\KeralaLotteryController;
 use App\Http\Controllers\NewsController;
 use Illuminate\Support\Facades\Route;
 
@@ -9,6 +10,11 @@ Route::get('/', [NewsController::class, 'index'])->name('news.index');
 Route::redirect('/world-cup-news', '/');
 Route::get('/news/article/{article:slug}', [NewsController::class, 'showArticle'])->name('news.article');
 Route::get('/trends/{slug}', [NewsController::class, 'trendPage'])->name('news.trend-page');
+Route::get('/kerala-lottery', [KeralaLotteryController::class, 'index'])->name('kerala-lottery.index');
+Route::get('/kerala-lottery/today', [KeralaLotteryController::class, 'today'])->name('kerala-lottery.today');
+Route::get('/kerala-lottery/{result:slug}/view-pdf', [KeralaLotteryController::class, 'viewPdf'])->name('kerala-lottery.pdf.view');
+Route::get('/kerala-lottery/{result:slug}/download-pdf', [KeralaLotteryController::class, 'downloadPdf'])->name('kerala-lottery.pdf.download');
+Route::get('/kerala-lottery/{result:slug}', [KeralaLotteryController::class, 'show'])->name('kerala-lottery.show');
 Route::get('/world-cup-news/top-stories', [NewsController::class, 'topStories'])->name('news.top');
 Route::get('/world-cup-news/trending', [NewsController::class, 'trending'])->name('news.trending');
 Route::get('/world-cup-news/fifa', [NewsController::class, 'fifa'])->name('news.fifa');

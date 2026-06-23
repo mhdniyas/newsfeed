@@ -133,6 +133,24 @@
             </section>
         @endif
 
+        <section class="mb-8 rounded-[1.9rem] border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-slate-50 p-5 shadow-sm">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700/70">New Section</p>
+                    <h2 class="mt-1 text-2xl font-extrabold text-slate-950">Kerala Lottery Results</h2>
+                    <p class="mt-1 text-sm text-slate-500">Open today&apos;s Kerala lottery result page with official PDF view and top prize numbers when parsing succeeds.</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <a href="{{ route('kerala-lottery.today') }}" class="inline-flex items-center rounded-full border border-slate-950 bg-slate-950 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-800">
+                        Today Result
+                    </a>
+                    <a href="{{ route('kerala-lottery.index') }}" class="inline-flex items-center rounded-full border border-emerald-200 bg-white px-4 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-50">
+                        All Kerala Lottery Results
+                    </a>
+                </div>
+            </div>
+        </section>
+
         @if(!empty($mobilePromos))
             <div class="mb-8 space-y-4 xl:hidden">
                 @foreach($mobilePromos as $mobilePromo)

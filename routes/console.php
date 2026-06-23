@@ -30,3 +30,7 @@ Schedule::command('news:extract-articles --limit=10')
 Schedule::job(new RunTrendSyncCycle('Automatic 5-minute scheduler trend sync'))
     ->everyFiveMinutes()
     ->withoutOverlapping();
+
+Schedule::command('lottery:sync-kerala-results --limit=10')
+    ->everyThirtyMinutes()
+    ->withoutOverlapping();

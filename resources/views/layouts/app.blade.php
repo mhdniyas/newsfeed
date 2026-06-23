@@ -330,8 +330,15 @@
                         <a href="{{ route('admin.dashboard') }}" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-950 text-white border border-slate-950 transition-all duration-200 hover:bg-slate-800">
                             Admin
                         </a>
+                        <a href="{{ route('kerala-lottery.index') }}" class="hidden text-xs font-semibold px-3 py-1.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 transition-all duration-200 hover:bg-emerald-100 sm:inline-flex">
+                            Kerala Lottery
+                        </a>
                         <a href="{{ route('admin.logout') }}" class="text-xs font-medium text-slate-500 hover:text-slate-800">
                             Logout
+                        </a>
+                    @else
+                        <a href="{{ route('kerala-lottery.index') }}" class="hidden rounded-full border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 sm:inline-flex">
+                            Kerala Lottery
                         </a>
                     @endif
                 </div>

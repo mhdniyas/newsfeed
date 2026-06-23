@@ -102,7 +102,17 @@ class AdminController extends Controller
         $visitStats = $visitorMetrics->getPublicStats();
         $visitorSnapshot = $visitorMetrics->adminAnalyticsSnapshot();
         $analyticsSummary = array_merge($visitorMetrics->articleAnalyticsSummary(), [
-            'top_viewed' => NewsItem::with('newsTopic')->orderByDesc('views_count')->orderByDesc('published_at')->take(12)->get(),
+            'top_viewed' => NewsItem::with('newsTopic')
+                ->orderByDesc('views_count')
+                ->orderByDesc('published_at')
+                ->take(12)
+                ->get()
+                ->values()
+                ->map(function (NewsItem $article, int $index) use ($visitorMetrics) {
+                    $article->setAttribute('view_rank', $visitorMetrics->viewRank((int) $article->views_count, $index + 1));
+
+                    return $article;
+                }),
             'top_clicked' => NewsItem::with('newsTopic')->orderByDesc('clicks_count')->orderByDesc('published_at')->take(12)->get(),
             'recent_activity' => NewsItem::with('newsTopic')
                 ->orderByDesc('last_clicked_at')

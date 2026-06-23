@@ -3,6 +3,8 @@
 @section('title', 'Admin Analytics - World Cup News Explorer')
 
 @php
+    $viewRank = $analyticsSummary['view_rank'];
+
     $breakdownCards = [
         ['title' => 'Devices', 'items' => $visitorSnapshot['device_breakdown'], 'tone' => 'emerald'],
         ['title' => 'Browsers', 'items' => $visitorSnapshot['browser_breakdown'], 'tone' => 'sky'],
@@ -16,6 +18,16 @@
         ['key' => 'registered_users', 'tone' => 'amber'],
         ['key' => 'returning_visitors', 'tone' => 'slate'],
     ];
+
+    $rankToneClasses = match ($viewRank['tone']) {
+        'rose' => 'border-rose-200 bg-rose-50 text-rose-700',
+        'sky' => 'border-sky-200 bg-sky-50 text-sky-700',
+        'emerald' => 'border-emerald-200 bg-emerald-50 text-emerald-700',
+        'violet' => 'border-violet-200 bg-violet-50 text-violet-700',
+        'yellow' => 'border-yellow-200 bg-yellow-50 text-yellow-700',
+        'amber' => 'border-amber-200 bg-amber-50 text-amber-700',
+        default => 'border-slate-200 bg-slate-100 text-slate-700',
+    };
 @endphp
 
 @section('content')
@@ -41,6 +53,12 @@
             <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-50/80">Live Now</p>
             <p class="mt-3 text-4xl font-black">{{ number_format($visitorSnapshot['live_now_count']) }}</p>
             <p class="mt-2 text-xs text-emerald-50/90">Visitors active in the last 5 minutes.</p>
+        </div>
+        <div class="col-span-2 rounded-3xl border p-4 shadow-sm xl:col-span-1 {{ $rankToneClasses }}">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.22em] opacity-80">View Rank</p>
+            <p class="mt-2 text-2xl font-extrabold">{{ $viewRank['tier'] }}</p>
+            <p class="mt-1 text-xs opacity-80">{{ $viewRank['range'] }}</p>
+            <p class="mt-2 text-[11px] font-bold uppercase tracking-[0.18em]">{{ number_format($analyticsSummary['article_views']) }} RP views</p>
         </div>
         <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
             <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Public Visits</p>
@@ -202,7 +220,39 @@
         </section>
     </div>
 
-    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+    <div class="grid grid-cols-1 xl:grid-cols-[1.15fr_0.85fr] gap-6 mb-8">
+        <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="flex items-start justify-between gap-3">
+                <div>
+                    <h2 class="text-base font-bold text-slate-900">PUBG-style View Ladder</h2>
+                    <p class="text-xs text-slate-500 mt-1">Rank the site by total article views and the leaderboard by per-article views.</p>
+                </div>
+                <span class="rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] {{ $rankToneClasses }}">
+                    {{ $viewRank['badge'] }}
+                </span>
+            </div>
+            <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                @foreach([
+                    ['tier' => 'Bronze', 'range' => '< 1500 RP'],
+                    ['tier' => 'Silver', 'range' => '1500 - 1800 RP'],
+                    ['tier' => 'Gold', 'range' => '1800 - 2200 RP'],
+                    ['tier' => 'Platinum', 'range' => '2200 - 2700 RP'],
+                    ['tier' => 'Diamond', 'range' => '2700 - 3200 RP'],
+                    ['tier' => 'Crown', 'range' => '3200 - 3700 RP'],
+                    ['tier' => 'Ace', 'range' => '3700 - 3900 RP'],
+                    ['tier' => 'Ace Master', 'range' => '3900 - 4050 RP'],
+                    ['tier' => 'Ace Dominator', 'range' => '4050 - 4200+ RP'],
+                    ['tier' => 'Conqueror', 'range' => 'Top 500 after Ace'],
+                ] as $tier)
+                    @php($isActiveTier = $viewRank['tier'] === $tier['tier'] || ($tier['tier'] === 'Ace' && str_starts_with($viewRank['tier'], 'Ace')))
+                    <div class="rounded-2xl border px-4 py-3 {{ $isActiveTier ? $rankToneClasses : 'border-slate-200 bg-slate-50 text-slate-700' }}">
+                        <p class="text-sm font-bold">{{ $tier['tier'] }}</p>
+                        <p class="mt-1 text-xs opacity-80">{{ $tier['range'] }}</p>
+                    </div>
+                @endforeach
+            </div>
+        </section>
+
         <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <div class="flex items-center justify-between gap-3">
                 <div>
@@ -212,12 +262,23 @@
                 <span class="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-700">{{ number_format($analyticsSummary['article_views']) }} total</span>
             </div>
             <div class="mt-4 space-y-3">
-                @foreach($analyticsSummary['top_viewed'] as $index => $article)
+                @foreach($analyticsSummary['top_viewed'] as $article)
                     <div class="flex items-start justify-between gap-3 rounded-2xl bg-slate-50 border border-slate-100 px-3 py-3">
                         <div class="min-w-0">
-                            <p class="text-[10px] font-extrabold uppercase tracking-[0.18em] text-slate-400">#{{ $index + 1 }}</p>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <p class="text-[10px] font-extrabold uppercase tracking-[0.18em] text-slate-400">#{{ $loop->iteration }}</p>
+                                <span class="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em]
+                                    @if(($article->view_rank['tone'] ?? null) === 'rose') bg-rose-50 text-rose-700
+                                    @elseif(($article->view_rank['tone'] ?? null) === 'sky') bg-sky-50 text-sky-700
+                                    @elseif(($article->view_rank['tone'] ?? null) === 'emerald') bg-emerald-50 text-emerald-700
+                                    @elseif(($article->view_rank['tone'] ?? null) === 'violet') bg-violet-50 text-violet-700
+                                    @elseif(($article->view_rank['tone'] ?? null) === 'yellow') bg-yellow-50 text-yellow-700
+                                    @elseif(($article->view_rank['tone'] ?? null) === 'amber') bg-amber-50 text-amber-700
+                                    @else bg-slate-100 text-slate-700 @endif">{{ $article->view_rank['badge'] ?? 'Bronze' }}</span>
+                            </div>
                             <p class="text-sm font-bold text-slate-900 line-clamp-2">{{ $article->title }}</p>
                             <p class="text-[11px] text-slate-500 mt-1">{{ $article->newsTopic?->name }} · {{ $article->source_name }}</p>
+                            <p class="mt-1 text-[11px] font-semibold text-slate-500">{{ $article->view_rank['range'] ?? '< 1500 RP' }}</p>
                         </div>
                         <span class="shrink-0 text-xs font-bold text-emerald-600">{{ number_format($article->views_count) }}</span>
                     </div>
@@ -234,10 +295,10 @@
                 <span class="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-amber-700">{{ number_format($analyticsSummary['article_clicks']) }} total</span>
             </div>
             <div class="mt-4 space-y-3">
-                @foreach($analyticsSummary['top_clicked'] as $index => $article)
+                @foreach($analyticsSummary['top_clicked'] as $article)
                     <div class="flex items-start justify-between gap-3 rounded-2xl bg-slate-50 border border-slate-100 px-3 py-3">
                         <div class="min-w-0">
-                            <p class="text-[10px] font-extrabold uppercase tracking-[0.18em] text-slate-400">#{{ $index + 1 }}</p>
+                            <p class="text-[10px] font-extrabold uppercase tracking-[0.18em] text-slate-400">#{{ $loop->iteration }}</p>
                             <p class="text-sm font-bold text-slate-900 line-clamp-2">{{ $article->title }}</p>
                             <p class="text-[11px] text-slate-500 mt-1">{{ $article->newsTopic?->name }} · {{ $article->source_name }}</p>
                         </div>

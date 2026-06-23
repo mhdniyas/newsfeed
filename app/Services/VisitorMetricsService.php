@@ -98,10 +98,83 @@ class VisitorMetricsService
 
     public function articleAnalyticsSummary(): array
     {
+        $articleViews = (int) DB::table('news_items')->sum('views_count');
+        $articleClicks = (int) DB::table('news_items')->sum('clicks_count');
+
         return [
-            'article_views' => (int) DB::table('news_items')->sum('views_count'),
-            'article_clicks' => (int) DB::table('news_items')->sum('clicks_count'),
+            'article_views' => $articleViews,
+            'article_clicks' => $articleClicks,
+            'view_rank' => $this->viewRank($articleViews),
         ];
+    }
+
+    public function viewRank(int $views, ?int $position = null): array
+    {
+        if ($position !== null && $position <= 500 && $views >= 3700) {
+            return [
+                'tier' => 'Conqueror',
+                'badge' => 'Top 500',
+                'tone' => 'rose',
+                'range' => 'Top 500 players in a server after reaching Ace.',
+            ];
+        }
+
+        return match (true) {
+            $views < 1500 => [
+                'tier' => 'Bronze',
+                'badge' => 'Bronze',
+                'tone' => 'amber',
+                'range' => '< 1500 RP',
+            ],
+            $views < 1800 => [
+                'tier' => 'Silver',
+                'badge' => 'Silver',
+                'tone' => 'slate',
+                'range' => '1500 - 1799 RP',
+            ],
+            $views < 2200 => [
+                'tier' => 'Gold',
+                'badge' => 'Gold',
+                'tone' => 'yellow',
+                'range' => '1800 - 2199 RP',
+            ],
+            $views < 2700 => [
+                'tier' => 'Platinum',
+                'badge' => 'Platinum',
+                'tone' => 'emerald',
+                'range' => '2200 - 2699 RP',
+            ],
+            $views < 3200 => [
+                'tier' => 'Diamond',
+                'badge' => 'Diamond',
+                'tone' => 'sky',
+                'range' => '2700 - 3199 RP',
+            ],
+            $views < 3700 => [
+                'tier' => 'Crown',
+                'badge' => 'Crown',
+                'tone' => 'violet',
+                'range' => '3200 - 3699 RP',
+            ],
+            $views < 3900 => [
+                'tier' => 'Ace',
+                'badge' => 'Ace',
+                'tone' => 'rose',
+                'range' => '3700 - 3899 RP',
+            ],
+            $views < 4050 => [
+                'tier' => 'Ace Master',
+                'badge' => 'Ace Master',
+                'tone' => 'rose',
+                'range' => '3900 - 4049 RP',
+            ],
+            default => [
+                'tier' => 'Ace Dominator',
+                'badge' => 'Ace Dominator',
+                'tone' => 'rose',
+                'range' => '4050 - 4200+ RP',
+            ],
+        };
     }
 
     public function adminAnalyticsSnapshot(): array

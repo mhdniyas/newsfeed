@@ -432,6 +432,43 @@ class NewsTest extends TestCase
         $page->assertSee('How sponsors appear on the site');
     }
 
+    public function test_admin_analytics_shows_pubg_style_view_ranks()
+    {
+        $topic = NewsTopic::create(['name' => 'Ranking Topic', 'keyword' => 'ranking-topic']);
+
+        NewsItem::create([
+            'news_topic_id' => $topic->id,
+            'title' => 'Diamond Story',
+            'source_name' => 'FIFA',
+            'url' => 'https://example.com/diamond-story',
+            'hash' => 'diamond-story',
+            'published_at' => now(),
+            'is_visible' => true,
+            'views_count' => 2750,
+        ]);
+
+        NewsItem::create([
+            'news_topic_id' => $topic->id,
+            'title' => 'Ace Story',
+            'source_name' => 'FIFA',
+            'url' => 'https://example.com/ace-story',
+            'hash' => 'ace-story',
+            'published_at' => now()->subMinute(),
+            'is_visible' => true,
+            'views_count' => 3900,
+        ]);
+
+        $response = $this->withSession(['admin_authenticated' => true])
+            ->get(route('admin.analytics'));
+
+        $response->assertOk();
+        $response->assertSee('PUBG-style View Ladder');
+        $response->assertSee('Ace Master');
+        $response->assertSee('Diamond Story');
+        $response->assertSee('Diamond');
+        $response->assertSee('Ace Story');
+    }
+
     /**
      * Test admin auth login logic and redirects.
      */

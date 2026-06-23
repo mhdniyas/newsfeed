@@ -37,7 +37,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:min-w-[340px]">
                         <div class="rounded-[1.6rem] border px-5 py-4 shadow-sm {{ $feedMeta['stat_classes'] }}">
                             <p class="text-[10px] font-semibold uppercase tracking-[0.18em] {{ $feedMeta['stat_text_classes'] }}">{{ $feedMeta['stat_label'] }}</p>
-                            <p class="mt-2 text-3xl font-black text-slate-950">{{ number_format($articles->total()) }}</p>
+                            <p class="mt-2 text-3xl font-black text-slate-950">{{ number_format($feedMeta['stat_value'] ?? $articles->total()) }}</p>
                         </div>
                         <a href="{{ route('news.index') }}" class="rounded-[1.6rem] border border-slate-200 bg-white/90 px-5 py-4 shadow-sm transition hover:border-emerald-200 hover:bg-white">
                             <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Back To News</p>

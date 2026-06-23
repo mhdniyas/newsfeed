@@ -313,6 +313,7 @@ class NewsController extends Controller
         $scope($query);
 
         $articles = $query->paginate(18);
+        $feedMeta['stat_value'] = max($articles->total(), $articles->count());
 
         return view('news.feed', array_merge(
             $this->publicPageContext($request, $visitorMetrics),

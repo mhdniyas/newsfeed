@@ -280,12 +280,12 @@
         </div>
     </div>
 
-    <nav class="fixed inset-x-0 bottom-0 z-[70] px-4 pb-[calc(env(safe-area-inset-bottom)+0.55rem)] pt-2 md:hidden">
-        <div class="mx-auto flex max-w-sm items-center justify-between rounded-[1.7rem] border border-white/80 bg-white/95 px-2 py-1.5 shadow-[0_14px_32px_rgba(15,23,42,0.10)] backdrop-blur-xl">
+    <nav class="fixed inset-x-0 bottom-0 z-[70] px-3 pb-[calc(env(safe-area-inset-bottom)+0.6rem)] pt-2 md:hidden">
+        <div class="mx-auto flex max-w-sm items-center justify-between rounded-[2rem] border border-white/70 bg-white/78 px-2 py-1.5 shadow-[0_22px_52px_rgba(15,23,42,0.20)] backdrop-blur-2xl">
             @foreach($mobileNavItems as $item)
                 <a href="{{ $item['href'] }}"
                    aria-label="{{ $item['label'] }}"
-                   class="group flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[1.25rem] px-1.5 py-2 text-[10px] font-semibold leading-none transition-all duration-200 {{ $item['active'] ? 'bg-slate-950 text-white shadow-[0_8px_20px_rgba(15,23,42,0.20)]' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700' }}">
+                   class="group flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[1.45rem] px-1.5 py-2 text-[10px] font-semibold leading-none transition-all duration-200 {{ $item['active'] ? 'bg-slate-950/92 text-white shadow-[0_12px_24px_rgba(15,23,42,0.28)]' : 'text-slate-500 hover:bg-white/70 hover:text-slate-800' }}">
                     <span class="flex h-4 w-4 items-center justify-center">
                         @if($item['icon'] === 'home')
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

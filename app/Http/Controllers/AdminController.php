@@ -104,6 +104,7 @@ class AdminController extends Controller
         $visitStats = $visitorMetrics->getPublicStats();
         $visitorSnapshot = $visitorMetrics->adminAnalyticsSnapshot();
         $analyticsSummary = $this->analyticsSummary($visitorMetrics);
+        $trendsAnalyticsSummary = $visitorMetrics->trendsAnalyticsSummary();
         $analyticsCharts = [
             'live_users' => $this->liveUserChart(),
             'news_total' => $this->newsTotalChart(),
@@ -112,7 +113,7 @@ class AdminController extends Controller
         ];
         $fetchStats = $this->fetchStats();
 
-        return view('admin.analytics', compact('visitStats', 'analyticsSummary', 'visitorSnapshot', 'analyticsCharts', 'fetchStats'));
+        return view('admin.analytics', compact('visitStats', 'analyticsSummary', 'trendsAnalyticsSummary', 'visitorSnapshot', 'analyticsCharts', 'fetchStats'));
     }
 
     public function rankingAnalytics(VisitorMetricsService $visitorMetrics)

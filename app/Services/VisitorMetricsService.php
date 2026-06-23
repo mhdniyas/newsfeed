@@ -21,6 +21,13 @@ class VisitorMetricsService
         $todayDate = now()->toDateString();
         $pagePath = $this->normalizedPagePath($request);
 
+        $pageViewsTodayKey = 'page_views_public_' . $todayDate;
+        $pageViewsTotal = ((int) Setting::get('page_views_public_total', '0')) + 1;
+        $pageViewsToday = ((int) Setting::get($pageViewsTodayKey, '0')) + 1;
+
+        Setting::set('page_views_public_total', (string) $pageViewsTotal);
+        Setting::set($pageViewsTodayKey, (string) $pageViewsToday);
+
         $visitor = VisitorAnalytic::where('fingerprint', $fingerprint)
             ->whereDate('visit_date', $todayDate)
             ->first();
@@ -65,6 +72,8 @@ class VisitorMetricsService
         return [
             'total' => (int) Setting::get('visits_public_total', '0'),
             'today' => (int) Setting::get('visits_public_' . now()->toDateString(), '0'),
+            'page_views_total' => (int) Setting::get('page_views_public_total', '0'),
+            'page_views_today' => (int) Setting::get('page_views_public_' . now()->toDateString(), '0'),
             'unique_today' => VisitorAnalytic::whereDate('visit_date', now()->toDateString())->count(),
             'unique_total' => VisitorAnalytic::distinct('fingerprint')->count('fingerprint'),
             'live_now' => $this->liveVisitorsQuery()->count(),
@@ -145,6 +154,76 @@ class VisitorMetricsService
                 'week'   => ['views' => $weekViews,   'clicks' => $weekClicks,   'rate' => $rate($weekClicks, $weekViews)],
                 'month'  => ['views' => $monthViews,  'clicks' => $monthClicks,  'rate' => $rate($monthClicks, $monthViews)],
             ],
+        ];
+    }
+
+    public function trendsAnalyticsSummary(): array
+    {
+        $sectionId = DB::table('news_sections')->where('slug', 'google-trends')->value('id');
+
+        if (!$sectionId) {
+            return [
+                'section_name' => 'Google Trends',
+                'article_views' => 0,
+                'article_clicks' => 0,
+                'conversion' => [
+                    'overall_rate' => 0.0,
+                    'today' => ['views' => 0, 'clicks' => 0, 'rate' => 0.0],
+                    'week' => ['views' => 0, 'clicks' => 0, 'rate' => 0.0],
+                    'month' => ['views' => 0, 'clicks' => 0, 'rate' => 0.0],
+                ],
+                'assessment' => $this->conversionAssessment(0.0),
+                'top_viewed' => collect(),
+                'top_clicked' => collect(),
+            ];
+        }
+
+        $articleViews = (int) DB::table('news_items')->where('news_section_id', $sectionId)->sum('views_count');
+        $articleClicks = (int) DB::table('news_items')->where('news_section_id', $sectionId)->sum('clicks_count');
+        $today = now()->toDateString();
+        $weekStart = now()->startOfWeek()->toDateString();
+        $monthStart = now()->startOfMonth()->toDateString();
+        $todayTotals = $this->metricTotals($today, $today, $sectionId);
+        $weekTotals = $this->metricTotals($weekStart, $today, $sectionId);
+        $monthTotals = $this->metricTotals($monthStart, $today, $sectionId);
+        $rate = fn (int $clicks, int $views): float => $views > 0 ? round(($clicks / $views) * 100, 2) : 0.0;
+        $overallRate = $rate($articleClicks, $articleViews);
+
+        return [
+            'section_name' => 'Google Trends',
+            'article_views' => $articleViews,
+            'article_clicks' => $articleClicks,
+            'conversion' => [
+                'overall_rate' => $overallRate,
+                'today' => [
+                    'views' => $todayTotals['views'],
+                    'clicks' => $todayTotals['clicks'],
+                    'rate' => $rate($todayTotals['clicks'], $todayTotals['views']),
+                ],
+                'week' => [
+                    'views' => $weekTotals['views'],
+                    'clicks' => $weekTotals['clicks'],
+                    'rate' => $rate($weekTotals['clicks'], $weekTotals['views']),
+                ],
+                'month' => [
+                    'views' => $monthTotals['views'],
+                    'clicks' => $monthTotals['clicks'],
+                    'rate' => $rate($monthTotals['clicks'], $monthTotals['views']),
+                ],
+            ],
+            'assessment' => $this->conversionAssessment($overallRate),
+            'top_viewed' => \App\Models\NewsItem::with('newsTopic')
+                ->where('news_section_id', $sectionId)
+                ->orderByDesc('views_count')
+                ->orderByDesc('published_at')
+                ->take(8)
+                ->get(),
+            'top_clicked' => \App\Models\NewsItem::with('newsTopic')
+                ->where('news_section_id', $sectionId)
+                ->orderByDesc('clicks_count')
+                ->orderByDesc('published_at')
+                ->take(8)
+                ->get(),
         ];
     }
 
@@ -348,16 +427,21 @@ class VisitorMetricsService
         return Cache::add($cacheKey, now()->toIso8601String(), now()->addSeconds($this->visitDedupSeconds));
     }
 
-    protected function metricTotals(string $startDate, string $endDate): array
+    protected function metricTotals(string $startDate, string $endDate, ?int $sectionId = null): array
     {
         if (!$this->dailyMetricTableReady()) {
             return ['views' => 0, 'clicks' => 0];
         }
 
-        $row = NewsItemDailyMetric::query()
+        $query = NewsItemDailyMetric::query()
             ->selectRaw('COALESCE(SUM(views_count), 0) as views, COALESCE(SUM(clicks_count), 0) as clicks')
-            ->whereBetween('metric_date', [$startDate, $endDate])
-            ->first();
+            ->whereBetween('metric_date', [$startDate, $endDate]);
+
+        if ($sectionId) {
+            $query->whereHas('newsItem', fn ($newsItemQuery) => $newsItemQuery->where('news_section_id', $sectionId));
+        }
+
+        $row = $query->first();
 
         return [
             'views' => (int) ($row->views ?? 0),
@@ -368,6 +452,32 @@ class VisitorMetricsService
     protected function dailyMetricTableReady(): bool
     {
         return DB::getSchemaBuilder()->hasTable('news_item_daily_metrics');
+    }
+
+    protected function conversionAssessment(float $rate): array
+    {
+        return match (true) {
+            $rate >= 5.0 => [
+                'label' => 'Excellent',
+                'tone' => 'emerald',
+                'message' => 'This conversion rate is strong and worth scaling.',
+            ],
+            $rate >= 3.0 => [
+                'label' => 'Good',
+                'tone' => 'sky',
+                'message' => 'This is a healthy conversion level for news traffic.',
+            ],
+            $rate >= 1.0 => [
+                'label' => 'Okay',
+                'tone' => 'amber',
+                'message' => 'Traffic is converting, but headline quality or placement can improve.',
+            ],
+            default => [
+                'label' => 'Weak',
+                'tone' => 'rose',
+                'message' => 'This traffic is not converting well yet.',
+            ],
+        };
     }
 
     protected function liveVisitorsQuery()

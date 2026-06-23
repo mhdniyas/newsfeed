@@ -4,6 +4,7 @@
 
 @php
     $viewRank = $analyticsSummary['view_rank'];
+    $trendsAssessment = $trendsAnalyticsSummary['assessment'];
 
     $breakdownCards = [
         ['title' => 'Devices', 'items' => $visitorSnapshot['device_breakdown'], 'tone' => 'emerald'],
@@ -23,6 +24,14 @@
         'emerald' => 'border-emerald-200 bg-emerald-50 text-emerald-700',
         'violet' => 'border-violet-200 bg-violet-50 text-violet-700',
         'yellow' => 'border-yellow-200 bg-yellow-50 text-yellow-700',
+        'amber' => 'border-amber-200 bg-amber-50 text-amber-700',
+        default => 'border-slate-200 bg-slate-100 text-slate-700',
+    };
+
+    $trendsAssessmentClasses = match ($trendsAssessment['tone']) {
+        'rose' => 'border-rose-200 bg-rose-50 text-rose-700',
+        'sky' => 'border-sky-200 bg-sky-50 text-sky-700',
+        'emerald' => 'border-emerald-200 bg-emerald-50 text-emerald-700',
         'amber' => 'border-amber-200 bg-amber-50 text-amber-700',
         default => 'border-slate-200 bg-slate-100 text-slate-700',
     };
@@ -46,11 +55,26 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-2 xl:grid-cols-6 gap-3 sm:gap-4 mb-6">
+    <div class="mb-6 flex flex-wrap gap-2" id="analytics-tabs">
+        <button type="button" data-tab-target="overview" class="analytics-tab inline-flex items-center justify-center rounded-xl border border-slate-200 bg-slate-950 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-slate-800">
+            Overview
+        </button>
+        <button type="button" data-tab-target="trends" class="analytics-tab inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
+            Google Trends
+        </button>
+    </div>
+
+    <div data-tab-panel="overview">
+    <div class="grid grid-cols-2 xl:grid-cols-7 gap-3 sm:gap-4 mb-6">
         <div class="col-span-2 rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-500 to-emerald-600 p-5 text-white shadow-lg shadow-emerald-500/15 xl:col-span-1">
             <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-50/80">Live Now</p>
             <p class="mt-3 text-4xl font-black">{{ number_format($visitorSnapshot['live_now_count']) }}</p>
             <p class="mt-2 text-xs text-emerald-50/90">Visitors active in the last 5 minutes.</p>
+        </div>
+        <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Site Views</p>
+            <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ number_format($visitStats['page_views_total']) }}</p>
+            <p class="mt-1 text-xs text-slate-500">All public page loads across the site.</p>
         </div>
         <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
             <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Public Visits</p>
@@ -58,9 +82,14 @@
             <p class="mt-1 text-xs text-slate-500">Deduped public page visits, not every rapid refresh.</p>
         </div>
         <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Today</p>
+            <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Site Views Today</p>
+            <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ number_format($visitStats['page_views_today']) }}</p>
+            <p class="mt-1 text-xs text-slate-500">Public page loads recorded today.</p>
+        </div>
+        <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Visits Today</p>
             <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ number_format($visitStats['today']) }}</p>
-            <p class="mt-1 text-xs text-slate-500">Total visits recorded today.</p>
+            <p class="mt-1 text-xs text-slate-500">Deduped visits recorded today.</p>
         </div>
         <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
             <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Unique Today</p>
@@ -184,7 +213,9 @@
 
                 <div class="mt-5 flex items-end gap-2 h-36">
                     @foreach($chart['points'] as $point)
-                        @php($height = max(10, (int) round(($point['value'] / $chart['max']) * 100)))
+                        @php
+                            $height = max(10, (int) round(($point['value'] / $chart['max']) * 100));
+                        @endphp
                         <div class="flex-1 min-w-0">
                             <div class="flex h-28 items-end">
                                 <div class="w-full rounded-t-2xl {{ $barTone }}" style="height: {{ $height }}%;"></div>
@@ -202,7 +233,9 @@
             </section>
         @endforeach
 
-        @php($registeredUsersChart = $analyticsCharts['registered_users'])
+        @php
+            $registeredUsersChart = $analyticsCharts['registered_users'];
+        @endphp
         <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <div class="flex items-start justify-between gap-3">
                 <div>
@@ -219,7 +252,9 @@
             </div>
         </section>
 
-        @php($returningVisitorsChart = $analyticsCharts['returning_visitors'])
+        @php
+            $returningVisitorsChart = $analyticsCharts['returning_visitors'];
+        @endphp
         <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <div class="flex items-start justify-between gap-3">
                 <div>
@@ -363,5 +398,167 @@
             </div>
         </section>
     </div>
+    </div>
+
+    <div data-tab-panel="trends" class="hidden">
+        @php
+            $trendsConv = $trendsAnalyticsSummary['conversion'];
+            $trendPeriods = [
+                ['label' => 'Today', 'key' => 'today', 'tone' => 'emerald'],
+                ['label' => 'This Week', 'key' => 'week', 'tone' => 'sky'],
+                ['label' => 'This Month', 'key' => 'month', 'tone' => 'violet'],
+            ];
+        @endphp
+
+        <div class="grid grid-cols-2 xl:grid-cols-5 gap-3 sm:gap-4 mb-6">
+            <div class="col-span-2 rounded-3xl border p-5 shadow-sm {{ $trendsAssessmentClasses }}">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.24em] opacity-80">Trend Conversion</p>
+                <p class="mt-3 text-4xl font-black">{{ $trendsAssessment['label'] }}</p>
+                <p class="mt-2 text-xs opacity-80">{{ $trendsAssessment['message'] }}</p>
+            </div>
+            <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Trend Views</p>
+                <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ number_format($trendsAnalyticsSummary['article_views']) }}</p>
+                <p class="mt-1 text-xs text-slate-500">Google Trends article impressions.</p>
+            </div>
+            <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Trend Conversions</p>
+                <p class="mt-2 text-3xl font-extrabold text-amber-700">{{ number_format($trendsAnalyticsSummary['article_clicks']) }}</p>
+                <p class="mt-1 text-xs text-slate-500">Outbound clicks from trend articles.</p>
+            </div>
+            <div class="rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-4 shadow-sm">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700/80">Overall Rate</p>
+                <p class="mt-2 text-3xl font-extrabold text-emerald-700">{{ number_format($trendsConv['overall_rate'], 2) }}%</p>
+                <p class="mt-1 text-xs text-emerald-700/70">Trend views to trend conversions.</p>
+            </div>
+        </div>
+
+        <div class="mb-6 rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+            <div class="flex items-center justify-between gap-3 px-5 py-4 border-b border-slate-100 bg-slate-50/60">
+                <div>
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.26em] text-slate-400">Google Trends Conversion</p>
+                    <h2 class="mt-0.5 text-base font-extrabold text-slate-900">Trend views → conversions by period</h2>
+                </div>
+                <span class="rounded-full border border-amber-200 bg-amber-50 px-4 py-1.5 text-sm font-black text-amber-700">{{ number_format($trendsConv['overall_rate'], 2) }}% all-time</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+                @foreach($trendPeriods as $p)
+                    @php
+                        $d = $trendsConv[$p['key']];
+                        $barWidth = min(100, max(4, $d['rate'] * 6));
+                        $toneBar   = match($p['tone']) { 'sky' => 'bg-sky-500', 'violet' => 'bg-violet-500', default => 'bg-emerald-500' };
+                        $toneBadge = match($p['tone']) { 'sky' => 'bg-sky-50 text-sky-700 border-sky-200', 'violet' => 'bg-violet-50 text-violet-700 border-violet-200', default => 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+                        $toneNum   = match($p['tone']) { 'sky' => 'text-sky-700', 'violet' => 'text-violet-700', default => 'text-emerald-700' };
+                    @endphp
+                    <div class="px-5 py-5">
+                        <p class="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">{{ $p['label'] }}</p>
+                        <p class="mt-2 text-3xl font-black {{ $toneNum }}">{{ number_format($d['rate'], 2) }}<span class="text-lg">%</span></p>
+                        <div class="mt-3 h-2 rounded-full bg-slate-100 overflow-hidden">
+                            <div class="h-full rounded-full {{ $toneBar }}" style="width: {{ $barWidth }}%"></div>
+                        </div>
+                        <div class="mt-3 flex items-center justify-between">
+                            <div class="text-center">
+                                <p class="text-[10px] uppercase tracking-[0.16em] text-slate-400">Views</p>
+                                <p class="text-sm font-extrabold text-slate-800">{{ number_format($d['views']) }}</p>
+                            </div>
+                            <span class="text-slate-300 text-lg font-light">→</span>
+                            <div class="text-center">
+                                <p class="text-[10px] uppercase tracking-[0.16em] text-slate-400">Conversions</p>
+                                <p class="text-sm font-extrabold text-amber-600">{{ number_format($d['clicks']) }}</p>
+                            </div>
+                            <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-bold {{ $toneBadge }}">{{ number_format($d['rate'], 2) }}%</span>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900">Top Viewed Trends</h2>
+                        <p class="text-xs text-slate-500 mt-1">Trend stories that got the most impressions.</p>
+                    </div>
+                    <span class="rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-700">{{ number_format($trendsAnalyticsSummary['article_views']) }} total</span>
+                </div>
+                <div class="mt-4 space-y-3">
+                    @forelse($trendsAnalyticsSummary['top_viewed'] as $article)
+                        <div class="flex items-start justify-between gap-3 rounded-2xl bg-slate-50 border border-slate-100 px-3 py-3">
+                            <div class="min-w-0">
+                                <p class="text-[10px] font-extrabold uppercase tracking-[0.18em] text-slate-400">#{{ $loop->iteration }}</p>
+                                <p class="text-sm font-bold text-slate-900 line-clamp-2">{{ $article->title }}</p>
+                                <p class="text-[11px] text-slate-500 mt-1">{{ $article->newsTopic?->name }} · {{ $article->source_name }}</p>
+                            </div>
+                            <span class="shrink-0 text-xs font-bold text-emerald-600">{{ number_format($article->views_count) }}</span>
+                        </div>
+                    @empty
+                        <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500">
+                            No trend article analytics recorded yet.
+                        </div>
+                    @endforelse
+                </div>
+            </section>
+
+            <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900">Top Trend Conversions</h2>
+                        <p class="text-xs text-slate-500 mt-1">Trend stories generating the most outbound clicks.</p>
+                    </div>
+                    <span class="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-amber-700">{{ number_format($trendsAnalyticsSummary['article_clicks']) }} total</span>
+                </div>
+                <div class="mt-4 space-y-3">
+                    @forelse($trendsAnalyticsSummary['top_clicked'] as $article)
+                        <div class="flex items-start justify-between gap-3 rounded-2xl bg-slate-50 border border-slate-100 px-3 py-3">
+                            <div class="min-w-0">
+                                <p class="text-[10px] font-extrabold uppercase tracking-[0.18em] text-slate-400">#{{ $loop->iteration }}</p>
+                                <p class="text-sm font-bold text-slate-900 line-clamp-2">{{ $article->title }}</p>
+                                <p class="text-[11px] text-slate-500 mt-1">{{ $article->newsTopic?->name }} · {{ $article->source_name }}</p>
+                            </div>
+                            <span class="shrink-0 text-xs font-bold text-amber-600">{{ number_format($article->clicks_count) }}</span>
+                        </div>
+                    @empty
+                        <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500">
+                            No trend conversions recorded yet.
+                        </div>
+                    @endforelse
+                </div>
+            </section>
+        </div>
+    </div>
 </div>
+@endsection
+
+@section('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const tabButtons = Array.from(document.querySelectorAll('.analytics-tab'));
+        const panels = Array.from(document.querySelectorAll('[data-tab-panel]'));
+
+        if (tabButtons.length === 0 || panels.length === 0) {
+            return;
+        }
+
+        const activateTab = (target) => {
+            tabButtons.forEach((button) => {
+                const active = button.dataset.tabTarget === target;
+                button.classList.toggle('bg-slate-950', active);
+                button.classList.toggle('text-white', active);
+                button.classList.toggle('bg-white', !active);
+                button.classList.toggle('text-slate-700', !active);
+            });
+
+            panels.forEach((panel) => {
+                panel.classList.toggle('hidden', panel.dataset.tabPanel !== target);
+            });
+        };
+
+        tabButtons.forEach((button) => {
+            button.addEventListener('click', () => activateTab(button.dataset.tabTarget));
+        });
+
+        activateTab('overview');
+    });
+</script>
 @endsection

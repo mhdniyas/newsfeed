@@ -371,6 +371,8 @@ class NewsController extends Controller
             'visitStats' => [
                 'total' => 0,
                 'today' => 0,
+                'page_views_total' => 0,
+                'page_views_today' => 0,
                 'unique_today' => 0,
                 'unique_total' => 0,
                 'live_now' => 0,

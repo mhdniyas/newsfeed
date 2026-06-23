@@ -22,6 +22,19 @@
     <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('app-icon-192.png') }}">
     <link rel="icon" type="image/png" sizes="512x512" href="{{ asset('app-icon-512.png') }}">
 
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-HSYYQHERF2"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+
+        function gtag() {
+            dataLayer.push(arguments);
+        }
+
+        gtag('js', new Date());
+        gtag('config', 'G-HSYYQHERF2');
+    </script>
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

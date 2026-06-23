@@ -11,6 +11,10 @@ use Illuminate\Support\Carbon;
 
 class AutomaticNewsSyncService
 {
+    public const SYNC_INTERVAL_MINUTES = 10;
+    public const SECTION_BATCH_SIZE = 12;
+    public const CYCLE_ARTICLE_LIMIT = 60;
+
     public function maybeTriggerDueSync(string $message = 'Automatic fallback sync triggered from web request.'): bool
     {
         $state = $this->syncState();
@@ -19,7 +23,7 @@ class AutomaticNewsSyncService
             return false;
         }
 
-        $intervalMinutes = (int) ($state['fetch_stats']['interval_minutes'] ?? 10);
+        $intervalMinutes = (int) ($state['fetch_stats']['interval_minutes'] ?? self::SYNC_INTERVAL_MINUTES);
         $currentSlot = $this->currentSlotStart($intervalMinutes);
         $graceWindow = $currentSlot->copy()->addSeconds(20);
 
@@ -86,9 +90,11 @@ class AutomaticNewsSyncService
         return [
             'total_runs' => (int) Setting::get('news_sync_total_runs', '0'),
             'last_success_at' => Setting::get('news_sync_last_success_at'),
-            'interval_minutes' => 10,
+            'interval_minutes' => self::SYNC_INTERVAL_MINUTES,
             'section_count' => (int) NewsSection::where('is_active', true)->count(),
-            'next_scheduled_at' => $this->nextScheduledFetchAt(10)?->toIso8601String(),
+            'section_batch_size' => self::SECTION_BATCH_SIZE,
+            'cycles_to_cover_all_sections' => (int) ceil(max(1, (int) NewsSection::where('is_active', true)->count()) / self::SECTION_BATCH_SIZE),
+            'next_scheduled_at' => $this->nextScheduledFetchAt(self::SYNC_INTERVAL_MINUTES)?->toIso8601String(),
             'news_total' => $health['news_total'],
             'content_health' => $health['status'],
             'content_health_label' => $health['label'],

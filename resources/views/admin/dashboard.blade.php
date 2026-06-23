@@ -108,7 +108,7 @@
                 <div class="rounded-2xl border border-slate-200 bg-slate-950 px-4 py-3 text-white">
                     <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Run Type</p>
                     <p class="mt-1 text-sm font-black">Async queue worker</p>
-                    <p id="sync-auto-interval" class="mt-1 text-xs text-slate-300">Every {{ $fetchStats['interval_minutes'] }} minutes across {{ $fetchStats['section_count'] }} active sections, max 60 articles.</p>
+                    <p id="sync-auto-interval" class="mt-1 text-xs text-slate-300">Every {{ $fetchStats['interval_minutes'] }} minutes fetch {{ $fetchStats['section_batch_size'] ?? 12 }} of {{ $fetchStats['section_count'] }} active sections. Full rotation in {{ $fetchStats['cycles_to_cover_all_sections'] ?? 1 }} runs.</p>
                 </div>
             </div>
 
@@ -889,7 +889,7 @@
             }
 
             if (els.autoInterval) {
-                els.autoInterval.textContent = `Every ${fetchStats.interval_minutes || 10} minutes across ${fetchStats.section_count || 0} active sections, max 60 articles.`;
+                els.autoInterval.textContent = `Every ${fetchStats.interval_minutes || 10} minutes fetch ${fetchStats.section_batch_size || 12} of ${fetchStats.section_count || 0} active sections. Full rotation in ${fetchStats.cycles_to_cover_all_sections || 1} runs.`;
             }
 
             if (els.autoHealth) {

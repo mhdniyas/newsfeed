@@ -7,7 +7,7 @@ use App\Models\Setting;
 
 class NewsSyncStateService
 {
-    public function startCycle(string $source, int $totalSections, int $totalTopics, int $cycleLimit): void
+    public function startCycle(string $source, int $totalSections, int $totalTopics, int $cycleLimit, int $sectionLimit = 6, ?int $activeSectionCount = null): void
     {
         Setting::set('news_sync_status', 'running');
         Setting::set('news_sync_requested_at', Setting::get('news_sync_requested_at') ?: now()->toIso8601String());
@@ -24,7 +24,7 @@ class NewsSyncStateService
             [
                 'time' => now()->toIso8601String(),
                 'level' => 'info',
-                'message' => 'Cycle started. Dispatching section fetch jobs.',
+                'message' => "Cycle started. Dispatching {$totalSections} section jobs from {$activeSectionCount} active sections.",
             ],
         ]));
         Setting::set('news_sync_meta', json_encode([
@@ -32,12 +32,13 @@ class NewsSyncStateService
             'stage' => 'Dispatching section jobs',
             'processed_sections' => 0,
             'total_sections' => $totalSections,
+            'active_section_count' => $activeSectionCount ?? $totalSections,
             'processed_topics' => 0,
             'total_topics' => $totalTopics,
             'failed_sections' => 0,
             'article_limit' => $cycleLimit,
             'cycle_limit' => $cycleLimit,
-            'section_limit' => 6,
+            'section_limit' => $sectionLimit,
             'current_section' => null,
             'current_topic' => null,
             'current_item' => null,

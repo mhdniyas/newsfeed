@@ -147,20 +147,11 @@
     <header class="sticky {{ isset($tickerArticles) && $tickerArticles->isNotEmpty() ? 'top-11' : 'top-0' }} z-50 backdrop-blur-md bg-white/90 border-b border-slate-200/80 transition-all duration-300 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16 gap-4">
-                <nav class="flex items-center gap-2 overflow-x-auto whitespace-nowrap pr-2">
-                    <a href="{{ route('news.index') }}"
-                       class="inline-flex items-center rounded-full border px-3.5 py-2 text-xs font-bold transition-colors {{ request()->routeIs('news.index') ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700' }}">
-                        Home
-                    </a>
-                    <a href="{{ route('news.fixtures') }}"
-                       class="inline-flex items-center rounded-full border px-3.5 py-2 text-xs font-bold transition-colors {{ request()->routeIs('news.fixtures') ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700' }}">
-                        Fixtures
-                    </a>
-                    <a href="{{ route('news.scores') }}"
-                       class="inline-flex items-center rounded-full border px-3.5 py-2 text-xs font-bold transition-colors {{ request()->routeIs('news.scores') ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-700 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700' }}">
-                        Live
-                    </a>
-                </nav>
+                <div class="flex min-w-0 items-center">
+                    <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700 shadow-sm">
+                        Signalz Online
+                    </span>
+                </div>
 
                 <div class="flex items-center space-x-4 shrink-0">
                     @if(session('admin_authenticated'))
@@ -281,7 +272,7 @@
     </div>
 
     <nav class="fixed inset-x-0 bottom-0 z-[70] px-3 pb-[calc(env(safe-area-inset-bottom)+0.6rem)] pt-2 md:hidden">
-        <div class="mx-auto flex max-w-sm items-center justify-between rounded-[2rem] border border-white/70 bg-white/78 px-2 py-1.5 shadow-[0_22px_52px_rgba(15,23,42,0.20)] backdrop-blur-2xl">
+        <div class="mx-auto flex max-w-sm items-center justify-between rounded-[2rem] border border-white/45 bg-white/40 px-2 py-1.5 shadow-[0_22px_52px_rgba(15,23,42,0.20)] backdrop-blur-2xl">
             @foreach($mobileNavItems as $item)
                 <a href="{{ $item['href'] }}"
                    aria-label="{{ $item['label'] }}"

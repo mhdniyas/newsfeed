@@ -7,8 +7,8 @@
     <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between mb-8">
         <div>
             <p class="text-[11px] font-semibold uppercase tracking-[0.26em] text-rose-500">Admin Destroy</p>
-            <h1 class="mt-1 text-2xl sm:text-3xl font-extrabold text-slate-900">Low-performance article cleanup</h1>
-            <p class="mt-2 max-w-3xl text-sm text-slate-500">Review the least-clicked stories first, then bulk delete weak inventory without touching the rest of the news stream.</p>
+            <h1 class="mt-1 text-2xl sm:text-3xl font-extrabold text-slate-900">Retention cleanup queue</h1>
+            <p class="mt-2 max-w-3xl text-sm text-slate-500">Automatic cleanup deletes articles older than {{ $autoDeleteReport['days'] }} days with fewer than {{ number_format($autoDeleteReport['click_threshold']) }} clicks. Favorites are always protected.</p>
         </div>
         <div class="flex flex-wrap gap-2">
             <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold transition-colors shadow-sm">
@@ -49,18 +49,18 @@
             <p class="mt-1 text-xs text-slate-500">Cards never seen on the public side.</p>
         </div>
         <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Clicks In Filter</p>
-            <p class="mt-2 text-3xl font-extrabold text-amber-600">{{ number_format($destroyStats['least_clicked_total']) }}</p>
-            <p class="mt-1 text-xs text-slate-500">Combined outbound clicks of this result set.</p>
+            <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Favorites In Queue</p>
+            <p class="mt-2 text-3xl font-extrabold text-amber-600">{{ number_format($destroyStats['favorite_articles']) }}</p>
+            <p class="mt-1 text-xs text-slate-500">Favorite posts are protected and skipped from deletion.</p>
         </div>
     </div>
 
     <div class="mb-8 rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white shadow-sm overflow-hidden">
         <div class="border-b border-amber-200 px-5 py-4">
             <h2 class="text-base font-bold text-slate-900">Auto-delete report</h2>
-            <p class="mt-1 text-xs text-slate-500">Every day the scheduler removes articles older than {{ $autoDeleteReport['days'] }} days when clicks stay at {{ number_format($autoDeleteReport['click_threshold']) }} or below. Anything above that stays.</p>
+            <p class="mt-1 text-xs text-slate-500">Every day the scheduler removes articles older than {{ $autoDeleteReport['days'] }} days when clicks stay below {{ number_format($autoDeleteReport['click_threshold']) }}. High-click posts and favorites stay protected.</p>
         </div>
-        <div class="grid gap-3 px-5 py-4 md:grid-cols-3">
+        <div class="grid gap-3 px-5 py-4 md:grid-cols-4">
             <div class="rounded-2xl border border-amber-200 bg-white p-4">
                 <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Eligible Now</p>
                 <p class="mt-2 text-3xl font-extrabold text-rose-600">{{ number_format($autoDeleteReport['eligible_now']) }}</p>
@@ -69,7 +69,12 @@
             <div class="rounded-2xl border border-amber-200 bg-white p-4">
                 <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Protected Now</p>
                 <p class="mt-2 text-3xl font-extrabold text-emerald-600">{{ number_format($autoDeleteReport['protected_now']) }}</p>
-                <p class="mt-1 text-xs text-slate-500">Older than {{ $autoDeleteReport['days'] }} days but kept because clicks are above {{ number_format($autoDeleteReport['click_threshold']) }}.</p>
+                <p class="mt-1 text-xs text-slate-500">Older than {{ $autoDeleteReport['days'] }} days and kept because of clicks or favorites.</p>
+            </div>
+            <div class="rounded-2xl border border-amber-200 bg-white p-4">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Favorite Protected</p>
+                <p class="mt-2 text-3xl font-extrabold text-amber-600">{{ number_format($autoDeleteReport['favorite_protected_now']) }}</p>
+                <p class="mt-1 text-xs text-slate-500">Older posts explicitly protected by the favorite flag.</p>
             </div>
             <div class="rounded-2xl border border-amber-200 bg-white p-4">
                 <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Last Run</p>
@@ -83,6 +88,7 @@
                 <p class="mt-2 text-xs text-slate-500">
                     Deleted {{ number_format($autoDeleteReport['last_deleted_count']) }} from {{ number_format($autoDeleteReport['last_eligible_count']) }} eligible.
                     Protected: {{ number_format($autoDeleteReport['last_protected_count']) }}.
+                    Favorites: {{ number_format($autoDeleteReport['last_favorite_protected_count']) }}.
                 </p>
             </div>
         </div>
@@ -93,7 +99,7 @@
             <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
                     <h2 class="text-base font-bold text-slate-900">Destroy queue</h2>
-                    <p class="mt-1 text-xs text-slate-500">Least-clicked articles appear first. Use filters, select rows, then bulk delete.</p>
+                    <p class="mt-1 text-xs text-slate-500">This queue only shows articles that the retention rule can delete. Use favorite to protect a post from all cleanup actions.</p>
                 </div>
                 <div class="text-xs text-slate-500">
                     Next auto fetch in <span class="font-semibold text-slate-700 js-fetch-countdown" data-next-fetch="{{ $fetchStats['next_scheduled_at'] ?? '' }}">calculating...</span>
@@ -181,6 +187,9 @@
                                         <span class="inline-flex rounded-full bg-rose-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-rose-700">{{ $article->newsSection?->name ?? 'Unassigned' }}</span>
                                         <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-600">{{ number_format($article->clicks_count) }} clicks</span>
                                         <span class="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-600">{{ number_format($article->views_count) }} views</span>
+                                        @if($article->is_favorite)
+                                            <span class="inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-amber-700">Favorite</span>
+                                        @endif
                                     </div>
                                     <div class="mt-3 flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
                                         <div class="min-w-0 xl:max-w-3xl">
@@ -188,7 +197,10 @@
                                             <p class="mt-1 text-xs text-slate-500">{{ $article->source_name }} @if($article->newsTopic) · {{ $article->newsTopic->name }} @endif</p>
                                             <p class="mt-2 text-xs text-slate-400">Published {{ optional($article->published_at)->format('M d, Y H:i') ?? 'Unknown' }}</p>
                                         </div>
-                                        <div class="flex shrink-0">
+                                        <div class="flex shrink-0 gap-2">
+                                            <button type="submit" form="favorite-article-{{ $article->id }}" class="inline-flex items-center justify-center rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700 transition hover:bg-amber-100">
+                                                {{ $article->is_favorite ? 'Unfavorite' : 'Favorite' }}
+                                            </button>
                                             <button type="submit" form="delete-article-{{ $article->id }}" onclick="return confirm('Delete this article permanently?');" class="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100">
                                                 Delete
                                             </button>
@@ -198,7 +210,7 @@
                             </div>
                         </div>
                     @empty
-                        <div class="px-4 py-10 text-center text-sm text-slate-500">No articles match the current destroy filter.</div>
+                        <div class="px-4 py-10 text-center text-sm text-slate-500">No articles currently match the retention cleanup rule for this filter.</div>
                     @endforelse
                 </div>
             </div>
@@ -210,6 +222,9 @@
     </div>
 
     @foreach($articles as $article)
+        <form id="favorite-article-{{ $article->id }}" action="{{ route('admin.articles.toggle-favorite', $article) }}" method="POST" class="hidden">
+            @csrf
+        </form>
         <form id="delete-article-{{ $article->id }}" action="{{ route('admin.articles.delete', $article) }}" method="POST" class="hidden">
             @csrf
             @method('DELETE')

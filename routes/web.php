@@ -51,6 +51,7 @@ Route::middleware(\App\Http\Middleware\AdminAuth::class)->group(function () {
     // Article Management
     Route::post('/admin/articles/{article}/toggle-visibility', [AdminController::class, 'toggleArticleVisibility'])->name('admin.articles.toggle-visibility');
     Route::post('/admin/articles/{article}/toggle-featured', [AdminController::class, 'toggleArticleFeatured'])->name('admin.articles.toggle-featured');
+    Route::post('/admin/articles/{article}/toggle-favorite', [AdminController::class, 'toggleArticleFavorite'])->name('admin.articles.toggle-favorite');
     Route::delete('/admin/articles/{article}', [AdminController::class, 'deleteArticle'])->name('admin.articles.delete');
     Route::post('/admin/articles/bulk-delete', [AdminController::class, 'bulkDeleteArticles'])->name('admin.articles.bulk-delete');
     

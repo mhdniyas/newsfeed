@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'published_at',
     'is_visible',
     'is_featured',
+    'is_favorite',
     'views_count',
     'clicks_count',
     'last_viewed_at',
@@ -59,6 +60,7 @@ class NewsItem extends Model
             'published_at' => 'datetime',
             'is_visible' => 'boolean',
             'is_featured' => 'boolean',
+            'is_favorite' => 'boolean',
             'last_viewed_at' => 'datetime',
             'last_clicked_at' => 'datetime',
         ];

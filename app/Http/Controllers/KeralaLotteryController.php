@@ -147,7 +147,7 @@ class KeralaLotteryController extends Controller
             $result->local_pdf_path = $relativePath;
 
             // Attempt text extraction and parse if not already parsed
-            if ($result->status !== 'parsed') {
+            if ($result->status !== 'available') {
                 $service = app(KeralaLotteryService::class);
                 $rawText = $service->extractPdfText(Storage::disk($disk)->path($relativePath));
                 if (filled($rawText)) {
@@ -163,7 +163,7 @@ class KeralaLotteryController extends Controller
                     $hasPrizes = $result->hasParsedPrizes()
                         || !empty($result->other_prizes)
                         || !empty($result->consolation_prizes);
-                    $result->status = $hasPrizes ? 'parsed' : 'parse_failed';
+                    $result->status = $hasPrizes ? 'available' : 'parse_failed';
                 }
             }
 
@@ -246,7 +246,7 @@ class KeralaLotteryController extends Controller
                 || !empty($result->other_prizes)
                 || !empty($result->consolation_prizes);
 
-            $result->status = $hasPrizes ? 'parsed' : 'parse_failed';
+            $result->status = $hasPrizes ? 'available' : 'parse_failed';
             $result->save();
             $fixed++;
         }

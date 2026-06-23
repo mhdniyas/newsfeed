@@ -18,7 +18,7 @@
     border-radius: 9999px; padding: .2rem .65rem;
     font-size: .65rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase;
 }
-.idx-card .parsed  { border: 1px solid #bbf7d0; background: #f0fdf4; color: #15803d; }
+.idx-card .available  { border: 1px solid #bbf7d0; background: #f0fdf4; color: #15803d; }
 .idx-card .waiting { border: 1px solid #fde68a; background: #fefce8; color: #92400e; }
 .search-box {
     display: flex; align-items: center; gap: .75rem;
@@ -94,8 +94,8 @@
                         <h2 class="mt-1 text-xl font-extrabold text-slate-950">{{ $todayResult->lottery_name }}</h2>
                         <p class="mt-1 text-sm text-slate-500">Draw {{ $todayResult->draw_number }} · {{ optional($todayResult->result_date)->format('d F Y') }}</p>
                     </div>
-                    <span class="self-start inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] {{ $todayResult->status === 'parsed' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700' }}">
-                        {{ str_replace('_', ' ', $todayResult->status) }}
+                    <span class="self-start inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] {{ $todayResult->status === 'available' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-amber-200 bg-amber-50 text-amber-700' }}">
+                        {{ $todayResult->status === 'available' ? 'Available' : str_replace('_', ' ', $todayResult->status) }}
                     </span>
                 </div>
             </div>
@@ -162,8 +162,8 @@
                                     <p class="text-sm font-black text-slate-950 truncate">{{ $result->lottery_name }}</p>
                                     <p class="mt-0.5 text-xs text-slate-500">{{ $result->draw_number }} · {{ optional($result->result_date)->format('d M Y') }}</p>
                                 </div>
-                                <span class="status-pill {{ $result->status === 'parsed' ? 'parsed' : 'waiting' }} shrink-0">
-                                    {{ $result->status === 'parsed' ? '✓ Parsed' : str_replace('_', ' ', $result->status) }}
+                                <span class="status-pill {{ $result->status === 'available' ? 'available' : 'waiting' }} shrink-0">
+                                    {{ $result->status === 'available' ? '✓ Available' : str_replace('_', ' ', $result->status) }}
                                 </span>
                             </div>
 

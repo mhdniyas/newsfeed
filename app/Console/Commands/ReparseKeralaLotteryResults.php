@@ -73,7 +73,7 @@ class ReparseKeralaLotteryResults extends Command
                 || !empty($result->other_prizes)
                 || !empty($result->consolation_prizes);
 
-            $result->status = $hasPrizes ? 'parsed' : 'parse_failed';
+            $result->status = $hasPrizes ? 'available' : 'parse_failed';
             $result->save();
 
             $icon = $hasPrizes ? '✓' : '✗';

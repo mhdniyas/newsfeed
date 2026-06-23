@@ -34,7 +34,7 @@ class KeralaLotteryTest extends TestCase
             'draw_number' => 'SS-525',
             'result_date' => Carbon::create(2026, 6, 23),
             'slug' => 'sthree-sakthi-ss-525-result-23-06-2026',
-            'status' => 'parsed',
+            'status' => 'available',
             'official_pdf_url' => 'https://result.keralalotteries.com/viewlotisresult.php?drawserial=75298',
             'local_pdf_path' => 'lottery-results/sthree-sakthi-ss-525-result-23-06-2026.pdf',
             'first_prize_ticket' => 'ST 871122',
@@ -99,7 +99,7 @@ TEXT;
         $result = LotteryResult::first();
 
         $this->assertNotNull($result);
-        $this->assertSame('parsed', $result->status);
+        $this->assertSame('available', $result->status);
         $this->assertSame('ST 871122', $result->first_prize_ticket);
         $this->assertSame('₹1 Crore', $result->first_prize_amount);
         $this->assertSame('SS 649010', $result->second_prize_ticket);

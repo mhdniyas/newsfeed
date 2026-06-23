@@ -15,7 +15,7 @@
     <meta property="og:image" content="{{ asset('app-icon-512.png') }}">
     <meta name="google-adsense-account" content="{{ config('services.adsense.client') }}">
     <meta name="theme-color" content="#020617">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Newsfeed">
     <link rel="manifest" href="{{ asset('site.webmanifest') }}">

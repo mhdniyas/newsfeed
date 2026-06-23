@@ -15,7 +15,7 @@
 .num-chip:hover    { background:#e2e8f0; }
 .num-chip.match    { background:#dcfce7; border-color:#86efac; color:#15803d; box-shadow:0 0 0 2px #bbf7d0; }
 .status-pill       { display:inline-flex; align-items:center; gap:.35rem; border-radius:9999px; padding:.3rem .85rem; font-size:.68rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; }
-.status-parsed     { border:1px solid #bbf7d0; background:#f0fdf4; color:#15803d; }
+.status-available   { border:1px solid #bbf7d0; background:#f0fdf4; color:#15803d; }
 .status-waiting    { border:1px solid #fde68a; background:#fefce8; color:#92400e; }
 
 /* ── Number Checker ── */
@@ -28,14 +28,7 @@
 }
 #checker-input:focus { border-color:#6366f1; box-shadow:0 0 0 3px rgba(99,102,241,.15); }
 #checker-input::placeholder { color:#a5b4fc; font-weight:400; letter-spacing:0; }
-#checker-btn {
-    width:100%; border-radius:.875rem; background:#6366f1; border:none; padding:.85rem;
-    font-size:.9rem; font-weight:800; color:#fff; cursor:pointer; transition:background .15s, transform .1s;
-    margin-top:.75rem;
-}
-#checker-btn:hover  { background:#4f46e5; }
-#checker-btn:active { transform:scale(.98); }
-#checker-result { margin-top:1rem; border-radius:1rem; padding:1rem 1.25rem; display:none; }
+#checker-result { margin-top: 1rem; border-radius: 1rem; padding: 1rem 1.25rem; display: none; }
 #checker-result.win   { background:#f0fdf4; border:1.5px solid #86efac; color:#14532d; }
 #checker-result.lose  { background:#fef2f2; border:1.5px solid #fca5a5; color:#7f1d1d; }
 #checker-result.info  { background:#f0f9ff; border:1.5px solid #7dd3fc; color:#0c4a6e; }
@@ -78,14 +71,14 @@
 
                 @php
                     $statusClass = match($result?->status) {
-                        'parsed'        => 'status-parsed',
+                        'available'     => 'status-available',
                         'pdf_available' => 'status-waiting',
                         default         => 'status-waiting',
                     };
-                    $statusLabel = $result ? str_replace('_', ' ', $result->status) : 'waiting';
+                    $statusLabel = $result ? ($result->status === 'available' ? 'Available' : str_replace('_', ' ', $result->status)) : 'waiting';
                 @endphp
                 <span class="status-pill {{ $statusClass }} shrink-0 self-start">
-                    @if($result?->status === 'parsed')
+                    @if($result?->status === 'available')
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
                     @endif
                     {{ $statusLabel }}
@@ -174,10 +167,6 @@
             <input type="text" id="checker-input" maxlength="12"
                    placeholder="e.g. BK 304203"
                    autocomplete="off" autocorrect="off" spellcheck="false">
-            <button id="checker-btn" type="button" class="flex items-center justify-center gap-1.5 w-full">
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                Check My Number
-            </button>
             <div id="checker-result"></div>
         </div>
 
@@ -185,7 +174,6 @@
         (function() {
             const DATA   = @json($checkerData);
             const input  = document.getElementById('checker-input');
-            const btn    = document.getElementById('checker-btn');
             const result = document.getElementById('checker-result');
 
             function normalise(s) {
@@ -198,11 +186,11 @@
 
                 if (clean.length < 2) {
                     result.style.display = 'none';
+                    clearHighlights();
                     return;
                 }
 
-                // Extract last 4 digits for ending-number prizes
-                const last4 = clean.replace(/[^0-9]/g, '').slice(-4);
+                const digits = clean.replace(/[^0-9]/g, '');
 
                 let wins = [];
 
@@ -210,14 +198,26 @@
                     const val = normalise(entry.value);
 
                     if (entry.type === 'full') {
+                        const entryDigits = val.replace(/[^0-9]/g, '');
                         // Full match ignoring spaces
                         if (val === clean) {
                             wins.push(entry);
+                        } else if (/^\d+$/.test(clean) && clean === entryDigits) {
+                            // If user only entered the digits of the full ticket
+                            wins.push(entry);
                         }
                     } else {
-                        // Ending number match — last 4 digits of ticket vs stored 4-digit code
-                        if (last4.length === 4 && val === last4) {
-                            wins.push(entry);
+                        // Ending number match
+                        if (digits.length >= 2) {
+                            if (digits.length <= val.length) {
+                                if (val.endsWith(digits)) {
+                                    wins.push(entry);
+                                }
+                            } else {
+                                if (digits.endsWith(val)) {
+                                    wins.push(entry);
+                                }
+                            }
                         }
                     }
                 }
@@ -228,7 +228,7 @@
                     // Show all matching prizes
                     const lines = wins.map(w => {
                         const note = w.type === 'ending'
-                            ? `<div class="prize-note">Matching on last 4 digits (${last4}) — verify full ticket with official gazette.</div>`
+                            ? `<div class="prize-note">Matching on ending digits (\${w.value}) — verify full ticket with official gazette.</div>`
                             : `<div class="prize-note">Full ticket match — visit Kerala lottery office within 90 days.</div>`;
                         return `<div style="margin-bottom:.5rem">
                             <div class="prize-label flex items-center gap-1.5">
@@ -244,7 +244,7 @@
                     result.innerHTML = lines;
 
                     // Highlight matching chips
-                    highlightChips(wins, last4, clean);
+                    highlightChips(wins);
                 } else {
                     result.className = 'lose';
                     result.innerHTML = `
@@ -260,7 +260,7 @@
                 }
             }
 
-            function highlightChips(wins, last4, fullClean) {
+            function highlightChips(wins) {
                 clearHighlights();
                 document.querySelectorAll('.num-chip').forEach(chip => {
                     const chipVal = normalise(chip.textContent);
@@ -277,13 +277,28 @@
                 document.querySelectorAll('.num-chip.match').forEach(c => c.classList.remove('match'));
             }
 
-            btn.addEventListener('click', check);
             input.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
             input.addEventListener('input', () => {
-                if (input.value.trim() === '') { result.style.display = 'none'; clearHighlights(); }
+                const raw = input.value.trim();
+                const clean = normalise(raw);
+                if (clean.length >= 2) {
+                    check();
+                } else {
+                    result.style.display = 'none';
+                    clearHighlights();
+                }
             });
         })();
         </script>
+
+        @if($adsense['client'] && $adsense['tab_slot'])
+            <div class="my-4">
+                @include('news.partials.adsense-block', [
+                    'client' => $adsense['client'],
+                    'slot' => $adsense['tab_slot'],
+                ])
+            </div>
+        @endif
 
         <div class="grid gap-4 sm:grid-cols-3">
             @foreach([
@@ -369,6 +384,15 @@
                     <p class="mt-1 text-sm text-amber-700">Prize numbers could not be extracted automatically. Please view or download the official PDF above.</p>
                 </div>
             </div>
+        </div>
+    @endif
+
+    @if($adsense['client'] && $adsense['infeed_slot'])
+        <div class="my-4">
+            @include('news.partials.adsense-block', [
+                'client' => $adsense['client'],
+                'slot' => $adsense['infeed_slot'],
+            ])
         </div>
     @endif
 

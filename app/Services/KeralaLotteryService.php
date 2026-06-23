@@ -134,7 +134,7 @@ class KeralaLotteryService
                 $hasPrizes = $result->hasParsedPrizes()
                     || !empty($result->other_prizes)
                     || !empty($result->consolation_prizes);
-                $result->status = $hasPrizes ? 'parsed' : 'parse_failed';
+                $result->status = $hasPrizes ? 'available' : 'parse_failed';
             } else {
                 $result->status = 'parse_failed';
             }
@@ -149,6 +149,9 @@ class KeralaLotteryService
 
     public function parseRawText(string $rawText, array $fallback = []): array
     {
+        // Remove page footers that contain the date/time (which can match years like 2026 as ending numbers)
+        $rawText = preg_replace('/Page\s+\d+\s*Modernization\s*&\s*IT\s*Software\s*Division\s*:\s*Department\s*of\s*State\s*Lotteries\s*\d{2}\/\d{2}\/\d{4}\s*\d{2}:\d{2}:\d{2}/i', ' ', $rawText) ?? $rawText;
+
         $normalized = preg_replace('/\s+/', ' ', str_replace(["\r", "\n"], ' ', $rawText)) ?? $rawText;
 
         $parsed = [

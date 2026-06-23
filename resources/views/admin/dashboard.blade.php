@@ -250,7 +250,7 @@
             @php
                 $lotteryStats = [
                     'total'       => \App\Models\LotteryResult::count(),
-                    'parsed'      => \App\Models\LotteryResult::where('status', 'parsed')->count(),
+                    'available'   => \App\Models\LotteryResult::where('status', 'available')->count(),
                     'failed'      => \App\Models\LotteryResult::where('status', 'parse_failed')->count(),
                     'waiting'     => \App\Models\LotteryResult::whereIn('status', ['waiting', 'pdf_available'])->count(),
                     'latest'      => \App\Models\LotteryResult::latest('result_date')->first(),
@@ -262,8 +262,8 @@
                     <p class="mt-1 text-2xl font-black text-slate-900">{{ $lotteryStats['total'] }}</p>
                 </div>
                 <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700/80">Parsed ✓</p>
-                    <p class="mt-1 text-2xl font-black text-emerald-700">{{ $lotteryStats['parsed'] }}</p>
+                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700/80">Available ✓</p>
+                    <p class="mt-1 text-2xl font-black text-emerald-700">{{ $lotteryStats['available'] }}</p>
                 </div>
                 <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3">
                     <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-red-700/80">Parse Failed</p>
@@ -279,8 +279,8 @@
                     <span class="font-bold text-slate-800">Latest:</span>
                     {{ $lotteryStats['latest']->lottery_name }} · {{ $lotteryStats['latest']->draw_number }} ·
                     {{ optional($lotteryStats['latest']->result_date)->format('d M Y') }} ·
-                    <span class="{{ $lotteryStats['latest']->status === 'parsed' ? 'text-emerald-600 font-bold' : 'text-red-600 font-bold' }}">
-                        {{ str_replace('_', ' ', $lotteryStats['latest']->status) }}
+                    <span class="{{ $lotteryStats['latest']->status === 'available' ? 'text-emerald-600 font-bold' : 'text-red-600 font-bold' }}">
+                        {{ $lotteryStats['latest']->status === 'available' ? 'Available' : str_replace('_', ' ', $lotteryStats['latest']->status) }}
                     </span>
                 </div>
             @endif

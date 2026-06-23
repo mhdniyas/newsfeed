@@ -139,16 +139,24 @@ class VisitorMetricsService
         $rate = fn (int $clicks, int $views): float => $views > 0 ? round(($clicks / $views) * 100, 2) : 0.0;
         $todayConversionRate = $rate($todayClicks, $todayViews);
         $dailyConversionBonus = $todayConversionRate > 5.0 ? 100 : 0;
-        $rankScore = $articleViews + $dailyConversionBonus;
+        $masterPointBreakdown = $this->masterPointsForCounts($articleViews, $articleClicks, $todayConversionRate);
 
         return [
             'article_views'  => $articleViews,
             'article_clicks' => $articleClicks,
-            'view_rank_score' => $rankScore,
+            'daily_views' => $todayViews,
+            'daily_clicks' => $todayClicks,
+            'daily_rank' => $this->dailyViewRank($todayViews),
+            'master_points' => $masterPointBreakdown['total'],
+            'master_points_from_views' => $masterPointBreakdown['view_points'],
+            'master_points_from_clicks' => $masterPointBreakdown['click_points'],
+            'master_points_from_bonus' => $masterPointBreakdown['bonus_points'],
+            'master_rank' => $this->masterPointRank($masterPointBreakdown['total']),
+            'view_rank_score' => $masterPointBreakdown['total'],
             'view_rank_bonus' => $dailyConversionBonus,
             'view_rank_bonus_active' => $dailyConversionBonus > 0,
             'view_rank_bonus_threshold' => 5.0,
-            'view_rank'      => $this->viewRank($rankScore),
+            'view_rank' => $this->dailyViewRank($todayViews),
             'conversion' => [
                 'overall_rate' => $rate($articleClicks, $articleViews),
                 'today'  => ['views' => $todayViews,  'clicks' => $todayClicks,  'rate' => $todayConversionRate],
@@ -343,73 +351,161 @@ class VisitorMetricsService
         return $this->fingerprint($request);
     }
 
-    public function viewRank(int $views, ?int $position = null): array
+    public function dailyViewRank(int $views): array
     {
-        if ($position !== null && $position <= 500 && $views >= 3700) {
-            return [
-                'tier' => 'Conqueror',
-                'badge' => 'Top 500',
-                'tone' => 'rose',
-                'range' => 'Top 500 after reaching Ace',
-            ];
-        }
-
         return match (true) {
-            $views < 1500 => [
+            $views < 1000 => [
                 'tier' => 'Bronze',
                 'badge' => 'Bronze',
                 'tone' => 'amber',
-                'range' => '< 1500 views',
+                'range' => '< 1000 views today',
             ],
-            $views < 1800 => [
+            $views < 2000 => [
                 'tier' => 'Silver',
                 'badge' => 'Silver',
                 'tone' => 'slate',
-                'range' => '1500 - 1799 views',
+                'range' => '1000 - 1999 views today',
             ],
-            $views < 2200 => [
+            $views < 3000 => [
                 'tier' => 'Gold',
                 'badge' => 'Gold',
                 'tone' => 'yellow',
-                'range' => '1800 - 2199 views',
+                'range' => '2000 - 2999 views today',
             ],
-            $views < 2700 => [
+            $views < 4000 => [
                 'tier' => 'Platinum',
                 'badge' => 'Platinum',
                 'tone' => 'emerald',
-                'range' => '2200 - 2699 views',
+                'range' => '3000 - 3999 views today',
             ],
-            $views < 3200 => [
+            $views < 5000 => [
                 'tier' => 'Diamond',
                 'badge' => 'Diamond',
                 'tone' => 'sky',
-                'range' => '2700 - 3199 views',
+                'range' => '4000 - 4999 views today',
             ],
-            $views < 3700 => [
+            default => [
+                'tier' => 'Conqueror',
+                'badge' => 'Conqueror',
+                'tone' => 'rose',
+                'range' => '5000+ views today',
+            ],
+        };
+    }
+
+    public function masterPointRank(int $points): array
+    {
+        return match (true) {
+            $points < 1000 => [
+                'tier' => 'Bronze',
+                'badge' => 'Bronze',
+                'tone' => 'amber',
+                'range' => '< 1000 master points',
+            ],
+            $points < 2000 => [
+                'tier' => 'Silver',
+                'badge' => 'Silver',
+                'tone' => 'slate',
+                'range' => '1000 - 1999 master points',
+            ],
+            $points < 3000 => [
+                'tier' => 'Gold',
+                'badge' => 'Gold',
+                'tone' => 'yellow',
+                'range' => '2000 - 2999 master points',
+            ],
+            $points < 4000 => [
+                'tier' => 'Platinum',
+                'badge' => 'Platinum',
+                'tone' => 'emerald',
+                'range' => '3000 - 3999 master points',
+            ],
+            $points < 5000 => [
+                'tier' => 'Diamond',
+                'badge' => 'Diamond',
+                'tone' => 'sky',
+                'range' => '4000 - 4999 master points',
+            ],
+            $points < 6000 => [
                 'tier' => 'Crown',
                 'badge' => 'Crown',
                 'tone' => 'violet',
-                'range' => '3200 - 3699 views',
+                'range' => '5000 - 5999 master points',
             ],
-            $views < 3900 => [
+            $points < 7000 => [
                 'tier' => 'Ace',
                 'badge' => 'Ace',
                 'tone' => 'rose',
-                'range' => '3700 - 3899 views',
+                'range' => '6000 - 6999 master points',
             ],
-            $views < 4050 => [
+            $points < 8000 => [
                 'tier' => 'Ace Master',
                 'badge' => 'Ace Master',
                 'tone' => 'rose',
-                'range' => '3900 - 4049 views',
+                'range' => '7000 - 7999 master points',
             ],
-            default => [
+            $points < 9000 => [
                 'tier' => 'Ace Dominator',
                 'badge' => 'Ace Dominator',
                 'tone' => 'rose',
-                'range' => '4050 - 4200+ views',
+                'range' => '8000 - 8999 master points',
+            ],
+            default => [
+                'tier' => 'Conqueror',
+                'badge' => 'Conqueror',
+                'tone' => 'rose',
+                'range' => '9000+ master points',
             ],
         };
+    }
+
+    public function viewRank(int $views, ?int $position = null): array
+    {
+        return $this->dailyViewRank($views);
+    }
+
+    public function masterPointsForCounts(int $views, int $clicks, ?float $conversionRate = null): array
+    {
+        $conversionRate ??= $views > 0 ? round(($clicks / $views) * 100, 2) : 0.0;
+
+        $viewPoints = intdiv(max($views, 0), 1000) * 1000;
+        $clickPoints = max($clicks, 0) * 25;
+        $bonusPoints = $conversionRate > 5.0 ? 100 : 0;
+
+        return [
+            'view_points' => $viewPoints,
+            'click_points' => $clickPoints,
+            'bonus_points' => $bonusPoints,
+            'total' => $viewPoints + $clickPoints + $bonusPoints,
+        ];
+    }
+
+    public function dailyViewLadder(): array
+    {
+        return [
+            ['tier' => 'Bronze', 'range' => '< 1000 views today'],
+            ['tier' => 'Silver', 'range' => '1000 - 1999 views today'],
+            ['tier' => 'Gold', 'range' => '2000 - 2999 views today'],
+            ['tier' => 'Platinum', 'range' => '3000 - 3999 views today'],
+            ['tier' => 'Diamond', 'range' => '4000 - 4999 views today'],
+            ['tier' => 'Conqueror', 'range' => '5000+ views today'],
+        ];
+    }
+
+    public function masterPointLadder(): array
+    {
+        return [
+            ['tier' => 'Bronze', 'range' => '< 1000 master points'],
+            ['tier' => 'Silver', 'range' => '1000 - 1999 master points'],
+            ['tier' => 'Gold', 'range' => '2000 - 2999 master points'],
+            ['tier' => 'Platinum', 'range' => '3000 - 3999 master points'],
+            ['tier' => 'Diamond', 'range' => '4000 - 4999 master points'],
+            ['tier' => 'Crown', 'range' => '5000 - 5999 master points'],
+            ['tier' => 'Ace', 'range' => '6000 - 6999 master points'],
+            ['tier' => 'Ace Master', 'range' => '7000 - 7999 master points'],
+            ['tier' => 'Ace Dominator', 'range' => '8000 - 8999 master points'],
+            ['tier' => 'Conqueror', 'range' => '9000+ master points'],
+        ];
     }
 
     public function adminAnalyticsSnapshot(): array
@@ -463,7 +559,8 @@ class VisitorMetricsService
 
         $query = NewsItemDailyMetric::query()
             ->selectRaw('COALESCE(SUM(views_count), 0) as views, COALESCE(SUM(clicks_count), 0) as clicks')
-            ->whereBetween('metric_date', [$startDate, $endDate]);
+            ->whereDate('metric_date', '>=', $startDate)
+            ->whereDate('metric_date', '<=', $endDate);
 
         if ($sectionId) {
             $query->whereHas('newsItem', fn ($newsItemQuery) => $newsItemQuery->where('news_section_id', $sectionId));

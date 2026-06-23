@@ -3,7 +3,8 @@
 @section('title', 'Admin Analytics - World Cup News Explorer')
 
 @php
-    $viewRank = $analyticsSummary['view_rank'];
+    $viewRank = $analyticsSummary['daily_rank'];
+    $masterRank = $analyticsSummary['master_rank'];
     $trendsAssessment = $trendsAnalyticsSummary['assessment'];
 
     $breakdownCards = [
@@ -167,19 +168,24 @@
     <section class="mb-8 rounded-[2rem] border px-5 py-5 shadow-sm {{ $rankToneClasses }}">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] opacity-80">View Rank</p>
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] opacity-80">Daily View Rank</p>
                 <h2 class="mt-2 text-3xl font-black">{{ $viewRank['tier'] }}</h2>
-                <p class="mt-2 text-sm opacity-80">Current range: {{ $viewRank['range'] }}. Ranking is based on total article views.</p>
+                <p class="mt-2 text-sm opacity-80">Today&apos;s range: {{ $viewRank['range'] }}. This ladder resets every new day.</p>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:min-w-[320px]">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:min-w-[520px]">
                 <div class="rounded-[1.6rem] border border-white/40 bg-white/70 px-5 py-4 shadow-sm">
-                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-70">Article Views</p>
-                    <p class="mt-2 text-3xl font-black">{{ number_format($analyticsSummary['article_views']) }}</p>
+                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-70">Today&apos;s Views</p>
+                    <p class="mt-2 text-3xl font-black">{{ number_format($analyticsSummary['daily_views']) }}</p>
+                </div>
+                <div class="rounded-[1.6rem] border border-white/40 bg-white/70 px-5 py-4 shadow-sm">
+                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-70">Master Points</p>
+                    <p class="mt-2 text-3xl font-black">{{ number_format($analyticsSummary['master_points']) }}</p>
+                    <p class="mt-1 text-xs opacity-70">{{ $masterRank['tier'] }}</p>
                 </div>
                 <a href="{{ route('admin.analytics.ranking') }}" class="rounded-[1.6rem] border border-white/40 bg-slate-950 px-5 py-4 text-white shadow-sm transition hover:bg-slate-800">
                     <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/70">Open Detail Page</p>
-                    <p class="mt-2 text-base font-black">Detailed Ranking Analytics</p>
-                    <p class="mt-1 text-xs text-white/75">View the full ladder and ranked articles.</p>
+                    <p class="mt-2 text-base font-black">Daily + Total Ranking</p>
+                    <p class="mt-1 text-xs text-white/75">View both ladders, point rules, and article tables.</p>
                 </a>
             </div>
         </div>

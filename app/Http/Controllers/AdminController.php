@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Jobs\RunNewsSyncCycle;
 use App\Models\NewsItem;
+use App\Models\NewsItemDailyMetric;
 use App\Models\NewsSection;
 use App\Models\NewsTopic;
 use App\Models\Setting;
@@ -577,7 +578,12 @@ class AdminController extends Controller
 
     protected function analyticsSummary(VisitorMetricsService $visitorMetrics): array
     {
+        $today = now()->toDateString();
+        $masterPointExpression = '(FLOOR(views_count / 1000) * 1000) + (clicks_count * 25) + (CASE WHEN views_count > 0 AND ((clicks_count * 100.0) / views_count) > 5 THEN 100 ELSE 0 END)';
+
         return array_merge($visitorMetrics->articleAnalyticsSummary(), [
+            'daily_ladder' => $visitorMetrics->dailyViewLadder(),
+            'master_ladder' => $visitorMetrics->masterPointLadder(),
             'top_viewed' => NewsItem::with('newsTopic')
                 ->orderByDesc('views_count')
                 ->orderByDesc('published_at')
@@ -586,6 +592,38 @@ class AdminController extends Controller
                 ->values()
                 ->map(function (NewsItem $article, int $index) use ($visitorMetrics) {
                     $article->setAttribute('view_rank', $visitorMetrics->viewRank((int) $article->views_count, $index + 1));
+
+                    return $article;
+                }),
+            'top_daily_ranked' => NewsItemDailyMetric::query()
+                ->with(['newsItem.newsTopic'])
+                ->whereDate('metric_date', $today)
+                ->orderByDesc('views_count')
+                ->orderByDesc('clicks_count')
+                ->take(12)
+                ->get()
+                ->values()
+                ->map(function (NewsItemDailyMetric $metric) use ($visitorMetrics) {
+                    $metric->setAttribute('daily_rank', $visitorMetrics->dailyViewRank((int) $metric->views_count));
+
+                    return $metric;
+                }),
+            'top_master_ranked' => NewsItem::query()
+                ->with('newsTopic')
+                ->select('news_items.*')
+                ->selectRaw("{$masterPointExpression} as master_points")
+                ->orderByRaw("{$masterPointExpression} desc")
+                ->orderByDesc('views_count')
+                ->orderByDesc('published_at')
+                ->take(12)
+                ->get()
+                ->values()
+                ->map(function (NewsItem $article) use ($visitorMetrics) {
+                    $article->setAttribute('master_rank', $visitorMetrics->masterPointRank((int) $article->master_points));
+                    $article->setAttribute('master_points_breakdown', $visitorMetrics->masterPointsForCounts(
+                        (int) $article->views_count,
+                        (int) $article->clicks_count
+                    ));
 
                     return $article;
                 }),

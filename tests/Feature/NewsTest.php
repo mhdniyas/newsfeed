@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\NewsItem;
+use App\Models\NewsItemDailyMetric;
 use App\Models\NewsSection;
 use App\Models\Setting;
 use App\Models\NewsTopic;
@@ -432,11 +433,11 @@ class NewsTest extends TestCase
         $page->assertSee('How sponsors appear on the site');
     }
 
-    public function test_admin_analytics_shows_pubg_style_view_ranks()
+    public function test_admin_analytics_shows_daily_and_master_rankings()
     {
         $topic = NewsTopic::create(['name' => 'Ranking Topic', 'keyword' => 'ranking-topic']);
 
-        NewsItem::create([
+        $diamondStory = NewsItem::create([
             'news_topic_id' => $topic->id,
             'title' => 'Diamond Story',
             'source_name' => 'FIFA',
@@ -445,9 +446,10 @@ class NewsTest extends TestCase
             'published_at' => now(),
             'is_visible' => true,
             'views_count' => 2750,
+            'clicks_count' => 10,
         ]);
 
-        NewsItem::create([
+        $aceStory = NewsItem::create([
             'news_topic_id' => $topic->id,
             'title' => 'Ace Story',
             'source_name' => 'FIFA',
@@ -456,25 +458,45 @@ class NewsTest extends TestCase
             'published_at' => now()->subMinute(),
             'is_visible' => true,
             'views_count' => 3900,
+            'clicks_count' => 70,
+        ]);
+
+        NewsItemDailyMetric::create([
+            'news_item_id' => $diamondStory->id,
+            'metric_date' => now()->toDateString(),
+            'views_count' => 2100,
+            'clicks_count' => 20,
+        ]);
+
+        NewsItemDailyMetric::create([
+            'news_item_id' => $aceStory->id,
+            'metric_date' => now()->toDateString(),
+            'views_count' => 3000,
+            'clicks_count' => 50,
         ]);
 
         $response = $this->withSession(['admin_authenticated' => true])
             ->get(route('admin.analytics'));
 
         $response->assertOk();
-        $response->assertSee('Detailed Ranking Analytics');
-        $response->assertSee('Ace Dominator');
-        $response->assertSee('Current range: 4050 - 4200+ views');
-        $response->assertDontSee('RP views');
+        $response->assertSee('Daily View Rank');
+        $response->assertSee('Conqueror');
+        $response->assertSee('5000+ views today');
+        $response->assertSee('Daily + Total Ranking');
+        $response->assertDontSee('RP');
 
         $rankingResponse = $this->withSession(['admin_authenticated' => true])
             ->get(route('admin.analytics.ranking'));
 
         $rankingResponse->assertOk();
-        $rankingResponse->assertSee('Rank Ladder');
+        $rankingResponse->assertSee('Daily Rank Ladder');
+        $rankingResponse->assertSee('Master Points Ladder');
+        $rankingResponse->assertSee('Daily Ranking Table');
+        $rankingResponse->assertSee('Master Ranking Table');
         $rankingResponse->assertSee('Diamond Story');
         $rankingResponse->assertSee('Diamond');
         $rankingResponse->assertSee('Ace Story');
+        $rankingResponse->assertSee('8,000');
     }
 
     /**

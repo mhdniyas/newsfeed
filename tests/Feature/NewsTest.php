@@ -543,6 +543,8 @@ class NewsTest extends TestCase
         $response->assertSee('Latest Posts');
         $response->assertSee('Fresh Story');
         $response->assertSee('Top Sections By Posts');
+        $response->assertDontSee('@foreach($contentChartCards as $chartCard)', false);
+        $response->assertDontSee('{{ $chart[\'title\'] }}', false);
     }
 
     /**

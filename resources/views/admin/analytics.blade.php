@@ -209,8 +209,13 @@
                 @foreach($chartCards as $chartCard)
                     @php
                         $chart = $analyticsCharts[$chartCard['key']];
+                        $tabClasses = 'analytics-graph-tab inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-100';
+
+                        if ($loop->first) {
+                            $tabClasses .= ' bg-slate-950 text-white hover:bg-slate-800';
+                        }
                     @endphp
-                    <button type="button" data-graph-target="{{ $chartCard['key'] }}" class="analytics-graph-tab inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-100 {{ $loop->first ? 'bg-slate-950 text-white hover:bg-slate-800' : '' }}">
+                    <button type="button" data-graph-target="{{ $chartCard['key'] }}" class="{{ $tabClasses }}">
                         {{ $chart['title'] }}
                     </button>
                 @endforeach
@@ -571,8 +576,15 @@
                 </div>
                 <div class="flex flex-wrap gap-2" id="content-graph-switch">
                     @foreach($contentChartCards as $chartCard)
-                        @php($chart = $contentCharts[$chartCard['key']])
-                        <button type="button" data-content-graph-target="{{ $chartCard['key'] }}" class="content-graph-tab inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-100 {{ $loop->first ? 'bg-slate-950 text-white hover:bg-slate-800' : '' }}">
+                        @php
+                            $chart = $contentCharts[$chartCard['key']];
+                            $tabClasses = 'content-graph-tab inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-100';
+
+                            if ($loop->first) {
+                                $tabClasses .= ' bg-slate-950 text-white hover:bg-slate-800';
+                            }
+                        @endphp
+                        <button type="button" data-content-graph-target="{{ $chartCard['key'] }}" class="{{ $tabClasses }}">
                             {{ $chart['title'] }}
                         </button>
                     @endforeach

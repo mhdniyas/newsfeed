@@ -9,6 +9,9 @@ Route::redirect('/', '/world-cup-news');
 
 // Public News Explorer Routes
 Route::get('/world-cup-news', [NewsController::class, 'index'])->name('news.index');
+Route::get('/world-cup-news/top-stories', [NewsController::class, 'topStories'])->name('news.top');
+Route::get('/world-cup-news/trending', [NewsController::class, 'trending'])->name('news.trending');
+Route::get('/world-cup-news/fifa', [NewsController::class, 'fifa'])->name('news.fifa');
 Route::get('/world-cup-news/ai-news', [NewsController::class, 'aiNews'])->name('news.ai');
 Route::get('/world-cup-news/fixtures', [NewsController::class, 'fixtures'])->name('news.fixtures');
 Route::get('/world-cup-news/live-score', [NewsController::class, 'scores'])->name('news.scores');

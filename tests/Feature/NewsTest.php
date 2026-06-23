@@ -107,6 +107,153 @@ class NewsTest extends TestCase
         $response->assertSee('Topic 1');
     }
 
+    public function test_top_stories_page_shows_only_featured_articles()
+    {
+        $topic = NewsTopic::create(['name' => 'Topic', 'keyword' => 'topic']);
+
+        NewsItem::create([
+            'news_topic_id' => $topic->id,
+            'title' => 'Featured Story',
+            'source_name' => 'FIFA',
+            'url' => 'https://example.com/featured-story',
+            'hash' => 'featured-story',
+            'published_at' => now(),
+            'is_visible' => true,
+            'is_featured' => true,
+        ]);
+
+        NewsItem::create([
+            'news_topic_id' => $topic->id,
+            'title' => 'Standard Story',
+            'source_name' => 'FIFA',
+            'url' => 'https://example.com/standard-story',
+            'hash' => 'standard-story',
+            'published_at' => now()->subMinute(),
+            'is_visible' => true,
+            'is_featured' => false,
+        ]);
+
+        $response = $this->get(route('news.top'));
+
+        $response->assertOk();
+        $this->assertMatchesRegularExpression('/<article[\s\S]*Featured Story/', $response->getContent());
+        $this->assertDoesNotMatchRegularExpression('/<article[\s\S]*Standard Story/', $response->getContent());
+    }
+
+    public function test_trending_page_shows_recent_articles()
+    {
+        $topic = NewsTopic::create(['name' => 'Topic', 'keyword' => 'topic']);
+
+        NewsItem::create([
+            'news_topic_id' => $topic->id,
+            'title' => 'Newest Story',
+            'source_name' => 'FIFA',
+            'url' => 'https://example.com/newest-story',
+            'hash' => 'newest-story',
+            'published_at' => now(),
+            'is_visible' => true,
+        ]);
+
+        NewsItem::create([
+            'news_topic_id' => $topic->id,
+            'title' => 'Older Story',
+            'source_name' => 'FIFA',
+            'url' => 'https://example.com/older-story',
+            'hash' => 'older-story',
+            'published_at' => now()->subDays(2),
+            'is_visible' => true,
+        ]);
+
+        $response = $this->get(route('news.trending'));
+
+        $response->assertOk();
+        $response->assertSee('Newest Story');
+        $response->assertSee('Older Story');
+        $response->assertSeeInOrder(['Newest Story', 'Older Story'], false);
+    }
+
+    public function test_fifa_page_shows_only_sports_section_articles()
+    {
+        $sportsSection = \App\Models\NewsSection::query()
+            ->where('slug', 'sports')
+            ->orWhere('name', 'Sports')
+            ->firstOrFail();
+
+        $worldSection = \App\Models\NewsSection::firstOrCreate([
+            'slug' => 'world',
+        ], [
+            'name' => 'World',
+            'description' => 'World section',
+            'sort_order' => 2,
+            'is_active' => true,
+            'is_default' => false,
+            'refresh_interval_minutes' => 10,
+            'card_limit' => 6,
+        ]);
+
+        $sportsTopic = NewsTopic::create([
+            'news_section_id' => $sportsSection->id,
+            'name' => 'Sports Topic',
+            'keyword' => 'sports-topic',
+        ]);
+
+        $worldTopic = NewsTopic::create([
+            'news_section_id' => $worldSection->id,
+            'name' => 'World Topic',
+            'keyword' => 'world-topic',
+        ]);
+
+        NewsItem::create([
+            'news_topic_id' => $sportsTopic->id,
+            'news_section_id' => $sportsSection->id,
+            'title' => 'Sports Story',
+            'source_name' => 'FIFA',
+            'url' => 'https://example.com/sports-story',
+            'hash' => 'sports-story',
+            'published_at' => now(),
+            'is_visible' => true,
+        ]);
+
+        NewsItem::create([
+            'news_topic_id' => $worldTopic->id,
+            'news_section_id' => $worldSection->id,
+            'title' => 'World Story',
+            'source_name' => 'BBC',
+            'url' => 'https://example.com/world-story',
+            'hash' => 'world-story',
+            'published_at' => now()->subMinute(),
+            'is_visible' => true,
+        ]);
+
+        $response = $this->get(route('news.fifa'));
+
+        $response->assertOk();
+        $this->assertMatchesRegularExpression('/<article[\s\S]*Sports Story/', $response->getContent());
+        $this->assertDoesNotMatchRegularExpression('/<article[\s\S]*World Story/', $response->getContent());
+    }
+
+    public function test_mobile_nav_shows_public_compact_destinations_for_guests()
+    {
+        $response = $this->get(route('news.index'));
+
+        $response->assertOk();
+        $response->assertSee('aria-label="Top"', false);
+        $response->assertSee('aria-label="Trending"', false);
+        $response->assertSee('aria-label="FIFA"', false);
+        $response->assertDontSee('aria-label="Admin"', false);
+    }
+
+    public function test_mobile_nav_swaps_fifa_for_admin_when_authenticated()
+    {
+        $response = $this->withSession(['admin_authenticated' => true])->get(route('news.index'));
+
+        $response->assertOk();
+        $response->assertSee('aria-label="Top"', false);
+        $response->assertSee('aria-label="Trending"', false);
+        $response->assertSee('aria-label="Admin"', false);
+        $response->assertDontSee('aria-label="FIFA"', false);
+    }
+
     /**
      * Test admin auth login logic and redirects.
      */

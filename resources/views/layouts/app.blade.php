@@ -76,23 +76,30 @@
                 'icon' => 'home',
             ],
             [
-                'label' => 'Fixtures',
-                'href' => route('news.fixtures'),
-                'active' => request()->routeIs('news.fixtures'),
-                'icon' => 'calendar',
+                'label' => 'Top',
+                'href' => route('news.top'),
+                'active' => request()->routeIs('news.top'),
+                'icon' => 'top',
             ],
             [
-                'label' => 'AI',
-                'href' => route('news.ai'),
-                'active' => request()->routeIs('news.ai'),
-                'icon' => 'ai',
+                'label' => 'Trending',
+                'href' => route('news.trending'),
+                'active' => request()->routeIs('news.trending'),
+                'icon' => 'trending',
             ],
-            [
-                'label' => session('admin_authenticated') ? 'Admin' : 'Contact',
-                'href' => session('admin_authenticated') ? route('admin.dashboard') : $whatsAppHref,
-                'active' => request()->routeIs('admin.*'),
-                'icon' => session('admin_authenticated') ? 'admin' : 'contact',
-            ],
+            session('admin_authenticated')
+                ? [
+                    'label' => 'Admin',
+                    'href' => route('admin.dashboard'),
+                    'active' => request()->routeIs('admin.*'),
+                    'icon' => 'admin',
+                ]
+                : [
+                    'label' => 'FIFA',
+                    'href' => route('news.fifa'),
+                    'active' => request()->routeIs('news.fifa'),
+                    'icon' => 'fifa',
+                ],
         ];
     @endphp
 
@@ -260,50 +267,43 @@
         </div>
     </div>
 
-    <nav class="fixed inset-x-0 bottom-0 z-[70] px-4 pb-[calc(env(safe-area-inset-bottom)+0.9rem)] pt-3 md:hidden">
-        <div class="mx-auto flex max-w-sm items-center justify-between rounded-[2rem] border border-white/80 bg-white/95 px-3 py-2 shadow-[0_18px_40px_rgba(15,23,42,0.12)] backdrop-blur-xl">
+    <nav class="fixed inset-x-0 bottom-0 z-[70] px-4 pb-[calc(env(safe-area-inset-bottom)+0.55rem)] pt-2 md:hidden">
+        <div class="mx-auto flex max-w-sm items-center justify-between rounded-[1.7rem] border border-white/80 bg-white/95 px-2 py-1.5 shadow-[0_14px_32px_rgba(15,23,42,0.10)] backdrop-blur-xl">
             @foreach($mobileNavItems as $item)
                 <a href="{{ $item['href'] }}"
                    aria-label="{{ $item['label'] }}"
-                   class="group flex h-14 items-center justify-center rounded-[1.6rem] px-3 text-sm font-semibold transition-all duration-200 {{ $item['active'] ? 'min-w-[4.8rem] gap-2 bg-slate-950 text-white shadow-[0_10px_24px_rgba(15,23,42,0.22)]' : 'min-w-[3.2rem] text-slate-400 hover:bg-slate-100 hover:text-slate-700' }}">
-                    <span class="flex h-11 w-11 items-center justify-center rounded-[1.4rem] {{ $item['active'] ? 'bg-transparent' : 'bg-transparent' }}">
+                   class="group flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-[1.25rem] px-1.5 py-2 text-[10px] font-semibold leading-none transition-all duration-200 {{ $item['active'] ? 'bg-slate-950 text-white shadow-[0_8px_20px_rgba(15,23,42,0.20)]' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700' }}">
+                    <span class="flex h-4 w-4 items-center justify-center">
                         @if($item['icon'] === 'home')
-                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="M3 10.5 12 3l9 7.5"></path>
                                 <path d="M5 9.5V21h14V9.5"></path>
                             </svg>
-                        @elseif($item['icon'] === 'calendar')
-                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M7 3v3"></path>
-                                <path d="M17 3v3"></path>
-                                <rect x="3" y="5" width="18" height="16" rx="3"></rect>
-                                <path d="M3 10h18"></path>
+                        @elseif($item['icon'] === 'top')
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="m12 4 2.7 5.4 6 .9-4.3 4.2 1 5.9-5.4-2.8-5.4 2.8 1-5.9-4.3-4.2 6-.9L12 4Z"></path>
                             </svg>
-                        @elseif($item['icon'] === 'ai')
-                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <rect x="4" y="4" width="16" height="16" rx="4"></rect>
-                                <path d="M9 15v-6"></path>
-                                <path d="M15 15v-6"></path>
-                                <path d="M8 12h2"></path>
-                                <path d="M14 12h2"></path>
-                                <path d="M8 9h2"></path>
-                                <path d="M14 9h2"></path>
+                        @elseif($item['icon'] === 'trending')
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M4 15 9 10l4 4 7-8"></path>
+                                <path d="M20 10V6h-4"></path>
                             </svg>
-                        @elseif($item['icon'] === 'contact')
-                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <path d="M21 11.5a8.38 8.38 0 0 1-1.1 4.2L21 21l-5.5-1.1A8.5 8.5 0 1 1 21 11.5Z"></path>
-                                <path d="M9.8 9.3c.2-.5.4-.5.7-.5h.6c.2 0 .4 0 .5.4l.7 1.8c.1.2.1.4 0 .6l-.4.6c-.1.2-.2.3 0 .5.4.7 1 1.3 1.7 1.7.2.1.3.1.5 0l.6-.4c.2-.1.4-.1.6 0l1.8.7c.3.1.4.3.4.5v.6c0 .3 0 .5-.5.7-.5.2-1.6.3-3.2-.5-1.1-.5-2.1-1.4-2.9-2.3-.8-.8-1.7-1.8-2.3-2.9-.8-1.6-.7-2.7-.5-3.2Z"></path>
+                        @elseif($item['icon'] === 'fifa')
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="8"></circle>
+                                <path d="M12 4v16"></path>
+                                <path d="M4 12h16"></path>
+                                <path d="M6.5 6.5c2 1.5 3.5 1.5 5.5 0 2 1.5 3.5 1.5 5.5 0"></path>
+                                <path d="M6.5 17.5c2-1.5 3.5-1.5 5.5 0 2-1.5 3.5-1.5 5.5 0"></path>
                             </svg>
                         @else
-                            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z"></path>
                                 <path d="M4 20a8 8 0 0 1 16 0"></path>
                             </svg>
                         @endif
                     </span>
-                    @if($item['active'])
-                        <span class="pr-1 text-[13px] font-medium tracking-tight">{{ $item['label'] }}</span>
-                    @endif
+                    <span class="truncate">{{ $item['label'] }}</span>
                 </a>
             @endforeach
         </div>

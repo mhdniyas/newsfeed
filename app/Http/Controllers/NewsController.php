@@ -17,6 +17,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -159,6 +160,83 @@ class NewsController extends Controller
         ));
     }
 
+    public function topStories(Request $request, VisitorMetricsService $visitorMetrics)
+    {
+        return $this->renderCuratedFeed(
+            $request,
+            $visitorMetrics,
+            [
+                'eyebrow' => 'Featured Feed',
+                'title' => 'Top Stories',
+                'description' => 'Featured headlines curated from the strongest stories across the news stream.',
+                'empty_title' => 'No top stories yet',
+                'empty_description' => 'Feature articles in admin and they will appear here.',
+                'stat_label' => 'Featured Stories',
+                'accent_classes' => 'border-amber-200 bg-[radial-gradient(circle_at_top_left,_rgba(251,191,36,0.18),_transparent_30%),linear-gradient(135deg,_#ffffff_0%,_#fffbeb_58%,_#fff7ed_100%)]',
+                'stat_classes' => 'border-amber-200 bg-white/90',
+                'stat_text_classes' => 'text-amber-700/70',
+                'hero_text_classes' => 'text-slate-950',
+                'hero_copy_classes' => 'text-slate-600',
+            ],
+            fn (Builder $query) => $query->featured()
+        );
+    }
+
+    public function trending(Request $request, VisitorMetricsService $visitorMetrics)
+    {
+        return $this->renderCuratedFeed(
+            $request,
+            $visitorMetrics,
+            [
+                'eyebrow' => 'Latest Feed',
+                'title' => 'Trending',
+                'description' => 'The newest visible stories across every active section, sorted by fresh publication time.',
+                'empty_title' => 'No trending stories yet',
+                'empty_description' => 'Run a sync and the latest stories will appear here.',
+                'stat_label' => 'Recent Stories',
+                'accent_classes' => 'border-sky-200 bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.18),_transparent_32%),linear-gradient(135deg,_#ffffff_0%,_#f8fafc_58%,_#ecfeff_100%)]',
+                'stat_classes' => 'border-sky-200 bg-white/90',
+                'stat_text_classes' => 'text-sky-700/70',
+                'hero_text_classes' => 'text-slate-950',
+                'hero_copy_classes' => 'text-slate-600',
+            ],
+            fn (Builder $query) => $query
+        );
+    }
+
+    public function fifa(Request $request, VisitorMetricsService $visitorMetrics)
+    {
+        $sportsSection = NewsSection::query()
+            ->where('slug', 'sports')
+            ->orWhere('name', 'Sports')
+            ->first();
+
+        return $this->renderCuratedFeed(
+            $request,
+            $visitorMetrics,
+            [
+                'eyebrow' => 'Sports Feed',
+                'title' => 'FIFA',
+                'description' => $sportsSection?->description ?: 'Sports coverage gathered into one public feed for fast mobile browsing.',
+                'empty_title' => 'No FIFA stories yet',
+                'empty_description' => 'Sync the Sports section and stories will appear here.',
+                'stat_label' => 'Sports Stories',
+                'accent_classes' => 'border-emerald-200 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.18),_transparent_30%),linear-gradient(135deg,_#ffffff_0%,_#f0fdf4_58%,_#ecfeff_100%)]',
+                'stat_classes' => 'border-emerald-200 bg-white/90',
+                'stat_text_classes' => 'text-emerald-700/70',
+                'hero_text_classes' => 'text-slate-950',
+                'hero_copy_classes' => 'text-slate-600',
+            ],
+            function (Builder $query) use ($sportsSection) {
+                if ($sportsSection) {
+                    $query->where('news_section_id', $sportsSection->id);
+                } else {
+                    $query->whereRaw('1 = 0');
+                }
+            }
+        );
+    }
+
     public function scores(Request $request, VisitorMetricsService $visitorMetrics, FifaMatchService $fifaMatchService)
     {
         return view('news.scores', array_merge(
@@ -217,6 +295,30 @@ class NewsController extends Controller
         return view('news.ai', array_merge(
             $this->publicPageContext($request, $visitorMetrics),
             compact('articles', 'aiSection', 'aiTopics')
+        ));
+    }
+
+    protected function renderCuratedFeed(
+        Request $request,
+        VisitorMetricsService $visitorMetrics,
+        array $feedMeta,
+        callable $scope
+    ) {
+        $query = NewsItem::visible()
+            ->with(['newsTopic', 'newsSection'])
+            ->orderByDesc('published_at')
+            ->orderByDesc('id');
+
+        $scope($query);
+
+        $articles = $query->paginate(18);
+
+        return view('news.feed', array_merge(
+            $this->publicPageContext($request, $visitorMetrics),
+            [
+                'articles' => $articles,
+                'feedMeta' => $feedMeta,
+            ]
         ));
     }
 

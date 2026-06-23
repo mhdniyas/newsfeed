@@ -191,8 +191,8 @@
                 </div>
                 <a href="{{ route('admin.analytics.ranking') }}" class="rounded-[1.6rem] border border-white/40 bg-slate-950 px-5 py-4 text-white shadow-sm transition hover:bg-slate-800">
                     <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/70">Open Detail Page</p>
-                    <p class="mt-2 text-base font-black">Daily + Total Ranking</p>
-                    <p class="mt-1 text-xs text-white/75">View both ladders, point rules, and article tables.</p>
+                    <p class="mt-2 text-base font-black">Signalz XP Dashboard</p>
+                    <p class="mt-1 text-xs text-white/75">Open missions, streaks, weekly growth, and lifetime rank.</p>
                 </a>
             </div>
         </div>

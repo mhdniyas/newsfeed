@@ -433,7 +433,7 @@ class NewsTest extends TestCase
         $page->assertSee('How sponsors appear on the site');
     }
 
-    public function test_admin_analytics_shows_daily_and_master_rankings()
+    public function test_admin_ranking_dashboard_shows_signalz_xp_system()
     {
         $topic = NewsTopic::create(['name' => 'Ranking Topic', 'keyword' => 'ranking-topic']);
 
@@ -475,6 +475,9 @@ class NewsTest extends TestCase
             'clicks_count' => 50,
         ]);
 
+        Setting::set('visits_public_total', '120');
+        Setting::set('visits_public_' . now()->toDateString(), '120');
+
         $response = $this->withSession(['admin_authenticated' => true])
             ->get(route('admin.analytics'));
 
@@ -482,21 +485,22 @@ class NewsTest extends TestCase
         $response->assertSee('Daily View Rank');
         $response->assertSee('Conqueror');
         $response->assertSee('5000+ views today');
-        $response->assertSee('Daily + Total Ranking');
+        $response->assertSee('Signalz XP Dashboard');
         $response->assertDontSee('RP');
 
         $rankingResponse = $this->withSession(['admin_authenticated' => true])
             ->get(route('admin.analytics.ranking'));
 
         $rankingResponse->assertOk();
-        $rankingResponse->assertSee('Daily Rank Ladder');
-        $rankingResponse->assertSee('Master Points Ladder');
-        $rankingResponse->assertSee('Daily Ranking Table');
-        $rankingResponse->assertSee('Master Ranking Table');
-        $rankingResponse->assertSee('Diamond Story');
-        $rankingResponse->assertSee('Diamond');
-        $rankingResponse->assertSee('Ace Story');
-        $rankingResponse->assertSee('8,000');
+        $rankingResponse->assertSee('Signalz Admin XP');
+        $rankingResponse->assertSee('Today&apos;s Signalz XP', false);
+        $rankingResponse->assertSee('Daily Missions');
+        $rankingResponse->assertSee('Private motivation dashboard');
+        $rankingResponse->assertSee('This Week');
+        $rankingResponse->assertSee('Lifetime');
+        $rankingResponse->assertSee('Growth Streak');
+        $rankingResponse->assertSee('Point Rules');
+        $rankingResponse->assertSee('Last 7 days progress');
     }
 
     public function test_admin_analytics_shows_content_tab_metrics()

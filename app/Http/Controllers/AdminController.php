@@ -124,10 +124,10 @@ class AdminController extends Controller
     public function rankingAnalytics(VisitorMetricsService $visitorMetrics)
     {
         $visitStats = $visitorMetrics->getPublicStats();
-        $analyticsSummary = $this->analyticsSummary($visitorMetrics);
+        $xpDashboard = $visitorMetrics->adminXpDashboard();
         $fetchStats = $this->fetchStats();
 
-        return view('admin.analytics-ranking', compact('visitStats', 'analyticsSummary', 'fetchStats'));
+        return view('admin.analytics-ranking', compact('visitStats', 'xpDashboard', 'fetchStats'));
     }
 
     public function destroyPage(Request $request, NewsRetentionService $newsRetention)

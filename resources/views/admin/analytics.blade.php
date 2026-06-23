@@ -65,8 +65,8 @@
     </div>
 
     <div data-tab-panel="overview">
-    <div class="grid grid-cols-2 xl:grid-cols-7 gap-3 sm:gap-4 mb-6">
-        <div class="col-span-2 rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-500 to-emerald-600 p-5 text-white shadow-lg shadow-emerald-500/15 xl:col-span-1">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 mb-4">
+        <div class="rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-500 to-emerald-600 p-5 text-white shadow-lg shadow-emerald-500/15">
             <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-50/80">Live Now</p>
             <p class="mt-3 text-4xl font-black">{{ number_format($visitorSnapshot['live_now_count']) }}</p>
             <p class="mt-2 text-xs text-emerald-50/90">Visitors active in the last 5 minutes.</p>
@@ -96,6 +96,9 @@
             <p class="mt-2 text-3xl font-extrabold text-emerald-600">{{ number_format($visitStats['unique_today']) }}</p>
             <p class="mt-1 text-xs text-slate-500">Distinct fingerprints seen today.</p>
         </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 mb-6">
         <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
             <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Article Views</p>
             <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ number_format($analyticsSummary['article_views']) }}</p>

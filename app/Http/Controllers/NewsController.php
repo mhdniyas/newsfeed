@@ -78,7 +78,7 @@ class NewsController extends Controller
 
         // Paginate - 12 articles per page
         $articles = $query->paginate(12);
-        $this->trackArticleViews($articles->pluck('id')->all());
+        $this->trackArticleViews($request, $articles->pluck('id')->all());
 
         $sections = NewsSection::where('is_active', true)
             ->withCount(['newsItems' => function ($query) {
@@ -255,6 +255,7 @@ class NewsController extends Controller
             ->orderByDesc('published_at')
             ->orderByDesc('id')
             ->paginate(24);
+        $this->trackArticleViews($request, $articles->pluck('id')->all());
 
         $galleryStats = [
             'recovered_images' => NewsItem::visible()
@@ -282,6 +283,7 @@ class NewsController extends Controller
             ->orderByDesc('published_at')
             ->orderByDesc('id')
             ->paginate(18);
+        $this->trackArticleViews($request, $articles->pluck('id')->all());
 
         $aiTopics = $aiSection
             ? NewsTopic::query()
@@ -313,6 +315,7 @@ class NewsController extends Controller
         $scope($query);
 
         $articles = $query->paginate(18);
+        $this->trackArticleViews($request, $articles->pluck('id')->all());
         $feedMeta['stat_value'] = max($articles->total(), $articles->count());
 
         return view('news.feed', array_merge(
@@ -448,8 +451,7 @@ class NewsController extends Controller
 
     public function trackArticleClick(NewsItem $article): RedirectResponse
     {
-        $article->increment('clicks_count');
-        $article->forceFill(['last_clicked_at' => now()])->save();
+        app(VisitorMetricsService::class)->trackArticleClick($article->id);
 
         return redirect()->away($article->url);
     }
@@ -474,16 +476,9 @@ class NewsController extends Controller
         ]);
     }
 
-    protected function trackArticleViews(array $articleIds): void
+    protected function trackArticleViews(Request $request, array $articleIds): void
     {
-        $articleIds = array_values(array_filter($articleIds));
-
-        if ($articleIds === []) {
-            return;
-        }
-
-        NewsItem::whereIn('id', $articleIds)->increment('views_count');
-        NewsItem::whereIn('id', $articleIds)->update(['last_viewed_at' => now()]);
+        app(VisitorMetricsService::class)->trackArticleImpressions($request, $articleIds);
     }
 
     protected function nextScheduledFetchAt(int $intervalMinutes): \Illuminate\Support\Carbon

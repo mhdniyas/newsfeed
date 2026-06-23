@@ -2,27 +2,24 @@
 
 namespace App\Services;
 
+use App\Models\NewsItemDailyMetric;
 use App\Models\Setting;
 use App\Models\VisitorAnalytic;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class VisitorMetricsService
 {
     protected int $liveWindowMinutes = 5;
+    protected int $visitDedupSeconds = 90;
+    protected int $articleViewDedupSeconds = 1800;
 
     public function recordPublicVisit(Request $request): array
     {
-        $todayKey = 'visits_public_' . now()->toDateString();
-        $total = ((int) Setting::get('visits_public_total', '0')) + 1;
-        $today = ((int) Setting::get($todayKey, '0')) + 1;
-
-        Setting::set('visits_public_total', (string) $total);
-        Setting::set($todayKey, (string) $today);
-        Setting::set('visits_public_last_seen_at', now()->toIso8601String());
-
         $fingerprint = $this->fingerprint($request);
         $todayDate = now()->toDateString();
+        $pagePath = $this->normalizedPagePath($request);
 
         $visitor = VisitorAnalytic::where('fingerprint', $fingerprint)
             ->whereDate('visit_date', $todayDate)
@@ -36,12 +33,26 @@ class VisitorMetricsService
             ]);
         }
 
+        $shouldCountVisit = $this->shouldCountVisit($fingerprint, $pagePath);
+
+        if ($shouldCountVisit) {
+            $todayKey = 'visits_public_' . $todayDate;
+            $total = ((int) Setting::get('visits_public_total', '0')) + 1;
+            $today = ((int) Setting::get($todayKey, '0')) + 1;
+
+            Setting::set('visits_public_total', (string) $total);
+            Setting::set($todayKey, (string) $today);
+        }
+
+        Setting::set('visits_public_last_seen_at', now()->toIso8601String());
+
         $visitor->fill(array_merge(
             $this->parseRequestContext($request),
             [
                 'ip_address' => $request->ip(),
                 'last_seen_at' => now(),
-                'visit_count' => ((int) $visitor->visit_count) + 1,
+                'page_path' => $pagePath,
+                'visit_count' => ((int) $visitor->visit_count) + ($shouldCountVisit ? 1 : 0),
             ]
         ));
         $visitor->save();
@@ -101,30 +112,128 @@ class VisitorMetricsService
         $articleViews = (int) DB::table('news_items')->sum('views_count');
         $articleClicks = (int) DB::table('news_items')->sum('clicks_count');
 
-        $todayViews  = (int) DB::table('news_items')->whereDate('last_viewed_at', now()->toDateString())->sum('views_count');
-        $todayClicks = (int) DB::table('news_items')->whereDate('last_clicked_at', now()->toDateString())->sum('clicks_count');
+        $todayViews = $this->metricTotals(now()->toDateString(), now()->toDateString())['views'];
+        $todayClicks = $this->metricTotals(now()->toDateString(), now()->toDateString())['clicks'];
 
-        $weekStart   = now()->startOfWeek();
-        $weekViews   = (int) DB::table('news_items')->where('last_viewed_at', '>=', $weekStart)->sum('views_count');
-        $weekClicks  = (int) DB::table('news_items')->where('last_clicked_at', '>=', $weekStart)->sum('clicks_count');
+        $weekStart = now()->startOfWeek()->toDateString();
+        $today = now()->toDateString();
+        $weekTotals = $this->metricTotals($weekStart, $today);
+        $weekViews = $weekTotals['views'];
+        $weekClicks = $weekTotals['clicks'];
 
-        $monthStart  = now()->startOfMonth();
-        $monthViews  = (int) DB::table('news_items')->where('last_viewed_at', '>=', $monthStart)->sum('views_count');
-        $monthClicks = (int) DB::table('news_items')->where('last_clicked_at', '>=', $monthStart)->sum('clicks_count');
+        $monthStart = now()->startOfMonth()->toDateString();
+        $monthTotals = $this->metricTotals($monthStart, $today);
+        $monthViews = $monthTotals['views'];
+        $monthClicks = $monthTotals['clicks'];
 
         $rate = fn (int $clicks, int $views): float => $views > 0 ? round(($clicks / $views) * 100, 2) : 0.0;
+        $todayConversionRate = $rate($todayClicks, $todayViews);
+        $dailyConversionBonus = $todayConversionRate > 5.0 ? 100 : 0;
+        $rankScore = $articleViews + $dailyConversionBonus;
 
         return [
             'article_views'  => $articleViews,
             'article_clicks' => $articleClicks,
-            'view_rank'      => $this->viewRank($articleViews),
+            'view_rank_score' => $rankScore,
+            'view_rank_bonus' => $dailyConversionBonus,
+            'view_rank_bonus_active' => $dailyConversionBonus > 0,
+            'view_rank_bonus_threshold' => 5.0,
+            'view_rank'      => $this->viewRank($rankScore),
             'conversion' => [
                 'overall_rate' => $rate($articleClicks, $articleViews),
-                'today'  => ['views' => $todayViews,  'clicks' => $todayClicks,  'rate' => $rate($todayClicks, $todayViews)],
+                'today'  => ['views' => $todayViews,  'clicks' => $todayClicks,  'rate' => $todayConversionRate],
                 'week'   => ['views' => $weekViews,   'clicks' => $weekClicks,   'rate' => $rate($weekClicks, $weekViews)],
                 'month'  => ['views' => $monthViews,  'clicks' => $monthClicks,  'rate' => $rate($monthClicks, $monthViews)],
             ],
         ];
+    }
+
+    public function trackArticleImpressions(Request $request, array $articleIds): void
+    {
+        $articleIds = array_values(array_unique(array_filter(array_map('intval', $articleIds))));
+
+        if ($articleIds === []) {
+            return;
+        }
+
+        $fingerprint = $this->fingerprint($request);
+        $newImpressions = [];
+
+        foreach ($articleIds as $articleId) {
+            $cacheKey = "article-impression:{$fingerprint}:{$articleId}";
+
+            if (Cache::add($cacheKey, now()->toIso8601String(), now()->addSeconds($this->articleViewDedupSeconds))) {
+                $newImpressions[] = $articleId;
+            }
+        }
+
+        if ($newImpressions === []) {
+            return;
+        }
+
+        DB::transaction(function () use ($newImpressions): void {
+            DB::table('news_items')
+                ->whereIn('id', $newImpressions)
+                ->increment('views_count');
+
+            DB::table('news_items')
+                ->whereIn('id', $newImpressions)
+                ->update(['last_viewed_at' => now()]);
+
+            if (!$this->dailyMetricTableReady()) {
+                return;
+            }
+
+            foreach ($newImpressions as $articleId) {
+                $metric = NewsItemDailyMetric::query()->firstOrCreate(
+                    [
+                        'news_item_id' => $articleId,
+                        'metric_date' => now()->toDateString(),
+                    ],
+                    [
+                        'views_count' => 0,
+                        'clicks_count' => 0,
+                    ]
+                );
+
+                $metric->increment('views_count');
+            }
+        });
+    }
+
+    public function trackArticleClick(int $articleId): void
+    {
+        DB::transaction(function () use ($articleId): void {
+            DB::table('news_items')
+                ->where('id', $articleId)
+                ->increment('clicks_count');
+
+            DB::table('news_items')
+                ->where('id', $articleId)
+                ->update(['last_clicked_at' => now()]);
+
+            if (!$this->dailyMetricTableReady()) {
+                return;
+            }
+
+            $metric = NewsItemDailyMetric::query()->firstOrCreate(
+                [
+                    'news_item_id' => $articleId,
+                    'metric_date' => now()->toDateString(),
+                ],
+                [
+                    'views_count' => 0,
+                    'clicks_count' => 0,
+                ]
+            );
+
+            $metric->increment('clicks_count');
+        });
+    }
+
+    public function fingerprintForRequest(Request $request): string
+    {
+        return $this->fingerprint($request);
     }
 
     public function viewRank(int $views, ?int $position = null): array
@@ -225,6 +334,40 @@ class VisitorMetricsService
             $request->ip() ?? 'unknown',
             substr((string) $request->userAgent(), 0, 255),
         ]));
+    }
+
+    protected function normalizedPagePath(Request $request): string
+    {
+        return '/' . ltrim($request->path(), '/');
+    }
+
+    protected function shouldCountVisit(string $fingerprint, string $pagePath): bool
+    {
+        $cacheKey = 'public-visit:' . sha1($fingerprint . '|' . $pagePath);
+
+        return Cache::add($cacheKey, now()->toIso8601String(), now()->addSeconds($this->visitDedupSeconds));
+    }
+
+    protected function metricTotals(string $startDate, string $endDate): array
+    {
+        if (!$this->dailyMetricTableReady()) {
+            return ['views' => 0, 'clicks' => 0];
+        }
+
+        $row = NewsItemDailyMetric::query()
+            ->selectRaw('COALESCE(SUM(views_count), 0) as views, COALESCE(SUM(clicks_count), 0) as clicks')
+            ->whereBetween('metric_date', [$startDate, $endDate])
+            ->first();
+
+        return [
+            'views' => (int) ($row->views ?? 0),
+            'clicks' => (int) ($row->clicks ?? 0),
+        ];
+    }
+
+    protected function dailyMetricTableReady(): bool
+    {
+        return DB::getSchemaBuilder()->hasTable('news_item_daily_metrics');
     }
 
     protected function liveVisitorsQuery()

@@ -55,13 +55,35 @@
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div class="rounded-[1.6rem] border border-white/40 bg-white/70 px-5 py-4 shadow-sm">
-                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-70">Article Views</p>
+                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-70">Base Views</p>
                     <p class="mt-2 text-3xl font-black">{{ number_format($analyticsSummary['article_views']) }}</p>
                 </div>
                 <div class="rounded-[1.6rem] border border-white/40 bg-white/70 px-5 py-4 shadow-sm">
-                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-70">Public Visits</p>
-                    <p class="mt-2 text-3xl font-black">{{ number_format($visitStats['total']) }}</p>
+                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-70">Rank Score</p>
+                    <p class="mt-2 text-3xl font-black">{{ number_format($analyticsSummary['view_rank_score']) }}</p>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm mb-8">
+        <div class="grid gap-3 md:grid-cols-3">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Daily Conversion</p>
+                <p class="mt-2 text-2xl font-black text-slate-900">{{ number_format($analyticsSummary['conversion']['today']['rate'], 2) }}%</p>
+                <p class="mt-1 text-xs text-slate-500">Today&apos;s clicks divided by today&apos;s views.</p>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Bonus Rule</p>
+                <p class="mt-2 text-2xl font-black text-slate-900">+100</p>
+                <p class="mt-1 text-xs text-slate-500">Awarded when daily conversion is above {{ number_format($analyticsSummary['view_rank_bonus_threshold'], 2) }}%.</p>
+            </div>
+            <div class="rounded-2xl border px-4 py-4 {{ $analyticsSummary['view_rank_bonus_active'] ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50' }}">
+                <p class="text-[10px] font-semibold uppercase tracking-[0.18em] {{ $analyticsSummary['view_rank_bonus_active'] ? 'text-emerald-700/80' : 'text-slate-400' }}">Active Bonus</p>
+                <p class="mt-2 text-2xl font-black {{ $analyticsSummary['view_rank_bonus_active'] ? 'text-emerald-700' : 'text-slate-900' }}">{{ number_format($analyticsSummary['view_rank_bonus']) }}</p>
+                <p class="mt-1 text-xs {{ $analyticsSummary['view_rank_bonus_active'] ? 'text-emerald-700/80' : 'text-slate-500' }}">
+                    {{ $analyticsSummary['view_rank_bonus_active'] ? 'Daily conversion passed the bonus threshold.' : 'No bonus yet. Increase today\'s conversion above the threshold.' }}
+                </p>
             </div>
         </div>
     </section>

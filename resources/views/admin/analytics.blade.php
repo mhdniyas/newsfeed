@@ -55,7 +55,7 @@
         <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
             <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Public Visits</p>
             <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ number_format($visitStats['total']) }}</p>
-            <p class="mt-1 text-xs text-slate-500">All page loads on the public hub.</p>
+            <p class="mt-1 text-xs text-slate-500">Deduped public page visits, not every rapid refresh.</p>
         </div>
         <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
             <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Today</p>
@@ -70,7 +70,7 @@
         <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
             <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Article Views</p>
             <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ number_format($analyticsSummary['article_views']) }}</p>
-            <p class="mt-1 text-xs text-slate-500">Loaded article card impressions.</p>
+            <p class="mt-1 text-xs text-slate-500">Deduped article impressions across public feeds.</p>
         </div>
         <div class="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-4 shadow-sm">
             <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-600">Conversions</p>
@@ -96,6 +96,9 @@
                 <h2 class="mt-0.5 text-base font-extrabold text-slate-900">Views → Conversions by Period</h2>
             </div>
             <span class="rounded-full border border-amber-200 bg-amber-50 px-4 py-1.5 text-sm font-black text-amber-700">{{ $conv['overall_rate'] }}% all-time</span>
+        </div>
+        <div class="px-5 pt-4 text-xs text-slate-500">
+            Period cards use per-day tracked article metrics, so one old article click no longer inflates the full day or week total.
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
             @foreach($periods as $p)

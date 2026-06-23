@@ -174,7 +174,10 @@
             <input type="text" id="checker-input" maxlength="12"
                    placeholder="e.g. BK 304203"
                    autocomplete="off" autocorrect="off" spellcheck="false">
-            <button id="checker-btn" type="button">🎯 Check My Number</button>
+            <button id="checker-btn" type="button" class="flex items-center justify-center gap-1.5 w-full">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Check My Number
+            </button>
             <div id="checker-result"></div>
         </div>
 
@@ -228,9 +231,12 @@
                             ? `<div class="prize-note">Matching on last 4 digits (${last4}) — verify full ticket with official gazette.</div>`
                             : `<div class="prize-note">Full ticket match — visit Kerala lottery office within 90 days.</div>`;
                         return `<div style="margin-bottom:.5rem">
-                            <div class="prize-label">🎉 ${w.prize}</div>
-                            ${w.amount ? `<div class="prize-amount">${w.amount}</div>` : ''}
-                            ${note}
+                            <div class="prize-label flex items-center gap-1.5">
+                                <svg class="h-5 w-5 text-emerald-600 inline" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                \${w.prize}
+                            </div>
+                            \${w.amount ? `<div class="prize-amount">\${w.amount}</div>` : ''}
+                            \${note}
                         </div>`;
                     }).join('<hr style="border:none;border-top:1px solid rgba(0,0,0,.1);margin:.5rem 0">');
 
@@ -242,7 +248,10 @@
                 } else {
                     result.className = 'lose';
                     result.innerHTML = `
-                        <div class="prize-label">😔 No Prize Found</div>
+                        <div class="prize-label flex items-center gap-1.5">
+                            <svg class="h-5 w-5 text-rose-500 inline" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
+                            No Prize Found
+                        </div>
                         <div class="prize-note" style="margin-top:.5rem;opacity:1">
                             The number <strong>${raw}</strong> did not match any prize in this draw.
                             Please double-check your ticket and verify with the official Kerala Lottery PDF.
@@ -276,16 +285,16 @@
         })();
         </script>
 
-        {{-- ── Top 3 Prizes ── --}}
         <div class="grid gap-4 sm:grid-cols-3">
             @foreach([
-                ['label' => '1st Prize', 'class' => 'prize-top', 'dark' => true,  'ticket' => $result->first_prize_ticket,  'amount' => $result->first_prize_amount,  'icon' => '🥇'],
-                ['label' => '2nd Prize', 'class' => 'prize-2nd', 'dark' => false, 'ticket' => $result->second_prize_ticket, 'amount' => $result->second_prize_amount, 'icon' => '🥈'],
-                ['label' => '3rd Prize', 'class' => 'prize-3rd', 'dark' => false, 'ticket' => $result->third_prize_ticket,  'amount' => $result->third_prize_amount,  'icon' => '🥉'],
+                ['label' => '1st Prize', 'class' => 'prize-top', 'dark' => true,  'ticket' => $result->first_prize_ticket,  'amount' => $result->first_prize_amount],
+                ['label' => '2nd Prize', 'class' => 'prize-2nd', 'dark' => false, 'ticket' => $result->second_prize_ticket, 'amount' => $result->second_prize_amount],
+                ['label' => '3rd Prize', 'class' => 'prize-3rd', 'dark' => false, 'ticket' => $result->third_prize_ticket,  'amount' => $result->third_prize_amount],
             ] as $prize)
                 <div class="{{ $prize['class'] }} p-5 shadow-md">
-                    <p class="text-[10px] font-bold uppercase tracking-[.2em] {{ $prize['dark'] ? 'text-amber-900/70' : 'text-slate-600/80' }}">
-                        {{ $prize['icon'] }} {{ $prize['label'] }}
+                    <p class="text-[10px] font-bold uppercase tracking-[.2em] {{ $prize['dark'] ? 'text-amber-900/70' : 'text-slate-600/80' }} flex items-center gap-1">
+                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.503-1.125 1.125-1.125h.872m5.007 0H9.5m5.007 0c.621 0 1.125-.503 1.125-1.125V6.75m-6.132 5.625c-.621 0-1.125-.503-1.125-1.125V6.75"/></svg>
+                        {{ $prize['label'] }}
                     </p>
                     <p class="mt-3 text-2xl sm:text-3xl font-black {{ $prize['dark'] ? 'text-amber-950' : 'text-slate-900' }} font-mono tracking-wide">
                         {{ $prize['ticket'] ?: '—' }}
@@ -301,7 +310,9 @@
         @if(!empty($result->consolation_prizes))
             <div class="section-card">
                 <div class="flex items-center gap-2 mb-4">
-                    <span class="text-lg">🎟️</span>
+                    <span class="text-indigo-600">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-12v.75m0 3v.75m0 3v.75m0 3V18M3 7.5A1.5 1.5 0 014.5 6h15A1.5 1.5 0 0121 7.5v9a1.5 1.5 0 01-1.5 1.5h-15A1.5 1.5 0 013 16.5v-9z"/></svg>
+                    </span>
                     <div>
                         <p class="text-[10px] font-bold uppercase tracking-[.2em] text-indigo-600/70">Consolation Prizes</p>
                         <p class="text-sm font-black text-slate-900">Full Ticket Numbers · {{ count($result->consolation_prizes) }} winners</p>

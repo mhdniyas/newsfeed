@@ -77,7 +77,7 @@ class KeralaLotteryTest extends TestCase
 
         $service = new class extends KeralaLotteryService
         {
-            protected function extractPdfText(string $absolutePath): ?string
+            public function extractPdfText(string $absolutePath): ?string
             {
                 return <<<TEXT
 KERALA STATE LOTTERIES - RESULT

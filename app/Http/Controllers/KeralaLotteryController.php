@@ -224,14 +224,7 @@ class KeralaLotteryController extends Controller
 
             $rawText = filled($result->raw_text) ? $result->raw_text : null;
             if (!$rawText) {
-                // Try to extract from PDF
-                $binary = trim((string) shell_exec('command -v pdftotext 2>/dev/null'));
-                if ($binary !== '') {
-                    $txtPath = tempnam(sys_get_temp_dir(), 'kerala-');
-                    shell_exec(escapeshellarg($binary) . ' -layout ' . escapeshellarg($pdfPath) . ' ' . escapeshellarg($txtPath) . ' 2>/dev/null');
-                    $rawText = is_file($txtPath) ? file_get_contents($txtPath) : null;
-                    @unlink($txtPath ?? '');
-                }
+                $rawText = $service->extractPdfText($pdfPath);
             }
 
             if (!filled($rawText)) {

@@ -62,7 +62,10 @@
                        autofocus="{{ $search ? 'autofocus' : false }}">
                 <button type="submit">Search</button>
                 @if($search)
-                    <a href="{{ route('kerala-lottery.index') }}" class="clear-btn">✕ Clear</a>
+                    <a href="{{ route('kerala-lottery.index') }}" class="clear-btn inline-flex items-center gap-1">
+                        <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        Clear
+                    </a>
                 @endif
             </div>
         </form>
@@ -71,7 +74,8 @@
         <div class="mt-5 flex flex-wrap gap-2">
             <a href="{{ route('kerala-lottery.today') }}"
                class="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/20 px-4 py-2 text-xs font-bold text-white transition hover:bg-white/20">
-                📅 Today's Result
+                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5m-9-6h.008v.008H12v-.008z"/></svg>
+                Today's Result
             </a>
             <a href="{{ route('kerala-lottery.index') }}"
                class="inline-flex items-center gap-1.5 rounded-full bg-white/5 border border-white/15 px-4 py-2 text-xs font-bold text-sky-200 transition hover:bg-white/10">
@@ -99,12 +103,15 @@
             @if($todayResult->hasParsedPrizes())
                 <div class="px-5 sm:px-7 pt-5 pb-3 grid gap-3 sm:grid-cols-3">
                     @foreach([
-                        ['label' => '🥇 1st Prize', 'ticket' => $todayResult->first_prize_ticket,  'amount' => $todayResult->first_prize_amount,  'color' => 'amber'],
-                        ['label' => '🥈 2nd Prize', 'ticket' => $todayResult->second_prize_ticket, 'amount' => $todayResult->second_prize_amount, 'color' => 'slate'],
-                        ['label' => '🥉 3rd Prize', 'ticket' => $todayResult->third_prize_ticket,  'amount' => $todayResult->third_prize_amount,  'color' => 'slate'],
+                        ['label' => '1st Prize', 'ticket' => $todayResult->first_prize_ticket,  'amount' => $todayResult->first_prize_amount,  'color' => 'amber'],
+                        ['label' => '2nd Prize', 'ticket' => $todayResult->second_prize_ticket, 'amount' => $todayResult->second_prize_amount, 'color' => 'slate'],
+                        ['label' => '3rd Prize', 'ticket' => $todayResult->third_prize_ticket,  'amount' => $todayResult->third_prize_amount,  'color' => 'slate'],
                     ] as $p)
                         <div class="rounded-xl border border-{{ $p['color'] }}-200 bg-{{ $p['color'] }}-50 px-4 py-3">
-                            <p class="text-[10px] font-bold uppercase tracking-[.18em] text-{{ $p['color'] }}-700/70">{{ $p['label'] }}</p>
+                            <p class="text-[10px] font-bold uppercase tracking-[.18em] text-{{ $p['color'] }}-700/70 flex items-center gap-1">
+                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.503-1.125 1.125-1.125h.872m5.007 0H9.5m5.007 0c.621 0 1.125-.503 1.125-1.125V6.75m-6.132 5.625c-.621 0-1.125-.503-1.125-1.125V6.75"/></svg>
+                                {{ $p['label'] }}
+                            </p>
                             <p class="mt-2 text-xl font-black text-slate-900 font-mono">{{ $p['ticket'] ?: '—' }}</p>
                             <p class="mt-1 text-xs font-semibold text-{{ $p['color'] }}-700">{{ $p['amount'] ?: '' }}</p>
                         </div>
@@ -163,12 +170,18 @@
                             @if($result->first_prize_ticket)
                                 <div class="mt-3 space-y-1">
                                     <div class="flex items-center justify-between gap-2">
-                                        <span class="text-[10px] font-bold uppercase tracking-[.14em] text-amber-700/80">🥇 1st</span>
+                                        <span class="text-[10px] font-bold uppercase tracking-[.14em] text-amber-700/80 flex items-center gap-0.5">
+                                            <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.503-1.125 1.125-1.125h.872m5.007 0H9.5m5.007 0c.621 0 1.125-.503 1.125-1.125V6.75"/></svg>
+                                            1st
+                                        </span>
                                         <span class="font-mono text-sm font-black text-slate-900">{{ $result->first_prize_ticket }}</span>
                                     </div>
                                     @if($result->second_prize_ticket)
                                         <div class="flex items-center justify-between gap-2">
-                                            <span class="text-[10px] font-bold uppercase tracking-[.14em] text-slate-500">🥈 2nd</span>
+                                            <span class="text-[10px] font-bold uppercase tracking-[.14em] text-slate-500 flex items-center gap-0.5">
+                                                <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.503-1.125 1.125-1.125h.872m5.007 0H9.5m5.007 0c.621 0 1.125-.503 1.125-1.125V6.75"/></svg>
+                                                2nd
+                                            </span>
                                             <span class="font-mono text-xs font-bold text-slate-700">{{ $result->second_prize_ticket }}</span>
                                         </div>
                                     @endif

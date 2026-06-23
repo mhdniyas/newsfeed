@@ -49,11 +49,11 @@ class ReparseKeralaLotteryResults extends Command
             $rawText = filled($result->raw_text) ? $result->raw_text : null;
 
             if (!$rawText) {
-                $rawText = $this->extractPdfText($pdfPath);
+                $rawText = $service->extractPdfText($pdfPath);
             }
 
             if (!filled($rawText)) {
-                $this->warn("  [NO TEXT]     #{$result->id} {$result->lottery_name} — pdftotext may not be installed");
+                $this->warn("  [NO TEXT]     #{$result->id} {$result->lottery_name} — text extraction failed");
                 $failed++;
                 continue;
             }
@@ -85,35 +85,5 @@ class ReparseKeralaLotteryResults extends Command
         $this->info("Done. Parsed: {$fixed} | Still failed: {$failed}");
 
         return self::SUCCESS;
-    }
-
-    protected function extractPdfText(string $absolutePath): ?string
-    {
-        $binary = trim((string) shell_exec('command -v pdftotext 2>/dev/null'));
-
-        if ($binary === '' || !is_file($absolutePath)) {
-            return null;
-        }
-
-        $txtPath = tempnam(sys_get_temp_dir(), 'kerala-lottery-');
-
-        if ($txtPath === false) {
-            return null;
-        }
-
-        $command = sprintf(
-            '%s -layout %s %s 2>/dev/null',
-            escapeshellarg($binary),
-            escapeshellarg($absolutePath),
-            escapeshellarg($txtPath)
-        );
-
-        shell_exec($command);
-
-        $text = is_file($txtPath) ? file_get_contents($txtPath) : false;
-
-        @unlink($txtPath);
-
-        return is_string($text) && trim($text) !== '' ? $text : null;
     }
 }

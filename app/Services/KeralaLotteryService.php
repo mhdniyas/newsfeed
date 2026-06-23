@@ -296,33 +296,50 @@ class KeralaLotteryService
         return Str::slug($lotteryName . ' ' . $drawNumber . ' result ' . $date->format('d m Y'));
     }
 
-    protected function extractPdfText(string $absolutePath): ?string
+    public function extractPdfText(string $absolutePath): ?string
     {
+        if (!is_file($absolutePath)) {
+            return null;
+        }
+
+        // 1. Try pure PHP Smalot PDF Parser first (zero system dependencies)
+        try {
+            $parser = new \Smalot\PdfParser\Parser();
+            $pdf = $parser->parseFile($absolutePath);
+            $text = $pdf->getText();
+            if (filled($text)) {
+                return $text;
+            }
+        } catch (\Throwable) {
+            // Ignore and fall back to pdftotext
+        }
+
+        // 2. Fallback to system pdftotext command if available
         $binary = trim((string) shell_exec('command -v pdftotext 2>/dev/null'));
 
-        if ($binary === '' || !is_file($absolutePath)) {
-            return null;
+        if ($binary !== '') {
+            $txtPath = tempnam(sys_get_temp_dir(), 'kerala-lottery-');
+
+            if ($txtPath !== false) {
+                $command = sprintf(
+                    '%s -layout %s %s 2>/dev/null',
+                    escapeshellarg($binary),
+                    escapeshellarg($absolutePath),
+                    escapeshellarg($txtPath)
+                );
+
+                shell_exec($command);
+
+                $text = is_file($txtPath) ? file_get_contents($txtPath) : false;
+
+                @unlink($txtPath);
+
+                if (is_string($text) && trim($text) !== '') {
+                    return $text;
+                }
+            }
         }
 
-        $txtPath = tempnam(sys_get_temp_dir(), 'kerala-lottery-');
-
-        if ($txtPath === false) {
-            return null;
-        }
-
-        $command = sprintf(
-            '%s -layout %s %s 2>/dev/null',
-            escapeshellarg($binary),
-            escapeshellarg($absolutePath),
-            escapeshellarg($txtPath)
-        );
-
-        shell_exec($command);
-
-        $text = is_file($txtPath) ? file_get_contents($txtPath) : false;
-
-        @unlink($txtPath);
-
-        return is_string($text) && trim($text) !== '' ? $text : null;
+        return null;
     }
 }

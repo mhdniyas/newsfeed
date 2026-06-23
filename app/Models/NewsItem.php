@@ -35,6 +35,16 @@ class NewsItem extends Model
             if (!$item->news_section_id && $item->news_topic_id) {
                 $item->news_section_id = NewsTopic::query()->whereKey($item->news_topic_id)->value('news_section_id');
             }
+
+            // Set as featured if it belongs to Google Trends section
+            if ($item->news_section_id) {
+                $isTrends = cache()->remember("section-is-trends:{$item->news_section_id}", 3600, function () use ($item) {
+                    return NewsSection::query()->whereKey($item->news_section_id)->where('slug', 'google-trends')->exists();
+                });
+                if ($isTrends) {
+                    $item->is_featured = true;
+                }
+            }
         });
     }
 

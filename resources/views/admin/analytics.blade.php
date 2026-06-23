@@ -72,10 +72,60 @@
             <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ number_format($analyticsSummary['article_views']) }}</p>
             <p class="mt-1 text-xs text-slate-500">Loaded article card impressions.</p>
         </div>
-        <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Article Clicks</p>
-            <p class="mt-2 text-3xl font-extrabold text-amber-600">{{ number_format($analyticsSummary['article_clicks']) }}</p>
-            <p class="mt-1 text-xs text-slate-500">Outbound news card clicks.</p>
+        <div class="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-4 shadow-sm">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-600">Conversions</p>
+            <p class="mt-2 text-3xl font-extrabold text-amber-700">{{ number_format($analyticsSummary['article_clicks']) }}</p>
+            <p class="mt-1 text-xs text-amber-600/80">Outbound article link clicks.</p>
+            <p class="mt-1.5 text-sm font-black text-amber-800">{{ $analyticsSummary['conversion']['overall_rate'] }}% <span class="text-xs font-semibold text-amber-600">overall rate</span></p>
+        </div>
+    </div>
+
+    {{-- Conversion Rate Breakdown --}}
+    @php
+        $conv = $analyticsSummary['conversion'];
+        $periods = [
+            ['label' => 'Today',        'key' => 'today', 'tone' => 'emerald'],
+            ['label' => 'This Week',    'key' => 'week',  'tone' => 'sky'],
+            ['label' => 'This Month',   'key' => 'month', 'tone' => 'violet'],
+        ];
+    @endphp
+    <div class="mb-6 rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div class="flex items-center justify-between gap-3 px-5 py-4 border-b border-slate-100 bg-slate-50/60">
+            <div>
+                <p class="text-[11px] font-semibold uppercase tracking-[0.26em] text-slate-400">Conversion Rate</p>
+                <h2 class="mt-0.5 text-base font-extrabold text-slate-900">Views → Conversions by Period</h2>
+            </div>
+            <span class="rounded-full border border-amber-200 bg-amber-50 px-4 py-1.5 text-sm font-black text-amber-700">{{ $conv['overall_rate'] }}% all-time</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+            @foreach($periods as $p)
+                @php
+                    $d = $conv[$p['key']];
+                    $barWidth = min(100, max(4, $d['rate'] * 6));
+                    $toneBar   = match($p['tone']) { 'sky' => 'bg-sky-500', 'violet' => 'bg-violet-500', default => 'bg-emerald-500' };
+                    $toneBadge = match($p['tone']) { 'sky' => 'bg-sky-50 text-sky-700 border-sky-200', 'violet' => 'bg-violet-50 text-violet-700 border-violet-200', default => 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+                    $toneNum   = match($p['tone']) { 'sky' => 'text-sky-700', 'violet' => 'text-violet-700', default => 'text-emerald-700' };
+                @endphp
+                <div class="px-5 py-5">
+                    <p class="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">{{ $p['label'] }}</p>
+                    <p class="mt-2 text-3xl font-black {{ $toneNum }}">{{ $d['rate'] }}<span class="text-lg">%</span></p>
+                    <div class="mt-3 h-2 rounded-full bg-slate-100 overflow-hidden">
+                        <div class="h-full rounded-full {{ $toneBar }} transition-all duration-700" style="width: {{ $barWidth }}%"></div>
+                    </div>
+                    <div class="mt-3 flex items-center justify-between">
+                        <div class="text-center">
+                            <p class="text-[10px] uppercase tracking-[0.16em] text-slate-400">Views</p>
+                            <p class="text-sm font-extrabold text-slate-800">{{ number_format($d['views']) }}</p>
+                        </div>
+                        <span class="text-slate-300 text-lg font-light">→</span>
+                        <div class="text-center">
+                            <p class="text-[10px] uppercase tracking-[0.16em] text-slate-400">Conversions</p>
+                            <p class="text-sm font-extrabold text-amber-600">{{ number_format($d['clicks']) }}</p>
+                        </div>
+                        <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-bold {{ $toneBadge }}">{{ $d['rate'] }}%</span>
+                    </div>
+                </div>
+            @endforeach
         </div>
     </div>
 
@@ -291,10 +341,10 @@
         <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <div class="flex items-center justify-between gap-3">
                 <div>
-                    <h2 class="text-base font-bold text-slate-900">Top Clicked News</h2>
+                    <h2 class="text-base font-bold text-slate-900">Top Conversions</h2>
                     <p class="text-xs text-slate-500 mt-1">Stories generating the most outbound traffic.</p>
                 </div>
-                <span class="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-amber-700">{{ number_format($analyticsSummary['article_clicks']) }} total</span>
+                <span class="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-amber-700">{{ number_format($analyticsSummary['article_clicks']) }} total conversions</span>
             </div>
             <div class="mt-4 space-y-3">
                 @foreach($analyticsSummary['top_clicked'] as $article)
@@ -304,7 +354,7 @@
                             <p class="text-sm font-bold text-slate-900 line-clamp-2">{{ $article->title }}</p>
                             <p class="text-[11px] text-slate-500 mt-1">{{ $article->newsTopic?->name }} · {{ $article->source_name }}</p>
                         </div>
-                        <span class="shrink-0 text-xs font-bold text-amber-600">{{ number_format($article->clicks_count) }}</span>
+                        <span class="shrink-0 text-xs font-bold text-amber-600">{{ number_format($article->clicks_count) }} conv.</span>
                     </div>
                 @endforeach
             </div>

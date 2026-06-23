@@ -19,6 +19,9 @@
             <a href="{{ route('admin.promotions') }}" class="flex items-center space-x-1.5 px-4 py-2.5 rounded-xl bg-sky-50 border border-sky-200 text-sky-800 text-xs font-bold shadow-sm hover:bg-sky-100 transition-colors">
                 <span>Promotions</span>
             </a>
+            <a href="{{ route('admin.trends') }}" class="flex items-center space-x-1.5 px-4 py-2.5 rounded-xl bg-violet-50 border border-violet-200 text-violet-800 text-xs font-bold shadow-sm hover:bg-violet-100 transition-colors">
+                <span>Trend Keywords</span>
+            </a>
             <a href="{{ route('admin.destroy') }}" class="flex items-center space-x-1.5 px-4 py-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold shadow-sm hover:bg-rose-100 transition-colors">
                 <span>Open Destroy Page</span>
             </a>

@@ -7,6 +7,7 @@ use App\Models\NewsSection;
 use App\Models\NewsTopic;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
@@ -26,6 +27,33 @@ class NewsFetchService
     {
         $topics = $section->newsTopics()->where('is_active', true)->orderBy('sort_order')->orderBy('id')->get();
         $sectionLimit = max(1, (int) ($section->card_limit ?: 6));
+
+        if ($section->slug === 'google-trends') {
+            $topics = $this->interleaveTopicsByCountry(
+                $section->newsTopics()
+                    ->where('is_active', true)
+                    ->orderBy('country')
+                    ->orderBy('sort_order')
+                    ->orderByDesc('updated_at')
+                    ->orderByDesc('id')
+                    ->get()
+            );
+            $sectionLimit = max(25, $sectionLimit);
+        }
+
+        return $this->fetchTopicBatch($section, $topics, $cycleLimit, $sectionLimit);
+    }
+
+    public function fetchTopicBatch(
+        NewsSection $section,
+        Collection $topics,
+        int $cycleLimit = 120,
+        ?int $sectionLimit = null,
+        NewsSyncStateService|TrendSyncStateService|null $syncState = null
+    ): array {
+        $syncState ??= $this->syncState;
+        $sectionLimit = max(1, (int) ($sectionLimit ?: ($section->card_limit ?: 6)));
+        $sectionLimit = min($sectionLimit, max(1, $cycleLimit));
         $stats = [
             'new_articles' => 0,
             'google_articles' => 0,
@@ -37,14 +65,14 @@ class NewsFetchService
         $processedTopics = 0;
         $totalTopics = max(1, $topics->count());
 
-        $this->syncState->beginSection($section, $topics->count());
+        $syncState->beginSection($section, $topics->count());
 
         foreach ($topics as $topic) {
-            if ($stats['new_articles'] >= $sectionLimit || $this->syncState->globalLimitReached()) {
+            if ($stats['new_articles'] >= $sectionLimit || $syncState->globalLimitReached()) {
                 break;
             }
 
-            $this->syncState->appendLog("Fetching Google News feed for {$section->name} / {$topic->name}.", 'info');
+            $syncState->appendLog("Fetching Google News feed for {$section->name} / {$topic->name}.", 'info');
 
             $encodedKeyword = urlencode($topic->keyword);
             $hl = $topic->language ?: 'en';
@@ -52,10 +80,10 @@ class NewsFetchService
             $url = "https://news.google.com/rss/search?q={$encodedKeyword}&hl={$hl}&gl={$gl}&ceid={$gl}:{$hl}";
 
             try {
-                $response = Http::timeout(10)->get($url);
+                $response = Http::retry(3, 500)->timeout(10)->get($url);
 
                 if (!$response->successful()) {
-                    $this->syncState->appendLog("RSS request failed for {$topic->name} with HTTP {$response->status()}.", 'error');
+                    $syncState->appendLog("RSS request failed for {$topic->name} with HTTP {$response->status()}.", 'error');
                     $processedTopics++;
                     continue;
                 }
@@ -64,7 +92,7 @@ class NewsFetchService
                 $xml = simplexml_load_string($response->body(), 'SimpleXMLElement', LIBXML_NOCDATA);
 
                 if (!$xml || !isset($xml->channel->item)) {
-                    $this->syncState->appendLog("No RSS items found for {$topic->name}.", 'warning');
+                    $syncState->appendLog("No RSS items found for {$topic->name}.", 'warning');
                     $processedTopics++;
                     continue;
                 }
@@ -73,7 +101,7 @@ class NewsFetchService
                 $totalItems = max(1, count($items));
 
                 foreach ($items as $itemIndex => $item) {
-                    if ($stats['new_articles'] >= $sectionLimit || $this->syncState->globalLimitReached()) {
+                    if ($stats['new_articles'] >= $sectionLimit || $syncState->globalLimitReached()) {
                         break;
                     }
 
@@ -83,7 +111,7 @@ class NewsFetchService
                     $pubDate = (string) $item->pubDate;
                     $itemNumber = $itemIndex + 1;
 
-                    $this->syncState->updateTopicProgress(
+                    $syncState->updateTopicProgress(
                         $section,
                         $topic->name,
                         $processedTopics + 1,
@@ -156,46 +184,77 @@ class NewsFetchService
 
                     $stats['new_articles']++;
                     $stats['google_articles']++;
-                    $this->syncState->accumulateStats([
+                    $syncState->accumulateStats([
                         'new_articles' => 1,
                         'google_articles' => 1,
                     ]);
 
                     if ($imageUrl && !str_contains($description, $imageUrl)) {
-                        $this->syncState->accumulateStats([
+                        $syncState->accumulateStats([
                             'images_recovered' => 1,
                         ]);
                     }
                 }
 
                 $processedTopics++;
-                $this->syncState->appendLog("Topic {$topic->name} processed in {$section->name}.", 'success');
+                $syncState->appendLog("Topic {$topic->name} processed in {$section->name}.", 'success');
             } catch (\Throwable $exception) {
                 $processedTopics++;
-                $this->syncState->appendLog("Topic {$topic->name} failed: {$exception->getMessage()}", 'error');
+                $syncState->appendLog("Topic {$topic->name} failed: {$exception->getMessage()}", 'error');
             }
         }
 
-        if ($section->slug === 'fifa-2026' && !$this->syncState->globalLimitReached() && $stats['new_articles'] < $sectionLimit) {
-            $officialCount = $this->syncOfficialFifaArticles($section, $topics->first(), min($sectionLimit - $stats['new_articles'], $cycleLimit - $this->syncState->savedArticles()));
+        if ($section->slug === 'fifa-2026' && !$syncState->globalLimitReached() && $stats['new_articles'] < $sectionLimit) {
+            $officialCount = $this->syncOfficialFifaArticles($section, $topics->first(), min($sectionLimit - $stats['new_articles'], $cycleLimit - $syncState->savedArticles()));
             if ($officialCount > 0) {
                 $stats['new_articles'] += $officialCount;
                 $stats['official_articles'] += $officialCount;
-                $this->syncState->accumulateStats([
+                $syncState->accumulateStats([
                     'new_articles' => $officialCount,
                     'official_articles' => $officialCount,
                 ]);
             }
-            $this->syncState->appendLog("Official FIFA sync saved {$officialCount} articles for {$section->name}.", 'success');
+            $syncState->appendLog("Official FIFA sync saved {$officialCount} articles for {$section->name}.", 'success');
         }
 
         if ($stats['skipped_duplicates'] > 0) {
-            $this->syncState->accumulateStats([
+            $syncState->accumulateStats([
                 'skipped_duplicates' => $stats['skipped_duplicates'],
             ]);
         }
 
         return $stats;
+    }
+
+    /**
+     * @param \Illuminate\Support\Collection<int, NewsTopic> $topics
+     * @return \Illuminate\Support\Collection<int, NewsTopic>
+     */
+    protected function interleaveTopicsByCountry($topics)
+    {
+        $groupedTopics = $topics
+            ->groupBy('country')
+            ->map(fn ($countryTopics) => $countryTopics->values());
+
+        $orderedTopics = collect();
+        $offset = 0;
+
+        while ($groupedTopics->isNotEmpty()) {
+            foreach ($groupedTopics->keys()->values() as $countryCode) {
+                $countryTopics = $groupedTopics->get($countryCode, collect());
+
+                if (!$countryTopics->has($offset)) {
+                    $groupedTopics->forget($countryCode);
+                    continue;
+                }
+
+                $orderedTopics->push($countryTopics->get($offset));
+            }
+
+            $offset++;
+        }
+
+        return $orderedTopics->values();
     }
 
     protected function syncOfficialFifaArticles(NewsSection $section, ?NewsTopic $topic, int $remainingSlots): int

@@ -2,6 +2,7 @@
 
 use Illuminate\Foundation\Inspiring;
 use App\Jobs\RunNewsSyncCycle;
+use App\Jobs\RunTrendSyncCycle;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 
@@ -20,4 +21,8 @@ Schedule::command('queue:work --stop-when-empty --queue=syncs,default --tries=1 
 
 Schedule::command('news:prune-old')
     ->daily()
+    ->withoutOverlapping();
+
+Schedule::job(new RunTrendSyncCycle('Automatic 5-minute scheduler trend sync'))
+    ->everyFiveMinutes()
     ->withoutOverlapping();

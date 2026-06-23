@@ -115,7 +115,7 @@ class NewsController extends Controller
                 ->where('news_section_id', $section->id)
                 ->orderByDesc('published_at')
                 ->orderByDesc('id')
-                ->take($section->card_limit ?: 6)
+                ->take(5)
                 ->get());
 
             return $section;
@@ -518,5 +518,36 @@ class NewsController extends Controller
         }
 
         return true;
+    }
+
+    /**
+     * AJAX: return the next batch of articles for a section on the landing page.
+     */
+    public function sectionMoreArticles(\App\Models\NewsSection $section, Request $request): JsonResponse
+    {
+        $offset  = max(0, (int) $request->input('offset', 5));
+        $perPage = 6;
+
+        $articles = NewsItem::visible()
+            ->with(['newsTopic', 'newsSection'])
+            ->where('news_section_id', $section->id)
+            ->orderByDesc('published_at')
+            ->orderByDesc('id')
+            ->skip($offset)
+            ->take($perPage)
+            ->get();
+
+        $totalVisible = NewsItem::visible()
+            ->where('news_section_id', $section->id)
+            ->count();
+
+        $html = $articles->map(fn ($article) => view('news.partials.section-card', compact('article'))->render())->implode('');
+
+        return response()->json([
+            'html'       => $html,
+            'hasMore'    => ($offset + $perPage) < $totalVisible,
+            'nextOffset' => $offset + $perPage,
+            'total'      => $totalVisible,
+        ]);
     }
 }

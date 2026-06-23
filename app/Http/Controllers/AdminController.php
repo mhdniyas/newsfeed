@@ -9,7 +9,9 @@ use App\Models\NewsTopic;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\AutomaticNewsSyncService;
+use App\Services\AutomaticTrendSyncService;
 use App\Services\PromotionHubService;
+use App\Services\TrendingNewsService;
 use App\Services\VisitorMetricsService;
 use Illuminate\Bus\UniqueLock;
 use Illuminate\Http\JsonResponse;
@@ -193,6 +195,30 @@ class AdminController extends Controller
         return view('admin.promotions', compact('promotions', 'previewPromo', 'fetchStats'));
     }
 
+    public function trends(Request $request, AutomaticNewsSyncService $automaticNewsSync, AutomaticTrendSyncService $automaticTrendSync, TrendingNewsService $trendingNewsService)
+    {
+        $automaticNewsSync->maybeTriggerDueSync('Automatic fallback sync triggered from admin trends request.');
+        $automaticTrendSync->maybeTriggerDueSync('Automatic fallback trend sync triggered from admin trends request.');
+
+        $fetchStats = $automaticNewsSync->fetchStats();
+        $trendSyncState = $automaticTrendSync->syncState();
+        $trendFetchStats = $automaticTrendSync->fetchStats();
+        $trendsSnapshot = $trendingNewsService->adminSnapshot();
+        $selectedCountry = strtoupper((string) $request->input('country', 'ALL'));
+        $trendsSectionId = $trendsSnapshot['section']?->id;
+        $trendArticles = NewsItem::with(['newsTopic', 'newsSection'])
+            ->when($trendsSectionId, fn ($query) => $query->where('news_section_id', $trendsSectionId))
+            ->when($selectedCountry !== 'ALL', function ($query) use ($selectedCountry) {
+                $query->whereHas('newsTopic', fn ($topicQuery) => $topicQuery->where('country', $selectedCountry));
+            })
+            ->orderByDesc('published_at')
+            ->orderByDesc('id')
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('admin.trends', compact('fetchStats', 'trendSyncState', 'trendFetchStats', 'trendsSnapshot', 'trendArticles', 'selectedCountry'));
+    }
+
     public function updatePromotions(Request $request, PromotionHubService $promotionHub)
     {
         $request->validate([
@@ -227,6 +253,55 @@ class AdminController extends Controller
         $promotionHub->save($cards, $request->input('whatsapp_message'));
 
         return back()->with('success', 'Promotion hub updated successfully.');
+    }
+
+    public function refreshTrends(Request $request, TrendingNewsService $trendingNewsService, AutomaticTrendSyncService $automaticTrendSync)
+    {
+        if ($request->boolean('sync_news')) {
+            $syncState = $automaticTrendSync->syncState();
+
+            if (in_array($syncState['status'], ['queued', 'running'], true) && !$syncState['is_stale']) {
+                return back()->with('success', 'A trend sync is already in progress. The live monitor will continue updating below.');
+            }
+
+            if ($syncState['is_stale']) {
+                $automaticTrendSync->stopTrackedSyncProcess('Previous trend sync state was stale and has been replaced with a fresh run.');
+            }
+
+            [$started, $message] = $automaticTrendSync->launchQueuedSync('Manual trend sync requested from admin trends page.');
+
+            return back()->with('success', $started
+                ? 'Trend sync started in background. The live monitor below will update progress automatically.'
+                : $message);
+        }
+
+        $trends = $trendingNewsService->fetchTrends();
+        $stats = $trendingNewsService->updateKeywordSpots($trends);
+        $countrySummary = collect($stats)
+            ->map(fn ($countryStats, $countryCode) => "{$countryCode}: {$countryStats['active']} active")
+            ->implode(', ');
+
+        return redirect()
+            ->route('admin.trends')
+            ->with('success', "Trend keywords refreshed. {$countrySummary}");
+    }
+
+    public function stopAndResyncTrends(AutomaticTrendSyncService $automaticTrendSync)
+    {
+        $automaticTrendSync->stopTrackedSyncProcess('Active trend sync was stopped manually before restarting.');
+
+        [$started, $message] = $automaticTrendSync->launchQueuedSync('Manual stop and resync requested from admin trends page.');
+
+        return back()->with('success', $started
+            ? 'Existing trend sync was stopped and a fresh background trend sync has been started.'
+            : $message);
+    }
+
+    public function trendsSyncStatus(AutomaticTrendSyncService $automaticTrendSync): JsonResponse
+    {
+        $automaticTrendSync->maybeTriggerDueSync('Automatic fallback trend sync triggered from admin trend sync monitor.');
+
+        return response()->json($automaticTrendSync->syncState());
     }
 
     public function storeSection(Request $request)

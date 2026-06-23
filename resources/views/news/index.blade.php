@@ -133,68 +133,71 @@
 
             <div class="min-w-0">
         @if($showSectionLanding)
-            <div class="space-y-8">
+            <div class="space-y-8" id="section-landing">
                 @foreach($homepageSections as $sectionIndex => $section)
                     @php($leadArticle = $section->latestArticles->first())
                     @php($supportingArticles = $section->latestArticles->slice(1))
-                    <section class="rounded-[2rem] border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
+                    <section
+                        class="rounded-[2rem] border border-slate-200 bg-white p-4 sm:p-5 shadow-sm"
+                        id="section-block-{{ $section->id }}"
+                        data-section-id="{{ $section->id }}"
+                        data-next-offset="5"
+                        data-more-url="{{ route('news.section.more', $section) }}"
+                    >
                         <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between mb-5">
                             <div>
                                 <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700/70">Live Section</p>
                                 <h2 class="mt-1 text-2xl font-extrabold text-slate-950">{{ $section->name }}</h2>
                                 <p class="mt-1 text-sm text-slate-500">{{ $section->description }}</p>
                             </div>
-                            <a href="{{ route('news.index', ['section' => $section->slug]) }}" class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-bold text-slate-700 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700">
+                            <a href="{{ route('news.index', ['section' => $section->slug]) }}" class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-bold text-slate-700 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 shrink-0">
                                 View All
                             </a>
                         </div>
-                        @if($leadArticle)
-                            <div class="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
-                                <article class="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-slate-950 text-white shadow-lg shadow-slate-950/10">
-                                    <a href="{{ route('news.visit', $leadArticle) }}" target="_blank" rel="noopener noreferrer" class="block">
-                                        <div class="relative h-64 sm:h-72 overflow-hidden">
-                                            <img src="{{ $leadArticle->image_url ?: route('media.news-image', $leadArticle) }}"
-                                                 data-proxy-src="{{ route('media.news-image', $leadArticle) }}"
-                                                 data-placeholder-src="{{ '/media/fifa-placeholder/' . rawurlencode($leadArticle->hash ?: (string) $leadArticle->id) . '.svg' }}"
-                                                 alt="{{ $leadArticle->title }}"
-                                                 class="h-full w-full object-cover opacity-85"
-                                                 loading="lazy"
-                                                 referrerpolicy="no-referrer"
-                                                 onerror="if(this.dataset.fallbackStage==='proxy'){this.src=this.dataset.placeholderSrc;this.dataset.fallbackStage='placeholder';return;} this.dataset.fallbackStage='proxy'; this.src=this.dataset.proxySrc;">
-                                            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
-                                            <div class="absolute inset-x-0 bottom-0 p-5">
-                                                <span class="inline-flex items-center rounded-full bg-white/12 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur">{{ $leadArticle->source_name }}</span>
-                                                <h3 class="mt-3 text-2xl font-extrabold leading-tight">{{ $leadArticle->title }}</h3>
-                                                <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-200 line-clamp-3">{{ $leadArticle->description ?? 'Open the story for full details.' }}</p>
-                                            </div>
-                                        </div>
-                                    </a>
-                                </article>
 
-                                <div class="grid gap-3">
-                                    @foreach($supportingArticles as $article)
-                                        <article class="rounded-[1.5rem] border border-slate-200 bg-slate-50/70 p-3 shadow-sm transition-all duration-200 hover:border-emerald-200 hover:bg-white">
-                                            <a href="{{ route('news.visit', $article) }}" target="_blank" rel="noopener noreferrer" class="flex items-start gap-3">
-                                                <img src="{{ $article->image_url ?: route('media.news-image', $article) }}"
-                                                     data-proxy-src="{{ route('media.news-image', $article) }}"
-                                                     data-placeholder-src="{{ '/media/fifa-placeholder/' . rawurlencode($article->hash ?: (string) $article->id) . '.svg' }}"
-                                                     alt="{{ $article->title }}"
-                                                     class="h-20 w-20 rounded-2xl object-cover shrink-0"
-                                                     loading="lazy"
-                                                     referrerpolicy="no-referrer"
-                                                     onerror="if(this.dataset.fallbackStage==='proxy'){this.src=this.dataset.placeholderSrc;this.dataset.fallbackStage='placeholder';return;} this.dataset.fallbackStage='proxy'; this.src=this.dataset.proxySrc;">
-                                                <div class="min-w-0">
-                                                    <div class="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                                                        <span>{{ $article->source_name }}</span>
-                                                        <span>{{ $article->published_at->diffForHumans() }}</span>
-                                                    </div>
-                                                    <h3 class="mt-2 text-sm font-extrabold leading-5 text-slate-900 line-clamp-3">{{ $article->title }}</h3>
-                                                    <p class="mt-2 text-xs leading-5 text-slate-500 line-clamp-2">{{ $article->description ?? 'Open the article for the full brief.' }}</p>
-                                                </div>
-                                            </a>
-                                        </article>
-                                    @endforeach
-                                </div>
+                        @if($leadArticle)
+                            {{-- Hero lead --}}
+                            <article class="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-slate-950 text-white shadow-lg shadow-slate-950/10 mb-4">
+                                <a href="{{ route('news.visit', $leadArticle) }}" target="_blank" rel="noopener noreferrer" class="block">
+                                    <div class="relative h-56 sm:h-64 overflow-hidden">
+                                        <img src="{{ $leadArticle->image_url ?: route('media.news-image', $leadArticle) }}"
+                                             data-proxy-src="{{ route('media.news-image', $leadArticle) }}"
+                                             data-placeholder-src="{{ '/media/fifa-placeholder/' . rawurlencode($leadArticle->hash ?: (string) $leadArticle->id) . '.svg' }}"
+                                             alt="{{ $leadArticle->title }}"
+                                             class="h-full w-full object-cover opacity-85"
+                                             loading="lazy" referrerpolicy="no-referrer"
+                                             onerror="if(this.dataset.fallbackStage==='proxy'){this.src=this.dataset.placeholderSrc;this.dataset.fallbackStage='placeholder';return;} this.dataset.fallbackStage='proxy'; this.src=this.dataset.proxySrc;}">
+                                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+                                        <div class="absolute inset-x-0 bottom-0 p-5">
+                                            <span class="inline-flex items-center rounded-full bg-white/12 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur">{{ $leadArticle->source_name }}</span>
+                                            <h3 class="mt-3 text-xl font-extrabold leading-tight">{{ $leadArticle->title }}</h3>
+                                            <p class="mt-2 text-sm leading-6 text-slate-200 line-clamp-2">{{ $leadArticle->description ?? 'Open the story for full details.' }}</p>
+                                        </div>
+                                    </div>
+                                </a>
+                            </article>
+
+                            {{-- Supporting articles list --}}
+                            <div class="section-more-list grid gap-3 sm:grid-cols-2">
+                                @foreach($supportingArticles as $article)
+                                    @include('news.partials.section-card', ['article' => $article])
+                                @endforeach
+                            </div>
+                        @endif
+
+                        @if($section->news_items_count > 5)
+                            {{-- Load More button --}}
+                            <div class="section-load-more-wrap mt-5 flex items-center justify-center gap-4">
+                                <button type="button"
+                                    class="section-load-more-btn inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition-all duration-200 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 active:scale-95"
+                                    data-section-block="section-block-{{ $section->id }}">
+                                    <svg class="w-3.5 h-3.5 btn-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                                    <span class="btn-label">Load More from {{ $section->name }}</span>
+                                    <svg class="hidden w-3.5 h-3.5 animate-spin btn-spinner" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                                </button>
+                                <span class="section-count-badge text-[11px] text-slate-400 font-medium">
+                                    Showing <span class="section-shown font-bold text-slate-600">5</span> of <span class="section-total font-bold text-slate-600">{{ $section->news_items_count }}</span>
+                                </span>
                             </div>
                         @endif
                     </section>
@@ -317,6 +320,57 @@
                 } catch (error) {}
             });
         }
+
+        // ── Per-section Load More ──────────────────────────────────────────
+        document.querySelectorAll('.section-load-more-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const blockId = btn.dataset.sectionBlock;
+                const block   = document.getElementById(blockId);
+                if (!block) return;
+
+                const url        = block.dataset.moreUrl;
+                const offset     = parseInt(block.dataset.nextOffset, 10);
+                const list       = block.querySelector('.section-more-list');
+                const wrap       = block.querySelector('.section-load-more-wrap');
+                const badge      = block.querySelector('.section-count-badge');
+                const shownEl    = block.querySelector('.section-shown');
+                const totalEl    = block.querySelector('.section-total');
+                const chevron    = btn.querySelector('.btn-chevron');
+                const spinner    = btn.querySelector('.btn-spinner');
+
+                btn.disabled = true;
+                chevron.classList.add('hidden');
+                spinner.classList.remove('hidden');
+
+                fetch(url + '?offset=' + offset, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(r => r.ok ? r.json() : Promise.reject(r))
+                .then(data => {
+                    if (data.html) {
+                        list.insertAdjacentHTML('beforeend', data.html);
+                    }
+                    block.dataset.nextOffset = data.nextOffset;
+                    const shown = Math.min(data.nextOffset, data.total);
+                    if (shownEl) shownEl.textContent = shown;
+                    if (totalEl) totalEl.textContent = data.total;
+                    badge.classList.remove('hidden');
+
+                    if (!data.hasMore) {
+                        wrap.remove();
+                    } else {
+                        btn.disabled = false;
+                        chevron.classList.remove('hidden');
+                        spinner.classList.add('hidden');
+                    }
+                })
+                .catch(() => {
+                    btn.disabled = false;
+                    chevron.classList.remove('hidden');
+                    spinner.classList.add('hidden');
+                });
+            });
+        });
 
         if (loadMoreBtn) {
             loadMoreBtn.addEventListener('click', function() {

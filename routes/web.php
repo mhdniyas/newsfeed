@@ -21,6 +21,7 @@ Route::get('/media/fifa-placeholder/{seed}.svg', [NewsController::class, 'placeh
 Route::get('/media/news-image/{article}', [NewsController::class, 'articleImage'])->name('media.news-image');
 Route::get('/news/{article}/visit', [NewsController::class, 'trackArticleClick'])->name('news.visit');
 Route::post('/analytics/visitor-context', [NewsController::class, 'updateVisitorContext'])->name('analytics.visitor-context');
+Route::get('/api/section/{section}/more', [NewsController::class, 'sectionMoreArticles'])->name('news.section.more');
 
 // Admin Auth Routes
 Route::get('/admin/login', [AdminController::class, 'showLoginForm'])->name('admin.login');
@@ -32,6 +33,8 @@ Route::middleware(\App\Http\Middleware\AdminAuth::class)->group(function () {
     Route::get('/admin', [AdminController::class, 'index'])->name('admin.dashboard');
     Route::get('/admin/analytics', [AdminController::class, 'analytics'])->name('admin.analytics');
     Route::get('/admin/analytics/ranking', [AdminController::class, 'rankingAnalytics'])->name('admin.analytics.ranking');
+    Route::get('/admin/trends', [AdminController::class, 'trends'])->name('admin.trends');
+    Route::get('/admin/trends/sync-status', [AdminController::class, 'trendsSyncStatus'])->name('admin.trends.sync-status');
     Route::get('/admin/destroy', [AdminController::class, 'destroyPage'])->name('admin.destroy');
     Route::get('/admin/promotions', [AdminController::class, 'promotions'])->name('admin.promotions');
     Route::get('/admin/sync-status', [AdminController::class, 'syncStatus'])->name('admin.sync-status');
@@ -56,6 +59,8 @@ Route::middleware(\App\Http\Middleware\AdminAuth::class)->group(function () {
     // Profile & Credentials
     Route::post('/admin/profile', [AdminController::class, 'updateProfile'])->name('admin.profile.update');
     Route::post('/admin/promotions', [AdminController::class, 'updatePromotions'])->name('admin.promotions.update');
+    Route::post('/admin/trends/refresh', [AdminController::class, 'refreshTrends'])->name('admin.trends.refresh');
+    Route::post('/admin/trends/restart', [AdminController::class, 'stopAndResyncTrends'])->name('admin.trends.restart');
 
     // Manual Fetch
     Route::post('/admin/fetch-news', [AdminController::class, 'fetchNewsNow'])->name('admin.fetch-news');

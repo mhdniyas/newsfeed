@@ -101,10 +101,29 @@ class VisitorMetricsService
         $articleViews = (int) DB::table('news_items')->sum('views_count');
         $articleClicks = (int) DB::table('news_items')->sum('clicks_count');
 
+        $todayViews  = (int) DB::table('news_items')->whereDate('last_viewed_at', now()->toDateString())->sum('views_count');
+        $todayClicks = (int) DB::table('news_items')->whereDate('last_clicked_at', now()->toDateString())->sum('clicks_count');
+
+        $weekStart   = now()->startOfWeek();
+        $weekViews   = (int) DB::table('news_items')->where('last_viewed_at', '>=', $weekStart)->sum('views_count');
+        $weekClicks  = (int) DB::table('news_items')->where('last_clicked_at', '>=', $weekStart)->sum('clicks_count');
+
+        $monthStart  = now()->startOfMonth();
+        $monthViews  = (int) DB::table('news_items')->where('last_viewed_at', '>=', $monthStart)->sum('views_count');
+        $monthClicks = (int) DB::table('news_items')->where('last_clicked_at', '>=', $monthStart)->sum('clicks_count');
+
+        $rate = fn (int $clicks, int $views): float => $views > 0 ? round(($clicks / $views) * 100, 2) : 0.0;
+
         return [
-            'article_views' => $articleViews,
+            'article_views'  => $articleViews,
             'article_clicks' => $articleClicks,
-            'view_rank' => $this->viewRank($articleViews),
+            'view_rank'      => $this->viewRank($articleViews),
+            'conversion' => [
+                'overall_rate' => $rate($articleClicks, $articleViews),
+                'today'  => ['views' => $todayViews,  'clicks' => $todayClicks,  'rate' => $rate($todayClicks, $todayViews)],
+                'week'   => ['views' => $weekViews,   'clicks' => $weekClicks,   'rate' => $rate($weekClicks, $weekViews)],
+                'month'  => ['views' => $monthViews,  'clicks' => $monthClicks,  'rate' => $rate($monthClicks, $monthViews)],
+            ],
         ];
     }
 

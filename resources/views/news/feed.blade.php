@@ -9,6 +9,17 @@
     $mobilePromos = $homepagePromo['mobile'] ?? [];
 @endphp
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    @if($adsense['client'] && $adsense['tab_slot'])
+        <div class="mb-8">
+            @include('news.partials.adsense-block', [
+                'client' => $adsense['client'],
+                'slot' => $adsense['tab_slot'],
+                'label' => 'Advertisement',
+                'variant' => 'hero',
+            ])
+        </div>
+    @endif
+
     @if(!empty($mobilePromos))
         <div class="mb-8 space-y-4 xl:hidden">
             @foreach($mobilePromos as $mobilePromo)

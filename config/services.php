@@ -40,7 +40,7 @@ return [
     ],
 
     'adsense' => [
-        'client' => env('ADSENSE_CLIENT_ID'),
+        'client' => env('ADSENSE_CLIENT_ID', 'ca-pub-8235195049591622'),
         'infeed_slot' => env('ADSENSE_INFEED_SLOT'),
         'tab_slot' => env('ADSENSE_TAB_SLOT'),
     ],

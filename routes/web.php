@@ -4,11 +4,9 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\NewsController;
 use Illuminate\Support\Facades\Route;
 
-// Redirect home page to the news hub
-Route::redirect('/', '/world-cup-news');
-
 // Public News Explorer Routes
-Route::get('/world-cup-news', [NewsController::class, 'index'])->name('news.index');
+Route::get('/', [NewsController::class, 'index'])->name('news.index');
+Route::redirect('/world-cup-news', '/');
 Route::get('/world-cup-news/top-stories', [NewsController::class, 'topStories'])->name('news.top');
 Route::get('/world-cup-news/trending', [NewsController::class, 'trending'])->name('news.trending');
 Route::get('/world-cup-news/fifa', [NewsController::class, 'fifa'])->name('news.fifa');

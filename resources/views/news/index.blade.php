@@ -104,13 +104,13 @@
         </div>
 
         @if($adsense['client'] && $adsense['tab_slot'])
-            <div class="mb-8 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-                <ins class="adsbygoogle block"
-                     style="display:block"
-                     data-ad-client="{{ $adsense['client'] }}"
-                     data-ad-slot="{{ $adsense['tab_slot'] }}"
-                     data-ad-format="auto"
-                     data-full-width-responsive="true"></ins>
+            <div class="mb-8">
+                @include('news.partials.adsense-block', [
+                    'client' => $adsense['client'],
+                    'slot' => $adsense['tab_slot'],
+                    'label' => 'Advertisement',
+                    'variant' => 'hero',
+                ])
             </div>
         @endif
 

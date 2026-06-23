@@ -13,6 +13,7 @@
     <meta property="og:title" content="@yield('title', 'FIFA World Cup 2026 News Explorer')">
     <meta property="og:description" content="@yield('meta_description', 'Get the latest FIFA World Cup 2026 news, fixtures, team updates, player news, and live football stories.')">
     <meta property="og:image" content="{{ asset('app-icon-512.png') }}">
+    <meta name="google-adsense-account" content="{{ config('services.adsense.client') }}">
     <meta name="theme-color" content="#020617">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">

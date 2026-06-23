@@ -20,13 +20,13 @@
     </div>
 
     @if($adsense['client'] && $adsense['infeed_slot'])
-        <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-            <ins class="adsbygoogle block"
-                 style="display:block"
-                 data-ad-client="{{ $adsense['client'] }}"
-                 data-ad-slot="{{ $adsense['infeed_slot'] }}"
-                 data-ad-format="auto"
-                 data-full-width-responsive="true"></ins>
+        <div class="mt-6">
+            @include('news.partials.adsense-block', [
+                'client' => $adsense['client'],
+                'slot' => $adsense['infeed_slot'],
+                'label' => 'Advertisement',
+                'variant' => 'subtle',
+            ])
         </div>
     @endif
 </div>

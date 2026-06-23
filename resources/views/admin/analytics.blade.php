@@ -74,8 +74,9 @@
 
     <div data-tab-panel="overview">
     <div class="mb-4 flex items-center justify-end">
-        <button type="button" data-refresh-tab="overview" class="analytics-refresh inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
-            Refresh Overview
+        <button type="button" data-refresh-tab="overview" class="analytics-refresh inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
+            <span class="analytics-refresh-spinner hidden h-3.5 w-3.5 rounded-full border-2 border-slate-300 border-t-slate-700 animate-spin"></span>
+            <span class="analytics-refresh-label">Refresh Overview</span>
         </button>
     </div>
     <div class="grid grid-cols-3 gap-3 sm:gap-4 lg:grid-cols-4 mb-6">
@@ -413,8 +414,9 @@
         @endphp
 
         <div class="mb-4 flex items-center justify-end">
-            <button type="button" data-refresh-tab="trends" class="analytics-refresh inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
-                Refresh Google Trends
+            <button type="button" data-refresh-tab="trends" class="analytics-refresh inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
+                <span class="analytics-refresh-spinner hidden h-3.5 w-3.5 rounded-full border-2 border-slate-300 border-t-slate-700 animate-spin"></span>
+                <span class="analytics-refresh-label">Refresh Google Trends</span>
             </button>
         </div>
 
@@ -538,8 +540,9 @@
 
     <div data-tab-panel="content" class="hidden">
         <div class="mb-4 flex items-center justify-end">
-            <button type="button" data-refresh-tab="content" class="analytics-refresh inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
-                Refresh Content
+            <button type="button" data-refresh-tab="content" class="analytics-refresh inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
+                <span class="analytics-refresh-spinner hidden h-3.5 w-3.5 rounded-full border-2 border-slate-300 border-t-slate-700 animate-spin"></span>
+                <span class="analytics-refresh-label">Refresh Content</span>
             </button>
         </div>
         <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-6">
@@ -774,6 +777,22 @@
         refreshButtons.forEach((button) => {
             button.addEventListener('click', () => {
                 const target = button.dataset.refreshTab || 'overview';
+                const label = button.querySelector('.analytics-refresh-label');
+                const spinner = button.querySelector('.analytics-refresh-spinner');
+
+                refreshButtons.forEach((refreshButton) => {
+                    refreshButton.disabled = true;
+                    refreshButton.classList.add('cursor-wait', 'opacity-70');
+                });
+
+                if (spinner) {
+                    spinner.classList.remove('hidden');
+                }
+
+                if (label) {
+                    label.textContent = 'Reloading...';
+                }
+
                 window.sessionStorage.setItem(tabStorageKey, target);
 
                 const url = new URL(window.location.href);

@@ -115,7 +115,7 @@ class VisitorMetricsService
                 'tier' => 'Conqueror',
                 'badge' => 'Top 500',
                 'tone' => 'rose',
-                'range' => 'Top 500 players in a server after reaching Ace.',
+                'range' => 'Top 500 after reaching Ace',
             ];
         }
 
@@ -124,55 +124,55 @@ class VisitorMetricsService
                 'tier' => 'Bronze',
                 'badge' => 'Bronze',
                 'tone' => 'amber',
-                'range' => '< 1500 RP',
+                'range' => '< 1500 views',
             ],
             $views < 1800 => [
                 'tier' => 'Silver',
                 'badge' => 'Silver',
                 'tone' => 'slate',
-                'range' => '1500 - 1799 RP',
+                'range' => '1500 - 1799 views',
             ],
             $views < 2200 => [
                 'tier' => 'Gold',
                 'badge' => 'Gold',
                 'tone' => 'yellow',
-                'range' => '1800 - 2199 RP',
+                'range' => '1800 - 2199 views',
             ],
             $views < 2700 => [
                 'tier' => 'Platinum',
                 'badge' => 'Platinum',
                 'tone' => 'emerald',
-                'range' => '2200 - 2699 RP',
+                'range' => '2200 - 2699 views',
             ],
             $views < 3200 => [
                 'tier' => 'Diamond',
                 'badge' => 'Diamond',
                 'tone' => 'sky',
-                'range' => '2700 - 3199 RP',
+                'range' => '2700 - 3199 views',
             ],
             $views < 3700 => [
                 'tier' => 'Crown',
                 'badge' => 'Crown',
                 'tone' => 'violet',
-                'range' => '3200 - 3699 RP',
+                'range' => '3200 - 3699 views',
             ],
             $views < 3900 => [
                 'tier' => 'Ace',
                 'badge' => 'Ace',
                 'tone' => 'rose',
-                'range' => '3700 - 3899 RP',
+                'range' => '3700 - 3899 views',
             ],
             $views < 4050 => [
                 'tier' => 'Ace Master',
                 'badge' => 'Ace Master',
                 'tone' => 'rose',
-                'range' => '3900 - 4049 RP',
+                'range' => '3900 - 4049 views',
             ],
             default => [
                 'tier' => 'Ace Dominator',
                 'badge' => 'Ace Dominator',
                 'tone' => 'rose',
-                'range' => '4050 - 4200+ RP',
+                'range' => '4050 - 4200+ views',
             ],
         };
     }

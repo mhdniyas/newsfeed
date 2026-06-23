@@ -101,25 +101,7 @@ class AdminController extends Controller
     {
         $visitStats = $visitorMetrics->getPublicStats();
         $visitorSnapshot = $visitorMetrics->adminAnalyticsSnapshot();
-        $analyticsSummary = array_merge($visitorMetrics->articleAnalyticsSummary(), [
-            'top_viewed' => NewsItem::with('newsTopic')
-                ->orderByDesc('views_count')
-                ->orderByDesc('published_at')
-                ->take(12)
-                ->get()
-                ->values()
-                ->map(function (NewsItem $article, int $index) use ($visitorMetrics) {
-                    $article->setAttribute('view_rank', $visitorMetrics->viewRank((int) $article->views_count, $index + 1));
-
-                    return $article;
-                }),
-            'top_clicked' => NewsItem::with('newsTopic')->orderByDesc('clicks_count')->orderByDesc('published_at')->take(12)->get(),
-            'recent_activity' => NewsItem::with('newsTopic')
-                ->orderByDesc('last_clicked_at')
-                ->orderByDesc('last_viewed_at')
-                ->take(12)
-                ->get(),
-        ]);
+        $analyticsSummary = $this->analyticsSummary($visitorMetrics);
         $analyticsCharts = [
             'live_users' => $this->liveUserChart(),
             'news_total' => $this->newsTotalChart(),
@@ -129,6 +111,15 @@ class AdminController extends Controller
         $fetchStats = $this->fetchStats();
 
         return view('admin.analytics', compact('visitStats', 'analyticsSummary', 'visitorSnapshot', 'analyticsCharts', 'fetchStats'));
+    }
+
+    public function rankingAnalytics(VisitorMetricsService $visitorMetrics)
+    {
+        $visitStats = $visitorMetrics->getPublicStats();
+        $analyticsSummary = $this->analyticsSummary($visitorMetrics);
+        $fetchStats = $this->fetchStats();
+
+        return view('admin.analytics-ranking', compact('visitStats', 'analyticsSummary', 'fetchStats'));
     }
 
     public function destroyPage(Request $request)
@@ -475,6 +466,29 @@ class AdminController extends Controller
         $automaticNewsSync ??= app(AutomaticNewsSyncService::class);
 
         return $automaticNewsSync->fetchStats();
+    }
+
+    protected function analyticsSummary(VisitorMetricsService $visitorMetrics): array
+    {
+        return array_merge($visitorMetrics->articleAnalyticsSummary(), [
+            'top_viewed' => NewsItem::with('newsTopic')
+                ->orderByDesc('views_count')
+                ->orderByDesc('published_at')
+                ->take(12)
+                ->get()
+                ->values()
+                ->map(function (NewsItem $article, int $index) use ($visitorMetrics) {
+                    $article->setAttribute('view_rank', $visitorMetrics->viewRank((int) $article->views_count, $index + 1));
+
+                    return $article;
+                }),
+            'top_clicked' => NewsItem::with('newsTopic')->orderByDesc('clicks_count')->orderByDesc('published_at')->take(12)->get(),
+            'recent_activity' => NewsItem::with('newsTopic')
+                ->orderByDesc('last_clicked_at')
+                ->orderByDesc('last_viewed_at')
+                ->take(12)
+                ->get(),
+        ]);
     }
 
     protected function buildArticleQuery($selectedSectionId, $selectedTopicId, ?string $search, string $sort)

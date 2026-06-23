@@ -272,7 +272,7 @@
     </div>
 
     <nav class="fixed inset-x-0 bottom-0 z-[70] px-3 pb-[calc(env(safe-area-inset-bottom)+0.6rem)] pt-2 md:hidden">
-        <div class="mx-auto flex max-w-sm items-center justify-between rounded-[2rem] border border-white/45 bg-white/40 px-2 py-1.5 shadow-[0_22px_52px_rgba(15,23,42,0.20)] backdrop-blur-2xl">
+        <div class="mx-auto flex max-w-sm items-center justify-between rounded-[2rem] border border-white/70 bg-white px-2 py-1.5 shadow-[0_22px_52px_rgba(15,23,42,0.20)] backdrop-blur-2xl">
             @foreach($mobileNavItems as $item)
                 <a href="{{ $item['href'] }}"
                    aria-label="{{ $item['label'] }}"

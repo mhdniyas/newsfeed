@@ -31,6 +31,7 @@ Route::any('/admin/logout', [AdminController::class, 'logout'])->name('admin.log
 Route::middleware(\App\Http\Middleware\AdminAuth::class)->group(function () {
     Route::get('/admin', [AdminController::class, 'index'])->name('admin.dashboard');
     Route::get('/admin/analytics', [AdminController::class, 'analytics'])->name('admin.analytics');
+    Route::get('/admin/analytics/ranking', [AdminController::class, 'rankingAnalytics'])->name('admin.analytics.ranking');
     Route::get('/admin/destroy', [AdminController::class, 'destroyPage'])->name('admin.destroy');
     Route::get('/admin/promotions', [AdminController::class, 'promotions'])->name('admin.promotions');
     Route::get('/admin/sync-status', [AdminController::class, 'syncStatus'])->name('admin.sync-status');

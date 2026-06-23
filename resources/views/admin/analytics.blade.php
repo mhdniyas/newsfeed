@@ -15,8 +15,6 @@
     $chartCards = [
         ['key' => 'live_users', 'tone' => 'emerald'],
         ['key' => 'news_total', 'tone' => 'sky'],
-        ['key' => 'registered_users', 'tone' => 'amber'],
-        ['key' => 'returning_visitors', 'tone' => 'slate'],
     ];
 
     $rankToneClasses = match ($viewRank['tone']) {
@@ -36,7 +34,7 @@
         <div>
             <p class="text-[11px] font-semibold uppercase tracking-[0.26em] text-slate-400">Admin Analytics</p>
             <h1 class="mt-1 text-2xl sm:text-3xl font-extrabold text-slate-900">Traffic intelligence</h1>
-            <p class="mt-2 max-w-2xl text-sm text-slate-500">Live visitors, device mix, IP activity, and article performance in a mobile-friendly layout.</p>
+            <p class="mt-2 max-w-2xl text-sm text-slate-500">Live visitors, device mix, IP activity, and article performance in a cleaner admin layout.</p>
         </div>
         <div class="flex flex-wrap gap-2">
             <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold transition-colors shadow-sm">
@@ -48,17 +46,11 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-2 xl:grid-cols-6 gap-3 sm:gap-4 mb-8">
+    <div class="grid grid-cols-2 xl:grid-cols-6 gap-3 sm:gap-4 mb-6">
         <div class="col-span-2 rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-500 to-emerald-600 p-5 text-white shadow-lg shadow-emerald-500/15 xl:col-span-1">
             <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-50/80">Live Now</p>
             <p class="mt-3 text-4xl font-black">{{ number_format($visitorSnapshot['live_now_count']) }}</p>
             <p class="mt-2 text-xs text-emerald-50/90">Visitors active in the last 5 minutes.</p>
-        </div>
-        <div class="col-span-2 rounded-3xl border p-4 shadow-sm xl:col-span-1 {{ $rankToneClasses }}">
-            <p class="text-[11px] font-semibold uppercase tracking-[0.22em] opacity-80">View Rank</p>
-            <p class="mt-2 text-2xl font-extrabold">{{ $viewRank['tier'] }}</p>
-            <p class="mt-1 text-xs opacity-80">{{ $viewRank['range'] }}</p>
-            <p class="mt-2 text-[11px] font-bold uppercase tracking-[0.18em]">{{ number_format($analyticsSummary['article_views']) }} RP views</p>
         </div>
         <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
             <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Public Visits</p>
@@ -86,6 +78,27 @@
             <p class="mt-1 text-xs text-slate-500">Outbound news card clicks.</p>
         </div>
     </div>
+
+    <section class="mb-8 rounded-[2rem] border px-5 py-5 shadow-sm {{ $rankToneClasses }}">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] opacity-80">View Rank</p>
+                <h2 class="mt-2 text-3xl font-black">{{ $viewRank['tier'] }}</h2>
+                <p class="mt-2 text-sm opacity-80">Current range: {{ $viewRank['range'] }}. Ranking is based on total article views.</p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:min-w-[320px]">
+                <div class="rounded-[1.6rem] border border-white/40 bg-white/70 px-5 py-4 shadow-sm">
+                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-70">Article Views</p>
+                    <p class="mt-2 text-3xl font-black">{{ number_format($analyticsSummary['article_views']) }}</p>
+                </div>
+                <a href="{{ route('admin.analytics.ranking') }}" class="rounded-[1.6rem] border border-white/40 bg-slate-950 px-5 py-4 text-white shadow-sm transition hover:bg-slate-800">
+                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-white/70">Open Detail Page</p>
+                    <p class="mt-2 text-base font-black">Detailed Ranking Analytics</p>
+                    <p class="mt-1 text-xs text-white/75">View the full ladder and ranked articles.</p>
+                </a>
+            </div>
+        </div>
+    </section>
 
     <div class="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 gap-6 mb-8">
         @foreach($chartCards as $chartCard)
@@ -118,9 +131,7 @@
 
                 <div class="mt-5 flex items-end gap-2 h-36">
                     @foreach($chart['points'] as $point)
-                        @php
-                            $height = max(10, (int) round(($point['value'] / $chart['max']) * 100));
-                        @endphp
+                        @php($height = max(10, (int) round(($point['value'] / $chart['max']) * 100)))
                         <div class="flex-1 min-w-0">
                             <div class="flex h-28 items-end">
                                 <div class="w-full rounded-t-2xl {{ $barTone }}" style="height: {{ $height }}%;"></div>
@@ -137,6 +148,40 @@
                 </div>
             </section>
         @endforeach
+
+        @php($registeredUsersChart = $analyticsCharts['registered_users'])
+        <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="flex items-start justify-between gap-3">
+                <div>
+                    <h2 class="text-base font-bold text-slate-900">{{ $registeredUsersChart['title'] }}</h2>
+                    <p class="mt-1 text-xs text-slate-500">{{ $registeredUsersChart['subtitle'] }}</p>
+                </div>
+                <span class="rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] bg-amber-50 text-amber-700">
+                    {{ number_format($registeredUsersChart['headline']) }} {{ $registeredUsersChart['headline_label'] }}
+                </span>
+            </div>
+            <div class="mt-5">
+                <p class="text-3xl font-black text-slate-900">{{ number_format($registeredUsersChart['total']) }}</p>
+                <p class="mt-1 text-xs text-slate-500">Total</p>
+            </div>
+        </section>
+
+        @php($returningVisitorsChart = $analyticsCharts['returning_visitors'])
+        <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="flex items-start justify-between gap-3">
+                <div>
+                    <h2 class="text-base font-bold text-slate-900">{{ $returningVisitorsChart['title'] }}</h2>
+                    <p class="mt-1 text-xs text-slate-500">{{ $returningVisitorsChart['subtitle'] }}</p>
+                </div>
+                <span class="rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] bg-slate-100 text-slate-700">
+                    {{ number_format($returningVisitorsChart['headline']) }} {{ $returningVisitorsChart['headline_label'] }}
+                </span>
+            </div>
+            <div class="mt-5">
+                <p class="text-3xl font-black text-slate-900">{{ number_format($returningVisitorsChart['total']) }}</p>
+                <p class="mt-1 text-xs text-slate-500">Total</p>
+            </div>
+        </section>
     </div>
 
     <div class="grid grid-cols-1 2xl:grid-cols-[1.15fr_0.85fr] gap-6 mb-8">
@@ -220,39 +265,7 @@
         </section>
     </div>
 
-    <div class="grid grid-cols-1 xl:grid-cols-[1.15fr_0.85fr] gap-6 mb-8">
-        <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div class="flex items-start justify-between gap-3">
-                <div>
-                    <h2 class="text-base font-bold text-slate-900">PUBG-style View Ladder</h2>
-                    <p class="text-xs text-slate-500 mt-1">Rank the site by total article views and the leaderboard by per-article views.</p>
-                </div>
-                <span class="rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] {{ $rankToneClasses }}">
-                    {{ $viewRank['badge'] }}
-                </span>
-            </div>
-            <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                @foreach([
-                    ['tier' => 'Bronze', 'range' => '< 1500 RP'],
-                    ['tier' => 'Silver', 'range' => '1500 - 1800 RP'],
-                    ['tier' => 'Gold', 'range' => '1800 - 2200 RP'],
-                    ['tier' => 'Platinum', 'range' => '2200 - 2700 RP'],
-                    ['tier' => 'Diamond', 'range' => '2700 - 3200 RP'],
-                    ['tier' => 'Crown', 'range' => '3200 - 3700 RP'],
-                    ['tier' => 'Ace', 'range' => '3700 - 3900 RP'],
-                    ['tier' => 'Ace Master', 'range' => '3900 - 4050 RP'],
-                    ['tier' => 'Ace Dominator', 'range' => '4050 - 4200+ RP'],
-                    ['tier' => 'Conqueror', 'range' => 'Top 500 after Ace'],
-                ] as $tier)
-                    @php($isActiveTier = $viewRank['tier'] === $tier['tier'] || ($tier['tier'] === 'Ace' && str_starts_with($viewRank['tier'], 'Ace')))
-                    <div class="rounded-2xl border px-4 py-3 {{ $isActiveTier ? $rankToneClasses : 'border-slate-200 bg-slate-50 text-slate-700' }}">
-                        <p class="text-sm font-bold">{{ $tier['tier'] }}</p>
-                        <p class="mt-1 text-xs opacity-80">{{ $tier['range'] }}</p>
-                    </div>
-                @endforeach
-            </div>
-        </section>
-
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <div class="flex items-center justify-between gap-3">
                 <div>
@@ -265,20 +278,9 @@
                 @foreach($analyticsSummary['top_viewed'] as $article)
                     <div class="flex items-start justify-between gap-3 rounded-2xl bg-slate-50 border border-slate-100 px-3 py-3">
                         <div class="min-w-0">
-                            <div class="flex flex-wrap items-center gap-2">
-                                <p class="text-[10px] font-extrabold uppercase tracking-[0.18em] text-slate-400">#{{ $loop->iteration }}</p>
-                                <span class="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em]
-                                    @if(($article->view_rank['tone'] ?? null) === 'rose') bg-rose-50 text-rose-700
-                                    @elseif(($article->view_rank['tone'] ?? null) === 'sky') bg-sky-50 text-sky-700
-                                    @elseif(($article->view_rank['tone'] ?? null) === 'emerald') bg-emerald-50 text-emerald-700
-                                    @elseif(($article->view_rank['tone'] ?? null) === 'violet') bg-violet-50 text-violet-700
-                                    @elseif(($article->view_rank['tone'] ?? null) === 'yellow') bg-yellow-50 text-yellow-700
-                                    @elseif(($article->view_rank['tone'] ?? null) === 'amber') bg-amber-50 text-amber-700
-                                    @else bg-slate-100 text-slate-700 @endif">{{ $article->view_rank['badge'] ?? 'Bronze' }}</span>
-                            </div>
+                            <p class="text-[10px] font-extrabold uppercase tracking-[0.18em] text-slate-400">#{{ $loop->iteration }}</p>
                             <p class="text-sm font-bold text-slate-900 line-clamp-2">{{ $article->title }}</p>
                             <p class="text-[11px] text-slate-500 mt-1">{{ $article->newsTopic?->name }} · {{ $article->source_name }}</p>
-                            <p class="mt-1 text-[11px] font-semibold text-slate-500">{{ $article->view_rank['range'] ?? '< 1500 RP' }}</p>
                         </div>
                         <span class="shrink-0 text-xs font-bold text-emerald-600">{{ number_format($article->views_count) }}</span>
                     </div>
@@ -303,79 +305,6 @@
                             <p class="text-[11px] text-slate-500 mt-1">{{ $article->newsTopic?->name }} · {{ $article->source_name }}</p>
                         </div>
                         <span class="shrink-0 text-xs font-bold text-amber-600">{{ number_format($article->clicks_count) }}</span>
-                    </div>
-                @endforeach
-            </div>
-        </section>
-    </div>
-
-    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <section class="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-            <div class="px-5 py-4 border-b border-slate-200 bg-slate-50/70">
-                <h2 class="text-base font-bold text-slate-900">Recent Visitor Details</h2>
-                <p class="text-xs text-slate-500 mt-1">Today’s latest visitor records with IP, device, and route details.</p>
-            </div>
-            <div class="divide-y divide-slate-200">
-                @forelse($visitorSnapshot['recent_visitors'] as $visitor)
-                    <div class="p-4">
-                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                            <div class="min-w-0">
-                                <p class="text-sm font-bold text-slate-900 break-all">{{ $visitor->ip_address ?: 'IP unavailable' }}</p>
-                                <p class="mt-1 text-xs text-slate-500 break-all">{{ $visitor->page_path ?: '/world-cup-news' }}</p>
-                            </div>
-                            <p class="text-xs font-medium text-slate-500">{{ optional($visitor->last_seen_at)?->format('M d, H:i:s') ?? 'Unknown' }}</p>
-                        </div>
-                        <div class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
-                            <div class="rounded-2xl bg-slate-50 px-3 py-2 text-xs">
-                                <p class="text-[10px] uppercase tracking-[0.16em] text-slate-400">Device</p>
-                                <p class="mt-1 font-bold text-slate-800">{{ $visitor->device_type ?: 'Unknown' }}</p>
-                            </div>
-                            <div class="rounded-2xl bg-slate-50 px-3 py-2 text-xs">
-                                <p class="text-[10px] uppercase tracking-[0.16em] text-slate-400">Browser</p>
-                                <p class="mt-1 font-bold text-slate-800">{{ $visitor->browser_name ?: 'Unknown' }}</p>
-                            </div>
-                            <div class="rounded-2xl bg-slate-50 px-3 py-2 text-xs">
-                                <p class="text-[10px] uppercase tracking-[0.16em] text-slate-400">Platform</p>
-                                <p class="mt-1 font-bold text-slate-800">{{ $visitor->os_name ?: 'Unknown' }}</p>
-                            </div>
-                            <div class="rounded-2xl bg-slate-50 px-3 py-2 text-xs">
-                                <p class="text-[10px] uppercase tracking-[0.16em] text-slate-400">Region</p>
-                                <p class="mt-1 font-bold text-slate-800">{{ $visitor->country_code ?: 'Unknown' }}</p>
-                            </div>
-                        </div>
-                    </div>
-                @empty
-                    <div class="p-6 text-sm text-slate-500">No visitor records available yet.</div>
-                @endforelse
-            </div>
-        </section>
-
-        <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 class="text-base font-bold text-slate-900">Recent Article Activity</h2>
-            <p class="text-xs text-slate-500 mt-1">Latest stories receiving views or clicks.</p>
-            <div class="mt-4 space-y-3">
-                @foreach($analyticsSummary['recent_activity'] as $article)
-                    <div class="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4">
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="min-w-0">
-                                <p class="text-sm font-bold text-slate-900 line-clamp-2">{{ $article->title }}</p>
-                                <p class="mt-1 text-[11px] text-slate-500">{{ $article->newsTopic?->name }} · {{ $article->source_name }}</p>
-                            </div>
-                            <div class="text-right text-xs">
-                                <p class="font-bold text-slate-900">{{ number_format($article->views_count) }} views</p>
-                                <p class="mt-1 font-bold text-amber-600">{{ number_format($article->clicks_count) }} clicks</p>
-                            </div>
-                        </div>
-                        <div class="mt-3 grid grid-cols-2 gap-2">
-                            <div class="rounded-2xl bg-white px-3 py-2 text-xs text-slate-500">
-                                <p class="text-[10px] uppercase tracking-[0.16em] text-slate-400">Last Viewed</p>
-                                <p class="mt-1 font-semibold text-slate-800">{{ optional($article->last_viewed_at)?->format('M d, H:i') ?? 'Never' }}</p>
-                            </div>
-                            <div class="rounded-2xl bg-white px-3 py-2 text-xs text-slate-500">
-                                <p class="text-[10px] uppercase tracking-[0.16em] text-slate-400">Last Clicked</p>
-                                <p class="mt-1 font-semibold text-slate-800">{{ optional($article->last_clicked_at)?->format('M d, H:i') ?? 'Never' }}</p>
-                            </div>
-                        </div>
                     </div>
                 @endforeach
             </div>

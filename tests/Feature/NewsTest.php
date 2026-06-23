@@ -462,11 +462,19 @@ class NewsTest extends TestCase
             ->get(route('admin.analytics'));
 
         $response->assertOk();
-        $response->assertSee('PUBG-style View Ladder');
-        $response->assertSee('Ace Master');
-        $response->assertSee('Diamond Story');
-        $response->assertSee('Diamond');
-        $response->assertSee('Ace Story');
+        $response->assertSee('Detailed Ranking Analytics');
+        $response->assertSee('Ace Dominator');
+        $response->assertSee('Current range: 4050 - 4200+ views');
+        $response->assertDontSee('RP views');
+
+        $rankingResponse = $this->withSession(['admin_authenticated' => true])
+            ->get(route('admin.analytics.ranking'));
+
+        $rankingResponse->assertOk();
+        $rankingResponse->assertSee('Rank Ladder');
+        $rankingResponse->assertSee('Diamond Story');
+        $rankingResponse->assertSee('Diamond');
+        $rankingResponse->assertSee('Ace Story');
     }
 
     /**

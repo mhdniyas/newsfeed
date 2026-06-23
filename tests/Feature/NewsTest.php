@@ -234,6 +234,56 @@ class NewsTest extends TestCase
         $this->assertStringContainsString('Saved 60/60 allowed articles', \App\Models\Setting::get('news_sync_last_output'));
     }
 
+    public function test_news_prune_old_command_deletes_only_low_click_old_articles()
+    {
+        $topic = NewsTopic::create([
+            'name' => 'Retention Topic',
+            'keyword' => 'retention-topic',
+            'language' => 'en',
+            'country' => 'US',
+            'is_active' => true,
+        ]);
+
+        $deleteCandidate = NewsItem::create([
+            'news_topic_id' => $topic->id,
+            'title' => 'Old Low Click Story',
+            'source_name' => 'Example',
+            'url' => 'https://example.com/old-low-click',
+            'hash' => 'old-low-click',
+            'published_at' => now()->subDays(9),
+            'clicks_count' => 500,
+            'is_visible' => true,
+        ]);
+
+        $protectedPopular = NewsItem::create([
+            'news_topic_id' => $topic->id,
+            'title' => 'Old Popular Story',
+            'source_name' => 'Example',
+            'url' => 'https://example.com/old-popular',
+            'hash' => 'old-popular',
+            'published_at' => now()->subDays(9),
+            'clicks_count' => 501,
+            'is_visible' => true,
+        ]);
+
+        $protectedRecent = NewsItem::create([
+            'news_topic_id' => $topic->id,
+            'title' => 'Recent Story',
+            'source_name' => 'Example',
+            'url' => 'https://example.com/recent-story',
+            'hash' => 'recent-story',
+            'published_at' => now()->subDays(2),
+            'clicks_count' => 0,
+            'is_visible' => true,
+        ]);
+
+        Artisan::call('news:prune-old');
+
+        $this->assertDatabaseMissing('news_items', ['id' => $deleteCandidate->id]);
+        $this->assertDatabaseHas('news_items', ['id' => $protectedPopular->id]);
+        $this->assertDatabaseHas('news_items', ['id' => $protectedRecent->id]);
+    }
+
     /**
      * Test fallback placeholder image route renders.
      */

@@ -140,6 +140,27 @@ class AdminController extends Controller
             'zero_view_articles' => (clone $statsQuery)->where('views_count', '<=', 0)->count(),
             'least_clicked_total' => (clone $statsQuery)->sum('clicks_count'),
         ];
+        $pruneDays = (int) Setting::get('news_prune_last_days', '8');
+        $pruneClickThreshold = (int) Setting::get('news_prune_last_click_threshold', '500');
+        $pruneCutoff = now()->subDays($pruneDays);
+        $autoDeleteReport = [
+            'days' => $pruneDays,
+            'click_threshold' => $pruneClickThreshold,
+            'cutoff_at' => $pruneCutoff,
+            'eligible_now' => NewsItem::query()
+                ->where('published_at', '<', $pruneCutoff)
+                ->where('clicks_count', '<=', $pruneClickThreshold)
+                ->count(),
+            'protected_now' => NewsItem::query()
+                ->where('published_at', '<', $pruneCutoff)
+                ->where('clicks_count', '>', $pruneClickThreshold)
+                ->count(),
+            'last_run_at' => Setting::get('news_prune_last_run_at'),
+            'last_cutoff_at' => Setting::get('news_prune_last_cutoff_at'),
+            'last_eligible_count' => (int) Setting::get('news_prune_last_eligible_count', '0'),
+            'last_deleted_count' => (int) Setting::get('news_prune_last_deleted_count', '0'),
+            'last_protected_count' => (int) Setting::get('news_prune_last_protected_count', '0'),
+        ];
         $fetchStats = $this->fetchStats();
 
         return view('admin.destroy', compact(
@@ -150,6 +171,7 @@ class AdminController extends Controller
             'search',
             'sort',
             'destroyStats',
+            'autoDeleteReport',
             'fetchStats'
         ));
     }

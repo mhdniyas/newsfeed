@@ -6,6 +6,7 @@ use App\Models\NewsTopic;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -16,10 +17,12 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Seed some admin/test user if needed
-        User::factory()->create([
-            'name' => 'Admin User',
+        User::firstOrCreate([
             'email' => 'admin@example.com',
+        ], [
+            'name' => 'Admin User',
+            'password' => Hash::make('password'),
+            'email_verified_at' => now(),
         ]);
 
         $topics = [
@@ -58,4 +61,3 @@ class DatabaseSeeder extends Seeder
         }
     }
 }
-

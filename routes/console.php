@@ -17,3 +17,7 @@ Schedule::command('queue:work --stop-when-empty --queue=syncs,default --tries=1 
     ->everyMinute()
     ->withoutOverlapping()
     ->runInBackground();
+
+Schedule::command('news:prune-old')
+    ->daily()
+    ->withoutOverlapping();

@@ -55,6 +55,39 @@
         </div>
     </div>
 
+    <div class="mb-8 rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white shadow-sm overflow-hidden">
+        <div class="border-b border-amber-200 px-5 py-4">
+            <h2 class="text-base font-bold text-slate-900">Auto-delete report</h2>
+            <p class="mt-1 text-xs text-slate-500">Every day the scheduler removes articles older than {{ $autoDeleteReport['days'] }} days when clicks stay at {{ number_format($autoDeleteReport['click_threshold']) }} or below. Anything above that stays.</p>
+        </div>
+        <div class="grid gap-3 px-5 py-4 md:grid-cols-3">
+            <div class="rounded-2xl border border-amber-200 bg-white p-4">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Eligible Now</p>
+                <p class="mt-2 text-3xl font-extrabold text-rose-600">{{ number_format($autoDeleteReport['eligible_now']) }}</p>
+                <p class="mt-1 text-xs text-slate-500">Would be deleted on the next scheduled prune.</p>
+            </div>
+            <div class="rounded-2xl border border-amber-200 bg-white p-4">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Protected Now</p>
+                <p class="mt-2 text-3xl font-extrabold text-emerald-600">{{ number_format($autoDeleteReport['protected_now']) }}</p>
+                <p class="mt-1 text-xs text-slate-500">Older than {{ $autoDeleteReport['days'] }} days but kept because clicks are above {{ number_format($autoDeleteReport['click_threshold']) }}.</p>
+            </div>
+            <div class="rounded-2xl border border-amber-200 bg-white p-4">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Last Run</p>
+                <p class="mt-2 text-sm font-bold text-slate-900">
+                    @if($autoDeleteReport['last_run_at'])
+                        {{ \Illuminate\Support\Carbon::parse($autoDeleteReport['last_run_at'])->format('M d, Y H:i') }}
+                    @else
+                        Not run yet
+                    @endif
+                </p>
+                <p class="mt-2 text-xs text-slate-500">
+                    Deleted {{ number_format($autoDeleteReport['last_deleted_count']) }} from {{ number_format($autoDeleteReport['last_eligible_count']) }} eligible.
+                    Protected: {{ number_format($autoDeleteReport['last_protected_count']) }}.
+                </p>
+            </div>
+        </div>
+    </div>
+
     <div class="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <div class="px-5 py-4 border-b border-slate-200 bg-slate-50/70">
             <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">

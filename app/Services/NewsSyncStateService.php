@@ -80,7 +80,7 @@ class NewsSyncStateService
     public function globalLimitReached(): bool
     {
         $meta = $this->meta();
-        $limit = (int) ($meta['cycle_limit'] ?? $meta['article_limit'] ?? 60);
+        $limit = (int) ($meta['cycle_limit'] ?? $meta['article_limit'] ?? 120);
         $saved = (int) (($meta['stats']['new_articles'] ?? 0));
 
         return $saved >= $limit;
@@ -214,7 +214,7 @@ class NewsSyncStateService
             . ((int) ($stats['official_articles'] ?? 0)) . " official FIFA articles, recovered "
             . ((int) ($stats['images_recovered'] ?? 0)) . " images, skipped "
             . ((int) ($stats['skipped_duplicates'] ?? 0)) . " duplicates. Saved "
-            . ((int) ($stats['new_articles'] ?? 0)) . '/' . ((int) ($meta['cycle_limit'] ?? 60))
+            . ((int) ($stats['new_articles'] ?? 0)) . '/' . ((int) ($meta['cycle_limit'] ?? 120))
             . " allowed articles across " . ((int) ($meta['processed_sections'] ?? 0)) . '/' . ((int) ($meta['total_sections'] ?? 0))
             . ' sections.';
 

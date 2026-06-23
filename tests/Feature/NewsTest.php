@@ -549,7 +549,7 @@ class NewsTest extends TestCase
     }
 
     /**
-     * Test news:fetch never saves more than 60 new articles in one run.
+     * Test news:fetch never saves more than 120 new articles in one run.
      */
     public function test_news_fetch_command_caps_saved_articles_per_run()
     {
@@ -600,8 +600,8 @@ class NewsTest extends TestCase
 
         Artisan::call('news:fetch');
 
-        $this->assertEquals(60, NewsItem::count());
-        $this->assertStringContainsString('Saved 60/60 allowed articles', \App\Models\Setting::get('news_sync_last_output'));
+        $this->assertEquals(120, NewsItem::count());
+        $this->assertStringContainsString('Saved 120/120 allowed articles', \App\Models\Setting::get('news_sync_last_output'));
     }
 
     public function test_news_prune_old_command_deletes_only_low_click_old_articles()

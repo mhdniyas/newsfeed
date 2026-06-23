@@ -22,7 +22,7 @@ class NewsFetchService
     ) {
     }
 
-    public function fetchSection(NewsSection $section, int $cycleLimit = 60): array
+    public function fetchSection(NewsSection $section, int $cycleLimit = 120): array
     {
         $topics = $section->newsTopics()->where('is_active', true)->orderBy('sort_order')->orderBy('id')->get();
         $sectionLimit = max(1, (int) ($section->card_limit ?: 6));

@@ -28,7 +28,7 @@ class FetchNewsSection implements ShouldQueue
         }
 
         try {
-            $summary = $fetchService->fetchSection($section, 60);
+            $summary = $fetchService->fetchSection($section, 120);
             $isLast = $syncState->completeSection($section, $summary);
 
             if ($isLast && $syncState->finalizerShouldDispatch()) {

@@ -73,6 +73,11 @@
     </div>
 
     <div data-tab-panel="overview">
+    <div class="mb-4 flex items-center justify-end">
+        <button type="button" data-refresh-tab="overview" class="analytics-refresh inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
+            Refresh Overview
+        </button>
+    </div>
     <div class="grid grid-cols-3 gap-3 sm:gap-4 lg:grid-cols-4 mb-6">
         <div class="rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-500 to-emerald-600 p-3 sm:p-4 text-white shadow-lg shadow-emerald-500/15">
             <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-50/80">Live Now</p>
@@ -407,6 +412,12 @@
             ];
         @endphp
 
+        <div class="mb-4 flex items-center justify-end">
+            <button type="button" data-refresh-tab="trends" class="analytics-refresh inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
+                Refresh Google Trends
+            </button>
+        </div>
+
         <div class="grid grid-cols-2 xl:grid-cols-5 gap-3 sm:gap-4 mb-6">
             <div class="col-span-2 rounded-3xl border p-5 shadow-sm {{ $trendsAssessmentClasses }}">
                 <p class="text-[11px] font-semibold uppercase tracking-[0.24em] opacity-80">Trend Conversion</p>
@@ -526,6 +537,11 @@
     </div>
 
     <div data-tab-panel="content" class="hidden">
+        <div class="mb-4 flex items-center justify-end">
+            <button type="button" data-refresh-tab="content" class="analytics-refresh inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
+                Refresh Content
+            </button>
+        </div>
         <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-6">
             <div class="col-span-2 rounded-3xl border border-sky-200 bg-gradient-to-br from-sky-500 to-cyan-500 p-5 text-white shadow-lg shadow-sky-500/15">
                 <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-50/80">Content Inventory</p>
@@ -722,14 +738,18 @@
     document.addEventListener('DOMContentLoaded', () => {
         const tabButtons = Array.from(document.querySelectorAll('.analytics-tab'));
         const panels = Array.from(document.querySelectorAll('[data-tab-panel]'));
+        const refreshButtons = Array.from(document.querySelectorAll('.analytics-refresh'));
+        const tabStorageKey = 'signalz-admin-analytics-tab';
 
         if (tabButtons.length === 0 || panels.length === 0) {
             return;
         }
 
         const activateTab = (target) => {
+            const safeTarget = panels.some((panel) => panel.dataset.tabPanel === target) ? target : 'overview';
+
             tabButtons.forEach((button) => {
-                const active = button.dataset.tabTarget === target;
+                const active = button.dataset.tabTarget === safeTarget;
                 button.classList.toggle('bg-slate-950', active);
                 button.classList.toggle('text-white', active);
                 button.classList.toggle('bg-white', !active);
@@ -737,15 +757,36 @@
             });
 
             panels.forEach((panel) => {
-                panel.classList.toggle('hidden', panel.dataset.tabPanel !== target);
+                panel.classList.toggle('hidden', panel.dataset.tabPanel !== safeTarget);
             });
+
+            window.sessionStorage.setItem(tabStorageKey, safeTarget);
+
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', safeTarget);
+            window.history.replaceState({}, '', url);
         };
 
         tabButtons.forEach((button) => {
             button.addEventListener('click', () => activateTab(button.dataset.tabTarget));
         });
 
-        activateTab('overview');
+        refreshButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                const target = button.dataset.refreshTab || 'overview';
+                window.sessionStorage.setItem(tabStorageKey, target);
+
+                const url = new URL(window.location.href);
+                url.searchParams.set('tab', target);
+                window.location.href = url.toString();
+            });
+        });
+
+        const initialTab = new URL(window.location.href).searchParams.get('tab')
+            || window.sessionStorage.getItem(tabStorageKey)
+            || 'overview';
+
+        activateTab(initialTab);
 
         const graphButtons = Array.from(document.querySelectorAll('.analytics-graph-tab'));
         const graphPanels = Array.from(document.querySelectorAll('[data-graph-panel]'));

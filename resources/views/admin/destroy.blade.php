@@ -8,7 +8,7 @@
         <div>
             <p class="text-[11px] font-semibold uppercase tracking-[0.26em] text-rose-500">Admin Destroy</p>
             <h1 class="mt-1 text-2xl sm:text-3xl font-extrabold text-slate-900">Retention cleanup queue</h1>
-            <p class="mt-2 max-w-3xl text-sm text-slate-500">Automatic cleanup deletes articles older than {{ $autoDeleteReport['days'] }} days with fewer than {{ number_format($autoDeleteReport['click_threshold']) }} clicks. Favorites are always protected.</p>
+            <p class="mt-2 max-w-3xl text-sm text-slate-500">Cleanup deletes articles older than {{ $autoDeleteReport['days'] }} days with fewer than {{ number_format($autoDeleteReport['click_threshold']) }} clicks. Favorites are always protected. (Automatic daily cleanup is disabled)</p>
         </div>
         <div class="flex flex-wrap gap-2">
             <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold transition-colors shadow-sm">
@@ -58,13 +58,13 @@
     <div class="mb-8 rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white shadow-sm overflow-hidden">
         <div class="border-b border-amber-200 px-5 py-4">
             <h2 class="text-base font-bold text-slate-900">Auto-delete report</h2>
-            <p class="mt-1 text-xs text-slate-500">Every day the scheduler removes articles older than {{ $autoDeleteReport['days'] }} days when clicks stay below {{ number_format($autoDeleteReport['click_threshold']) }}. High-click posts and favorites stay protected.</p>
+            <p class="mt-1 text-xs text-slate-500">Automatic daily pruning is disabled. You can run the cleanup process manually using the "Destroy Now" button to remove articles older than {{ $autoDeleteReport['days'] }} days when clicks stay below {{ number_format($autoDeleteReport['click_threshold']) }}. High-click posts and favorites stay protected.</p>
         </div>
         <div class="grid gap-3 px-5 py-4 md:grid-cols-2 xl:grid-cols-5">
             <div class="rounded-2xl border border-amber-200 bg-white p-4">
                 <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Eligible Now</p>
                 <p class="mt-2 text-3xl font-extrabold text-rose-600">{{ number_format($autoDeleteReport['eligible_now']) }}</p>
-                <p class="mt-1 text-xs text-slate-500">Would be deleted on the next scheduled prune.</p>
+                <p class="mt-1 text-xs text-slate-500">Eligible for manual deletion.</p>
             </div>
             <div class="rounded-2xl border border-amber-200 bg-white p-4">
                 <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Protected Now</p>

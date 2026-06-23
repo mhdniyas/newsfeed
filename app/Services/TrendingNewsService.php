@@ -340,24 +340,7 @@ class TrendingNewsService
 
     protected function trimKeywordPool(NewsSection $section): void
     {
-        $overflow = NewsTopic::query()
-            ->where('news_section_id', $section->id)
-            ->count() - self::KEYWORD_POOL_LIMIT;
-
-        if ($overflow <= 0) {
-            return;
-        }
-
-        $inactiveTopics = NewsTopic::query()
-            ->where('news_section_id', $section->id)
-            ->where('is_active', false)
-            ->orderBy('updated_at')
-            ->orderBy('id')
-            ->take($overflow)
-            ->get();
-
-        foreach ($inactiveTopics as $topic) {
-            $topic->delete();
-        }
+        // Automatic deletion of inactive Google Trends keyword topics has been removed.
+        // Inactive keywords will remain in the database unless manually deleted.
     }
 }

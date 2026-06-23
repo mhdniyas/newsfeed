@@ -189,7 +189,7 @@
                         <div class="flex items-start justify-between gap-3">
                             <div>
                                 <h3 class="text-sm font-bold text-slate-900">Keyword Flow</h3>
-                                <p class="mt-1 text-xs text-slate-500">Google Trends RSS currently exposes up to {{ $trendsSnapshot['keywords_per_country'] }} live keywords per country. The crawler keeps those active and trims the old pool as new ones arrive.</p>
+                                <p class="mt-1 text-xs text-slate-500">Google Trends RSS currently exposes up to {{ $trendsSnapshot['keywords_per_country'] }} live keywords per country. The crawler keeps those active, and old ones can be manually deleted.</p>
                             </div>
                             <span class="inline-flex rounded-full border border-emerald-200 bg-white px-3 py-2 text-[11px] font-bold text-emerald-700">
                                 {{ number_format($trendsSnapshot['total_active_keyword_limit']) }} active max
@@ -229,7 +229,7 @@
         <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Stored Pool Limit</p>
             <p class="mt-2 text-3xl font-black text-slate-900">{{ number_format($trendsSnapshot['keyword_pool_limit']) }}</p>
-            <p class="mt-1 text-xs text-slate-500">Old inactive trend keywords get removed as new ones arrive</p>
+            <p class="mt-1 text-xs text-slate-500">Old inactive trend keywords are stored (can be manually deleted)</p>
         </div>
         <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Trend News Cap</p>

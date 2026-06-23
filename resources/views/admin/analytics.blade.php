@@ -73,50 +73,47 @@
     </div>
 
     <div data-tab-panel="overview">
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 mb-4">
-        <div class="rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-500 to-emerald-600 p-5 text-white shadow-lg shadow-emerald-500/15">
-            <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-50/80">Live Now</p>
-            <p class="mt-3 text-4xl font-black">{{ number_format($visitorSnapshot['live_now_count']) }}</p>
-            <p class="mt-2 text-xs text-emerald-50/90">Visitors active in the last 5 minutes.</p>
+    <div class="grid grid-cols-3 gap-3 sm:gap-4 lg:grid-cols-4 mb-6">
+        <div class="rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-500 to-emerald-600 p-3 sm:p-4 text-white shadow-lg shadow-emerald-500/15">
+            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-50/80">Live Now</p>
+            <p class="mt-2 text-xl sm:text-3xl font-black leading-none">{{ number_format($visitorSnapshot['live_now_count']) }}</p>
+            <p class="mt-2 hidden text-xs text-emerald-50/90 sm:block">Visitors active in the last 5 minutes.</p>
         </div>
-        <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Site Views</p>
-            <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ number_format($visitStats['page_views_total']) }}</p>
-            <p class="mt-1 text-xs text-slate-500">All public page loads across the site.</p>
+        <div class="rounded-3xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
+            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Site Views</p>
+            <p class="mt-2 text-xl sm:text-3xl font-extrabold leading-none text-slate-900">{{ number_format($visitStats['page_views_total']) }}</p>
+            <p class="mt-2 hidden text-xs text-slate-500 sm:block">All public page loads across the site.</p>
         </div>
-        <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Public Visits</p>
-            <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ number_format($visitStats['total']) }}</p>
-            <p class="mt-1 text-xs text-slate-500">Deduped public page visits, not every rapid refresh.</p>
+        <div class="rounded-3xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
+            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Public Visits</p>
+            <p class="mt-2 text-xl sm:text-3xl font-extrabold leading-none text-slate-900">{{ number_format($visitStats['total']) }}</p>
+            <p class="mt-2 hidden text-xs text-slate-500 sm:block">Deduped public page visits.</p>
         </div>
-        <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Site Views Today</p>
-            <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ number_format($visitStats['page_views_today']) }}</p>
-            <p class="mt-1 text-xs text-slate-500">Public page loads recorded today.</p>
+        <div class="rounded-3xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
+            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Views Today</p>
+            <p class="mt-2 text-xl sm:text-3xl font-extrabold leading-none text-slate-900">{{ number_format($visitStats['page_views_today']) }}</p>
+            <p class="mt-2 hidden text-xs text-slate-500 sm:block">Public page loads recorded today.</p>
         </div>
-        <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Visits Today</p>
-            <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ number_format($visitStats['today']) }}</p>
-            <p class="mt-1 text-xs text-slate-500">Deduped visits recorded today.</p>
+        <div class="rounded-3xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
+            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Visits Today</p>
+            <p class="mt-2 text-xl sm:text-3xl font-extrabold leading-none text-slate-900">{{ number_format($visitStats['today']) }}</p>
+            <p class="mt-2 hidden text-xs text-slate-500 sm:block">Deduped visits recorded today.</p>
         </div>
-        <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Unique Today</p>
-            <p class="mt-2 text-3xl font-extrabold text-emerald-600">{{ number_format($visitStats['unique_today']) }}</p>
-            <p class="mt-1 text-xs text-slate-500">Distinct fingerprints seen today.</p>
+        <div class="rounded-3xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
+            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Unique Today</p>
+            <p class="mt-2 text-xl sm:text-3xl font-extrabold leading-none text-emerald-600">{{ number_format($visitStats['unique_today']) }}</p>
+            <p class="mt-2 hidden text-xs text-slate-500 sm:block">Distinct fingerprints seen today.</p>
         </div>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 mb-6">
-        <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Article Views</p>
-            <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ number_format($analyticsSummary['article_views']) }}</p>
-            <p class="mt-1 text-xs text-slate-500">Deduped article impressions across public feeds.</p>
+        <div class="rounded-3xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
+            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Article Views</p>
+            <p class="mt-2 text-xl sm:text-3xl font-extrabold leading-none text-slate-900">{{ number_format($analyticsSummary['article_views']) }}</p>
+            <p class="mt-2 hidden text-xs text-slate-500 sm:block">Deduped article impressions across public feeds.</p>
         </div>
-        <div class="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-4 shadow-sm">
-            <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-600">Conversions</p>
-            <p class="mt-2 text-3xl font-extrabold text-amber-700">{{ number_format($analyticsSummary['article_clicks']) }}</p>
-            <p class="mt-1 text-xs text-amber-600/80">Outbound article link clicks.</p>
-            <p class="mt-1.5 text-sm font-black text-amber-800">{{ $analyticsSummary['conversion']['overall_rate'] }}% <span class="text-xs font-semibold text-amber-600">overall rate</span></p>
+        <div class="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-3 sm:p-4 shadow-sm">
+            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-600">Conversions</p>
+            <p class="mt-2 text-xl sm:text-3xl font-extrabold leading-none text-amber-700">{{ number_format($analyticsSummary['article_clicks']) }}</p>
+            <p class="mt-1 text-[11px] font-black text-amber-800">{{ $analyticsSummary['conversion']['overall_rate'] }}% <span class="hidden font-semibold text-amber-600 sm:inline">overall rate</span></p>
+            <p class="mt-2 hidden text-xs text-amber-600/80 sm:block">Outbound article link clicks.</p>
         </div>
     </div>
 

@@ -499,6 +499,48 @@ class NewsTest extends TestCase
         $rankingResponse->assertSee('8,000');
     }
 
+    public function test_admin_analytics_shows_content_tab_metrics()
+    {
+        $topic = NewsTopic::create(['name' => 'Content Topic', 'keyword' => 'content-topic']);
+
+        NewsItem::create([
+            'news_topic_id' => $topic->id,
+            'title' => 'Fresh Story',
+            'source_name' => 'FIFA',
+            'url' => 'https://example.com/fresh-story',
+            'hash' => 'fresh-story',
+            'published_at' => now()->subMinutes(20),
+            'is_visible' => true,
+            'is_featured' => true,
+        ]);
+
+        NewsItem::create([
+            'news_topic_id' => $topic->id,
+            'title' => 'Hidden Story',
+            'source_name' => 'FIFA',
+            'url' => 'https://example.com/hidden-story',
+            'hash' => 'hidden-story',
+            'published_at' => now()->subDays(1),
+            'is_visible' => false,
+            'is_favorite' => true,
+        ]);
+
+        Setting::set('news_destroy_total_count', '12');
+        Setting::set('news_prune_last_deleted_count', '3');
+
+        $response = $this->withSession(['admin_authenticated' => true])
+            ->get(route('admin.analytics'));
+
+        $response->assertOk();
+        $response->assertSee('Content');
+        $response->assertSee('Content Inventory');
+        $response->assertSee('Destroyed Total');
+        $response->assertSee('Last Destroy Run');
+        $response->assertSee('Latest Posts');
+        $response->assertSee('Fresh Story');
+        $response->assertSee('Top Sections By Posts');
+    }
+
     /**
      * Test admin auth login logic and redirects.
      */

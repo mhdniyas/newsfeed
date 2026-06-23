@@ -18,6 +18,10 @@
         ['key' => 'live_users', 'tone' => 'emerald'],
         ['key' => 'news_total', 'tone' => 'sky'],
     ];
+    $contentChartCards = [
+        ['key' => 'hourly_publish', 'tone' => 'amber'],
+        ['key' => 'daily_publish', 'tone' => 'sky'],
+    ];
 
     $rankToneClasses = match ($viewRank['tone']) {
         'rose' => 'border-rose-200 bg-rose-50 text-rose-700',
@@ -62,6 +66,9 @@
         </button>
         <button type="button" data-tab-target="trends" class="analytics-tab inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
             Google Trends
+        </button>
+        <button type="button" data-tab-target="content" class="analytics-tab inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
+            Content
         </button>
     </div>
 
@@ -515,6 +522,189 @@
             </section>
         </div>
     </div>
+
+    <div data-tab-panel="content" class="hidden">
+        <div class="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-6">
+            <div class="col-span-2 rounded-3xl border border-sky-200 bg-gradient-to-br from-sky-500 to-cyan-500 p-5 text-white shadow-lg shadow-sky-500/15">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-sky-50/80">Content Inventory</p>
+                <p class="mt-3 text-4xl font-black">{{ number_format($contentAnalytics['total_posts']) }}</p>
+                <p class="mt-2 text-xs text-sky-50/90">Total internal news posts currently stored on the site.</p>
+            </div>
+            <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Today&apos;s Posts</p>
+                <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ number_format($contentAnalytics['today_posts']) }}</p>
+                <p class="mt-1 text-xs text-slate-500">Stories published since midnight.</p>
+            </div>
+            <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Last Hour</p>
+                <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ number_format($contentAnalytics['last_hour_posts']) }}</p>
+                <p class="mt-1 text-xs text-slate-500">Fresh posts added in the last 60 minutes.</p>
+            </div>
+            <div class="rounded-3xl border border-emerald-200 bg-white p-4 shadow-sm">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700/80">Visible</p>
+                <p class="mt-2 text-3xl font-extrabold text-emerald-700">{{ number_format($contentAnalytics['visible_posts']) }}</p>
+                <p class="mt-1 text-xs text-slate-500">Posts currently visible on the public site.</p>
+            </div>
+            <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Hidden</p>
+                <p class="mt-2 text-3xl font-extrabold text-slate-900">{{ number_format($contentAnalytics['hidden_posts']) }}</p>
+                <p class="mt-1 text-xs text-slate-500">Stored posts that are not public right now.</p>
+            </div>
+            <div class="rounded-3xl border border-rose-200 bg-gradient-to-br from-rose-50 to-orange-50 p-4 shadow-sm">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-rose-700/80">Destroyed Total</p>
+                <p class="mt-2 text-3xl font-extrabold text-rose-700">{{ number_format($contentAnalytics['destroyed_total']) }}</p>
+                <p class="mt-1 text-xs text-rose-700/70">Cumulative deleted posts from prune and manual destroy actions.</p>
+            </div>
+            <div class="rounded-3xl border border-amber-200 bg-white p-4 shadow-sm">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-700/80">Destroy Ready</p>
+                <p class="mt-2 text-3xl font-extrabold text-amber-700">{{ number_format($contentAnalytics['destroy_ready']) }}</p>
+                <p class="mt-1 text-xs text-slate-500">Posts currently eligible for the destroy routine.</p>
+            </div>
+        </div>
+
+        <section class="mb-6 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+            <div class="flex flex-col gap-4 border-b border-slate-200 bg-slate-50/70 px-5 py-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">Publishing Graph Switch</p>
+                    <h2 class="mt-1 text-xl font-extrabold text-slate-950">Content flow and publish velocity</h2>
+                    <p class="mt-1 text-xs text-slate-500">Switch between last-hour velocity and the 7-day publishing trend.</p>
+                </div>
+                <div class="flex flex-wrap gap-2" id="content-graph-switch">
+                    @foreach($contentChartCards as $chartCard)
+                        @php($chart = $contentCharts[$chartCard['key']])
+                        <button type="button" data-content-graph-target="{{ $chartCard['key'] }}" class="content-graph-tab inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-100 {{ $loop->first ? 'bg-slate-950 text-white hover:bg-slate-800' : '' }}">
+                            {{ $chart['title'] }}
+                        </button>
+                    @endforeach
+                </div>
+            </div>
+
+            <div class="p-5 sm:p-6">
+                @foreach($contentChartCards as $chartCard)
+                    @php
+                        $chart = $contentCharts[$chartCard['key']];
+                        $barTone = $chartCard['tone'] === 'amber' ? 'bg-amber-500' : 'bg-sky-500';
+                        $badgeTone = $chartCard['tone'] === 'amber'
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-sky-50 text-sky-700 border-sky-200';
+                    @endphp
+                    <div data-content-graph-panel="{{ $chartCard['key'] }}" class="{{ $loop->first ? '' : 'hidden' }}">
+                        <div class="grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)] lg:items-start">
+                            <div class="rounded-[1.7rem] border border-slate-200 bg-slate-50 p-5">
+                                <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">{{ $chart['subtitle'] }}</p>
+                                <p class="mt-4 text-4xl font-black text-slate-950">{{ number_format($chart['headline']) }}</p>
+                                <p class="mt-1 text-sm font-semibold text-slate-500">{{ $chart['headline_label'] }}</p>
+                                <div class="mt-4 inline-flex rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] {{ $badgeTone }}">
+                                    {{ number_format($chart['total']) }} total
+                                </div>
+                            </div>
+
+                            <div class="overflow-hidden rounded-[1.7rem] border border-slate-200 bg-white p-4 sm:p-5">
+                                <div class="flex h-52 items-end gap-2 sm:gap-3">
+                                    @foreach($chart['points'] as $point)
+                                        @php($height = max(12, (int) round(($point['value'] / $chart['max']) * 100)))
+                                        <div class="flex min-w-0 flex-1 flex-col items-center">
+                                            <div class="flex h-36 w-full items-end rounded-[1.25rem] bg-slate-50 px-1.5 pb-1.5">
+                                                <div class="w-full rounded-[1rem] {{ $barTone }}" style="height: {{ $height }}%;"></div>
+                                            </div>
+                                            <p class="mt-3 text-center text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">{{ $point['label'] }}</p>
+                                            <p class="mt-1 text-center text-xs font-extrabold text-slate-700">{{ number_format($point['value']) }}</p>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </section>
+
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900">Content Health</h2>
+                        <p class="text-xs text-slate-500 mt-1">Publishing and cleanup numbers that matter for the feed.</p>
+                    </div>
+                    <span class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-700">{{ number_format($contentAnalytics['featured_posts']) }} featured</span>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-3">
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                        <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Favorites</p>
+                        <p class="mt-2 text-2xl font-black text-slate-900">{{ number_format($contentAnalytics['favorite_posts']) }}</p>
+                    </div>
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                        <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Trend Posts</p>
+                        <p class="mt-2 text-2xl font-black text-slate-900">{{ number_format($contentAnalytics['trend_posts']) }}</p>
+                    </div>
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                        <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Extracted</p>
+                        <p class="mt-2 text-2xl font-black text-slate-900">{{ number_format($contentAnalytics['extracted_posts']) }}</p>
+                    </div>
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                        <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Protected Old</p>
+                        <p class="mt-2 text-2xl font-black text-slate-900">{{ number_format($contentAnalytics['destroy_protected']) }}</p>
+                    </div>
+                    <div class="col-span-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4">
+                        <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-rose-700/80">Last Destroy Run</p>
+                        <p class="mt-2 text-2xl font-black text-rose-700">{{ number_format($contentAnalytics['destroyed_last_run']) }}</p>
+                        <p class="mt-1 text-xs text-rose-700/70">Deleted in the most recent automatic or manual prune cycle.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900">Top Sections By Posts</h2>
+                        <p class="text-xs text-slate-500 mt-1">Which news sections hold the biggest inventory.</p>
+                    </div>
+                </div>
+                <div class="mt-4 space-y-3">
+                    @forelse($contentAnalytics['top_sections'] as $section)
+                        <div>
+                            <div class="flex items-center justify-between gap-3 text-sm">
+                                <span class="font-semibold text-slate-700">{{ $section->name }}</span>
+                                <span class="font-bold text-slate-900">{{ number_format($section->news_items_count) }}</span>
+                            </div>
+                            <div class="mt-2 h-2 rounded-full bg-slate-100 overflow-hidden">
+                                <div class="h-full rounded-full bg-sky-500" style="width: {{ max(8, min(100, $contentAnalytics['total_posts'] > 0 ? ($section->news_items_count / $contentAnalytics['total_posts']) * 100 : 0)) }}%"></div>
+                            </div>
+                        </div>
+                    @empty
+                        <p class="text-sm text-slate-500">No section data recorded yet.</p>
+                    @endforelse
+                </div>
+            </section>
+
+            <section class="xl:col-span-2 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900">Latest Posts</h2>
+                        <p class="text-xs text-slate-500 mt-1">Newest internal news cards currently on the site.</p>
+                    </div>
+                </div>
+                <div class="mt-4 grid grid-cols-1 xl:grid-cols-2 gap-3">
+                    @forelse($contentAnalytics['latest_posts'] as $article)
+                        <div class="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="text-sm font-bold text-slate-900 line-clamp-2">{{ $article->title }}</p>
+                                    <p class="mt-1 text-[11px] text-slate-500">{{ $article->newsSection?->name }} · {{ $article->newsTopic?->name }}</p>
+                                    <p class="mt-1 text-[11px] font-semibold text-slate-400">{{ optional($article->published_at)->diffForHumans() ?? 'Unknown' }}</p>
+                                </div>
+                                <span class="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-600 shadow-sm">{{ $article->is_visible ? 'Live' : 'Hidden' }}</span>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500">
+                            No posts recorded yet.
+                        </div>
+                    @endforelse
+                </div>
+            </section>
+        </div>
+    </div>
 </div>
 @endsection
 
@@ -572,6 +762,32 @@
 
         if (graphButtons.length > 0) {
             activateGraph(graphButtons[0].dataset.graphTarget);
+        }
+
+        const contentGraphButtons = Array.from(document.querySelectorAll('.content-graph-tab'));
+        const contentGraphPanels = Array.from(document.querySelectorAll('[data-content-graph-panel]'));
+
+        const activateContentGraph = (target) => {
+            contentGraphButtons.forEach((button) => {
+                const active = button.dataset.contentGraphTarget === target;
+                button.classList.toggle('bg-slate-950', active);
+                button.classList.toggle('text-white', active);
+                button.classList.toggle('hover:bg-slate-800', active);
+                button.classList.toggle('bg-white', !active);
+                button.classList.toggle('text-slate-700', !active);
+            });
+
+            contentGraphPanels.forEach((panel) => {
+                panel.classList.toggle('hidden', panel.dataset.contentGraphPanel !== target);
+            });
+        };
+
+        contentGraphButtons.forEach((button) => {
+            button.addEventListener('click', () => activateContentGraph(button.dataset.contentGraphTarget));
+        });
+
+        if (contentGraphButtons.length > 0) {
+            activateContentGraph(contentGraphButtons[0].dataset.contentGraphTarget);
         }
     });
 </script>

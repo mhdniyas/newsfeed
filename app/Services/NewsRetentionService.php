@@ -11,6 +11,7 @@ class NewsRetentionService
 {
     public const DEFAULT_DAYS = 3;
     public const DEFAULT_CLICK_THRESHOLD = 50;
+    public const TOTAL_DESTROYED_KEY = 'news_destroy_total_count';
 
     public function retentionDays(): int
     {
@@ -76,6 +77,7 @@ class NewsRetentionService
             ->where('is_favorite', true)
             ->count();
         $deleted = (clone $eligibleQuery)->delete();
+        $this->recordDeletedCount($deleted);
 
         Setting::set('news_prune_last_run_at', now()->toIso8601String());
         Setting::set('news_prune_last_cutoff_at', $cutoff->toIso8601String());
@@ -95,6 +97,21 @@ class NewsRetentionService
             'protected_count' => $protectedCount,
             'favorite_protected_count' => $favoriteProtectedCount,
         ];
+    }
+
+    public function recordDeletedCount(int $count): void
+    {
+        if ($count <= 0) {
+            return;
+        }
+
+        $current = (int) Setting::get(self::TOTAL_DESTROYED_KEY, '0');
+        Setting::set(self::TOTAL_DESTROYED_KEY, (string) ($current + $count));
+    }
+
+    public function totalDestroyedCount(): int
+    {
+        return (int) Setting::get(self::TOTAL_DESTROYED_KEY, '0');
     }
 
     protected function resolveClickThreshold(?int $clickThreshold = null): int

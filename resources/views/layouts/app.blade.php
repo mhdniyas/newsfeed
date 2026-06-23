@@ -294,22 +294,39 @@
 
     <div class="{{ $showAdminSidebar ? 'admin-content-offset' : '' }}">
     <!-- Navigation Header -->
-    <header class="sticky {{ isset($tickerArticles) && $tickerArticles->isNotEmpty() ? 'top-11' : 'top-0' }} z-50 backdrop-blur-md bg-white/90 border-b border-slate-200/80 transition-all duration-300 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16 gap-4">
+    <header class="sticky {{ isset($tickerArticles) && $tickerArticles->isNotEmpty() ? 'top-11' : 'top-0' }} z-50 transition-all duration-300 {{ $showAdminSidebar ? 'bg-transparent border-b-0 shadow-none px-4 pt-4 sm:px-6 lg:px-8' : 'backdrop-blur-md bg-white/90 border-b border-slate-200/80 shadow-sm' }}">
+        <div class="max-w-7xl mx-auto {{ $showAdminSidebar ? '' : 'px-4 sm:px-6 lg:px-8' }}">
+            <div class="flex items-center justify-between gap-4 {{ $showAdminSidebar ? 'rounded-[2rem] border border-slate-200 bg-white/95 px-4 py-3 shadow-[0_18px_48px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:px-5' : 'h-16' }}">
                 <div class="flex min-w-0 items-center">
                     @if($showAdminSidebar)
                         <button id="admin-sidebar-open" type="button" class="mr-3 inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-sm lg:hidden">
                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"></path><path d="M4 12h16"></path><path d="M4 17h16"></path></svg>
                         </button>
                     @endif
-                    <a href="{{ route('news.index') }}" class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700 shadow-sm hover:bg-slate-50">
-                        Signalz Online
-                    </a>
+                    @if($showAdminSidebar)
+                        <a href="{{ route('news.index') }}" class="flex min-w-0 items-center gap-3">
+                            <span class="inline-flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-gradient-to-br from-slate-100 to-white text-sm font-black tracking-[0.18em] text-slate-700 shadow-sm">SZ</span>
+                            <span class="min-w-0">
+                                <span class="block truncate text-sm font-bold text-slate-900">Signalz Online</span>
+                                <span class="block truncate text-[11px] font-medium text-slate-400">Admin control center</span>
+                            </span>
+                        </a>
+                    @else
+                        <a href="{{ route('news.index') }}" class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3.5 py-2 text-xs font-black uppercase tracking-[0.18em] text-slate-700 shadow-sm hover:bg-slate-50">
+                            Signalz Online
+                        </a>
+                    @endif
                 </div>
 
-                <div class="flex items-center space-x-4 shrink-0">
-                    @if(session('admin_authenticated') && !$showAdminSidebar)
+                <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+                    @if($showAdminSidebar)
+                        <span class="hidden rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-700 sm:inline-flex">Admin Live</span>
+                        <a href="{{ route('admin.analytics') }}" class="hidden rounded-[1rem] border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100 sm:inline-flex">Analytics</a>
+                        <a href="{{ route('admin.destroy') }}" class="hidden rounded-[1rem] border border-rose-200 bg-rose-50 px-3.5 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100 sm:inline-flex">Destroy</a>
+                        <a href="{{ route('admin.logout') }}" class="inline-flex items-center justify-center rounded-[1rem] border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50">
+                            Logout
+                        </a>
+                    @elseif(session('admin_authenticated') && !$showAdminSidebar)
                         <a href="{{ route('admin.dashboard') }}" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-950 text-white border border-slate-950 transition-all duration-200 hover:bg-slate-800">
                             Admin
                         </a>

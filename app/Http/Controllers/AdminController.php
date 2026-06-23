@@ -106,14 +106,19 @@ class AdminController extends Controller
         $visitStats = $visitorMetrics->getPublicStats();
         $visitorSnapshot = $visitorMetrics->adminAnalyticsSnapshot();
         $analyticsSummary = $this->analyticsSummary($visitorMetrics);
+        $contentAnalytics = $this->contentAnalyticsSummary(app(NewsRetentionService::class));
         $trendsAnalyticsSummary = $visitorMetrics->trendsAnalyticsSummary();
         $analyticsCharts = [
             'live_users' => $this->liveUserChart(),
             'news_total' => $this->newsTotalChart(),
         ];
+        $contentCharts = [
+            'hourly_publish' => $this->hourlyPublishChart(),
+            'daily_publish' => $this->newsTotalChart(),
+        ];
         $fetchStats = $this->fetchStats();
 
-        return view('admin.analytics', compact('visitStats', 'analyticsSummary', 'trendsAnalyticsSummary', 'visitorSnapshot', 'analyticsCharts', 'fetchStats'));
+        return view('admin.analytics', compact('visitStats', 'analyticsSummary', 'contentAnalytics', 'trendsAnalyticsSummary', 'visitorSnapshot', 'analyticsCharts', 'contentCharts', 'fetchStats'));
     }
 
     public function rankingAnalytics(VisitorMetricsService $visitorMetrics)
@@ -404,7 +409,9 @@ class AdminController extends Controller
     public function deleteTopic(NewsTopic $topic)
     {
         $topicName = $topic->name;
+        $deletedCount = NewsItem::query()->where('news_topic_id', $topic->id)->count();
         $topic->delete();
+        app(NewsRetentionService::class)->recordDeletedCount($deletedCount);
 
         return back()->with('success', "Topic '{$topicName}' and all its associated articles have been deleted.");
     }
@@ -436,13 +443,14 @@ class AdminController extends Controller
     /**
      * Delete an article.
      */
-    public function deleteArticle(NewsItem $article)
+    public function deleteArticle(NewsItem $article, NewsRetentionService $newsRetention)
     {
         if ($article->is_favorite) {
             return back()->withErrors(['article' => 'Favorite articles are protected from deletion. Remove favorite first.']);
         }
 
         $article->delete();
+        $newsRetention->recordDeletedCount(1);
         return back()->with('success', 'Article deleted successfully.');
     }
 
@@ -464,6 +472,7 @@ class AdminController extends Controller
         $deletedCount = NewsItem::query()
             ->whereIn('id', $eligibleIds)
             ->delete();
+        $newsRetention->recordDeletedCount($deletedCount);
 
         $skippedCount = $articles->count() - $deletedCount;
 
@@ -636,6 +645,53 @@ class AdminController extends Controller
         ]);
     }
 
+    protected function contentAnalyticsSummary(NewsRetentionService $newsRetention): array
+    {
+        $today = now()->toDateString();
+        $lastHour = now()->subHour();
+
+        $totalPosts = NewsItem::query()->count();
+        $visiblePosts = NewsItem::query()->where('is_visible', true)->count();
+        $hiddenPosts = max(0, $totalPosts - $visiblePosts);
+        $todayPosts = NewsItem::query()->whereDate('published_at', $today)->count();
+        $lastHourPosts = NewsItem::query()->where('published_at', '>=', $lastHour)->count();
+        $featuredPosts = NewsItem::query()->where('is_featured', true)->count();
+        $favoritePosts = NewsItem::query()->where('is_favorite', true)->count();
+        $trendPosts = NewsItem::query()
+            ->whereHas('newsSection', fn ($query) => $query->where('slug', 'google-trends'))
+            ->count();
+        $extractedPosts = NewsItem::query()->where('extraction_status', 'completed')->count();
+        $destroyReady = $newsRetention->eligibleQuery()->count();
+        $destroyProtected = $newsRetention->protectedQuery()->count();
+
+        return [
+            'total_posts' => $totalPosts,
+            'visible_posts' => $visiblePosts,
+            'hidden_posts' => $hiddenPosts,
+            'today_posts' => $todayPosts,
+            'last_hour_posts' => $lastHourPosts,
+            'featured_posts' => $featuredPosts,
+            'favorite_posts' => $favoritePosts,
+            'trend_posts' => $trendPosts,
+            'extracted_posts' => $extractedPosts,
+            'destroyed_total' => $newsRetention->totalDestroyedCount(),
+            'destroyed_last_run' => (int) Setting::get('news_prune_last_deleted_count', '0'),
+            'destroy_ready' => $destroyReady,
+            'destroy_protected' => $destroyProtected,
+            'latest_posts' => NewsItem::query()
+                ->with(['newsTopic', 'newsSection'])
+                ->orderByDesc('published_at')
+                ->take(8)
+                ->get(),
+            'top_sections' => NewsSection::query()
+                ->withCount('newsItems')
+                ->orderByDesc('news_items_count')
+                ->orderBy('name')
+                ->take(8)
+                ->get(),
+        ];
+    }
+
     protected function buildArticleQuery($selectedSectionId, $selectedTopicId, ?string $search, string $sort)
     {
         $articlesQuery = NewsItem::with(['newsTopic', 'newsSection'])
@@ -747,6 +803,32 @@ class AdminController extends Controller
             'total' => NewsItem::query()->count(),
             'headline' => NewsItem::query()->count(),
             'headline_label' => 'stories total',
+            'points' => $points->all(),
+            'max' => max(1, (int) $points->max('value')),
+        ];
+    }
+
+    protected function hourlyPublishChart(): array
+    {
+        $points = collect(range(0, 11))
+            ->map(function (int $offset) {
+                $hour = now()->copy()->startOfHour()->subHours(11 - $offset);
+
+                return [
+                    'label' => $hour->format('H:00'),
+                    'value' => NewsItem::query()
+                        ->whereBetween('published_at', [$hour, $hour->copy()->endOfHour()])
+                        ->count(),
+                ];
+            })
+            ->values();
+
+        return [
+            'title' => 'Last 12 Hours',
+            'subtitle' => 'Publishing volume in the last 12 hours',
+            'total' => (int) $points->sum('value'),
+            'headline' => NewsItem::query()->where('published_at', '>=', now()->subHour())->count(),
+            'headline_label' => 'posts in last hour',
             'points' => $points->all(),
             'max' => max(1, (int) $points->max('value')),
         ];

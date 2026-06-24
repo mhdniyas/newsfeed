@@ -79,4 +79,5 @@ Route::middleware(\App\Http\Middleware\AdminAuth::class)->group(function () {
     // Lottery Admin
     Route::post('/admin/lottery/sync', [KeralaLotteryController::class, 'adminSync'])->name('admin.lottery.sync');
     Route::post('/admin/lottery/reparse', [KeralaLotteryController::class, 'adminReparse'])->name('admin.lottery.reparse');
+    Route::post('/admin/lottery/{result}/official-url', [KeralaLotteryController::class, 'adminUpdateOfficialUrl'])->name('admin.lottery.update-url');
 });

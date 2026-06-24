@@ -7,6 +7,7 @@ use App\Services\AutomaticNewsSyncService;
 use App\Services\KeralaLotteryService;
 use App\Services\PromotionHubService;
 use App\Services\VisitorMetricsService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Schema;
@@ -71,7 +72,7 @@ class KeralaLotteryController extends Controller
         // Try to serve local file; if missing, attempt to fetch & cache it
         $pdf = $this->ensureLocalPdf($result);
 
-        if ($pdf) {
+        if ($pdf && is_file($pdf['path'])) {
             return Response::file($pdf['path'], [
                 'Content-Type'        => 'application/pdf',
                 'Content-Disposition' => 'inline; filename="' . $pdf['filename'] . '"',
@@ -88,7 +89,7 @@ class KeralaLotteryController extends Controller
         // Try to serve local file; if missing, attempt to fetch & cache it
         $pdf = $this->ensureLocalPdf($result);
 
-        if ($pdf) {
+        if ($pdf && is_file($pdf['path'])) {
             return Response::download($pdf['path'], $pdf['filename'], [
                 'Content-Type' => 'application/pdf',
             ]);
@@ -144,7 +145,13 @@ class KeralaLotteryController extends Controller
             $relativePath = $result->local_pdf_path
                 ?? KeralaLotteryService::STORAGE_DIR . '/' . $result->slug . '.pdf';
 
-            Storage::disk($disk)->put($relativePath, $body);
+            if (!Storage::disk($disk)->put($relativePath, $body)) {
+                return null;
+            }
+
+            if (!Storage::disk($disk)->exists($relativePath)) {
+                return null;
+            }
 
             // Persist the path and try to re-parse
             $result->local_pdf_path = $relativePath;
@@ -255,6 +262,21 @@ class KeralaLotteryController extends Controller
         }
 
         return back()->with('success', "Re-parsed {$fixed} lottery result(s) from {$results->count()} candidates.");
+    }
+
+    public function adminUpdateOfficialUrl(Request $request, LotteryResult $result): RedirectResponse
+    {
+        $validated = $request->validate([
+            'official_pdf_url' => 'required|url|max:2048',
+        ]);
+
+        $result->official_pdf_url = $validated['official_pdf_url'];
+        $result->local_pdf_path = null;
+        $result->status = 'waiting';
+        $result->last_fetch_at = now();
+        $result->save();
+
+        return back()->with('success', "Official PDF URL updated for {$result->lottery_name} {$result->draw_number}. Cached PDF path reset.");
     }
 
     protected function schemaReady(): bool

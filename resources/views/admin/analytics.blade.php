@@ -966,6 +966,7 @@
                                 <div class="min-w-0">
                                     <p class="text-sm font-bold text-slate-900">{{ $result->lottery_name }}</p>
                                     <p class="mt-1 text-[11px] text-slate-500">{{ optional($result->result_date)->format('d M Y') }} · {{ $result->draw_number ?: 'Draw pending' }}</p>
+                                    <p class="mt-1 break-all text-[11px] text-slate-400">{{ $result->official_pdf_url ?: 'No official PDF URL saved yet.' }}</p>
                                 </div>
                                 <span class="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-600 border border-slate-200">
                                     {{ str_replace('_', ' ', $result->status) }}
@@ -979,6 +980,16 @@
                                     PDF
                                 </a>
                             </div>
+                            <form action="{{ route('admin.lottery.update-url', $result) }}" method="POST" class="mt-3 space-y-2">
+                                @csrf
+                                <label class="block text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Update Official PDF URL</label>
+                                <div class="flex flex-col gap-2">
+                                    <input type="url" name="official_pdf_url" required value="{{ old('official_pdf_url', $result->official_pdf_url) }}" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 outline-none transition focus:border-emerald-500" placeholder="https://result.keralalotteries.com/viewlotisresult.php?drawserial=75299">
+                                    <button type="submit" class="inline-flex items-center justify-center rounded-xl border border-slate-950 bg-slate-950 px-3 py-2 text-[11px] font-bold text-white transition hover:bg-slate-800">
+                                        Save PDF URL
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     @empty
                         <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500">

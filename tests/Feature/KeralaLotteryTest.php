@@ -65,6 +65,56 @@ class KeralaLotteryTest extends TestCase
             ->assertHeader('content-type', 'application/pdf');
     }
 
+    public function test_pdf_view_redirects_to_official_url_when_local_cache_is_missing(): void
+    {
+        Storage::fake('local');
+
+        $result = LotteryResult::create([
+            'lottery_name' => 'Dhanalekshmi',
+            'lottery_code' => 'DL',
+            'draw_number' => 'DL-58',
+            'result_date' => Carbon::create(2026, 6, 24),
+            'slug' => 'dhanalekshmi-dl-58-result-24-06-2026',
+            'status' => 'parse_failed',
+            'official_pdf_url' => 'https://result.keralalotteries.com/viewlotisresult.php?drawserial=75299',
+            'local_pdf_path' => 'lottery-results/dhanalekshmi-dl-58-result-24-06-2026.pdf',
+        ]);
+
+        Http::fake([
+            'https://result.keralalotteries.com/viewlotisresult.php?drawserial=75299' => Http::response('not-a-pdf', 200),
+        ]);
+
+        $this->get(route('kerala-lottery.pdf.view', $result))
+            ->assertRedirect('https://result.keralalotteries.com/viewlotisresult.php?drawserial=75299');
+    }
+
+    public function test_admin_can_update_official_pdf_url_manually(): void
+    {
+        $result = LotteryResult::create([
+            'lottery_name' => 'Dhanalekshmi',
+            'lottery_code' => 'DL',
+            'draw_number' => 'DL-58',
+            'result_date' => Carbon::create(2026, 6, 24),
+            'slug' => 'dhanalekshmi-dl-58-result-24-06-2026',
+            'status' => 'parse_failed',
+            'official_pdf_url' => 'https://result.keralalotteries.com/viewlotisresult.php?drawserial=11111',
+            'local_pdf_path' => 'lottery-results/dhanalekshmi-dl-58-result-24-06-2026.pdf',
+        ]);
+
+        $response = $this->withSession(['admin_authenticated' => true])->post(
+            route('admin.lottery.update-url', $result),
+            ['official_pdf_url' => 'https://result.keralalotteries.com/viewlotisresult.php?drawserial=75299']
+        );
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('lottery_results', [
+            'id' => $result->id,
+            'official_pdf_url' => 'https://result.keralalotteries.com/viewlotisresult.php?drawserial=75299',
+            'status' => 'waiting',
+            'local_pdf_path' => null,
+        ]);
+    }
+
     public function test_kerala_lottery_public_pages_track_view_metrics(): void
     {
         $result = LotteryResult::create([

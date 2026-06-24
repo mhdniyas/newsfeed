@@ -287,13 +287,37 @@
                 </div>
             </div>
             @if($lotteryStats['latest'])
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                    <span class="font-bold text-slate-800">Latest:</span>
-                    {{ $lotteryStats['latest']->lottery_name }} · {{ $lotteryStats['latest']->draw_number }} ·
-                    {{ optional($lotteryStats['latest']->result_date)->format('d M Y') }} ·
-                    <span class="{{ $lotteryStats['latest']->status === 'available' ? 'text-emerald-600 font-bold' : 'text-red-600 font-bold' }}">
-                        {{ $lotteryStats['latest']->status === 'available' ? 'Available' : str_replace('_', ' ', $lotteryStats['latest']->status) }}
-                    </span>
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-600">
+                    <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                        <div>
+                            <span class="font-bold text-slate-800">Latest:</span>
+                            {{ $lotteryStats['latest']->lottery_name }} · {{ $lotteryStats['latest']->draw_number }} ·
+                            {{ optional($lotteryStats['latest']->result_date)->format('d M Y') }} ·
+                            <span class="{{ $lotteryStats['latest']->status === 'available' ? 'text-emerald-600 font-bold' : 'text-red-600 font-bold' }}">
+                                {{ $lotteryStats['latest']->status === 'available' ? 'Available' : str_replace('_', ' ', $lotteryStats['latest']->status) }}
+                            </span>
+                            <p class="mt-2 break-all text-xs text-slate-500">{{ $lotteryStats['latest']->official_pdf_url ?: 'No official PDF URL saved yet.' }}</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <a href="{{ route('kerala-lottery.show', $lotteryStats['latest']) }}" target="_blank" class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
+                                Open Result
+                            </a>
+                            <a href="{{ route('kerala-lottery.pdf.view', $lotteryStats['latest']) }}" target="_blank" class="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 shadow-sm transition hover:bg-emerald-100">
+                                Open PDF
+                            </a>
+                        </div>
+                    </div>
+                    <form action="{{ route('admin.lottery.update-url', $lotteryStats['latest']) }}" method="POST" class="mt-4 space-y-2">
+                        @csrf
+                        <label class="block text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Update Official PDF URL</label>
+                        <div class="flex flex-col gap-2 sm:flex-row">
+                            <input type="url" name="official_pdf_url" required value="{{ old('official_pdf_url', $lotteryStats['latest']->official_pdf_url) }}" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-800 outline-none transition focus:border-emerald-500" placeholder="https://result.keralalotteries.com/viewlotisresult.php?drawserial=75299">
+                            <button type="submit" class="inline-flex items-center justify-center rounded-xl border border-slate-950 bg-slate-950 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-slate-800">
+                                Save URL
+                            </button>
+                        </div>
+                        <p class="text-[11px] text-slate-400">This resets the cached PDF path so the next open/download uses the new URL.</p>
+                    </form>
                 </div>
             @endif
         </div>

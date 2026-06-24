@@ -43,6 +43,7 @@ Route::middleware(\App\Http\Middleware\AdminAuth::class)->group(function () {
     Route::get('/admin/trends/sync-status', [AdminController::class, 'trendsSyncStatus'])->name('admin.trends.sync-status');
     Route::get('/admin/destroy', [AdminController::class, 'destroyPage'])->name('admin.destroy');
     Route::post('/admin/destroy/run', [AdminController::class, 'runDestroyProcess'])->name('admin.destroy.run');
+    Route::post('/admin/destroy/settings', [AdminController::class, 'saveDestroySettings'])->name('admin.destroy.settings');
     Route::get('/admin/promotions', [AdminController::class, 'promotions'])->name('admin.promotions');
     Route::get('/admin/sync-status', [AdminController::class, 'syncStatus'])->name('admin.sync-status');
     

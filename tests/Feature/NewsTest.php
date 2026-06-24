@@ -691,7 +691,7 @@ class NewsTest extends TestCase
             'url' => 'https://example.com/old-low-click',
             'hash' => 'old-low-click',
             'published_at' => now()->subDays(9),
-            'clicks_count' => 500,
+            'clicks_count' => 49,
             'is_visible' => true,
         ]);
 
@@ -702,7 +702,7 @@ class NewsTest extends TestCase
             'url' => 'https://example.com/old-popular',
             'hash' => 'old-popular',
             'published_at' => now()->subDays(9),
-            'clicks_count' => 501,
+            'clicks_count' => 50,
             'is_visible' => true,
         ]);
 
@@ -943,7 +943,7 @@ class NewsTest extends TestCase
             'source_name' => 'FIFA',
             'url' => 'https://example.com/zero-click',
             'hash' => 'zero-click-hash',
-            'published_at' => now()->subHour(),
+            'published_at' => now()->subDays(4),
             'is_visible' => true,
             'views_count' => 1,
             'clicks_count' => 0,
@@ -955,17 +955,17 @@ class NewsTest extends TestCase
             'source_name' => 'FIFA',
             'url' => 'https://example.com/popular',
             'hash' => 'popular-hash',
-            'published_at' => now(),
+            'published_at' => now()->subDays(4),
             'is_visible' => true,
             'views_count' => 15,
-            'clicks_count' => 9,
+            'clicks_count' => 4,
         ]);
 
         $response = $this->withSession(['admin_authenticated' => true])
             ->get(route('admin.destroy'));
 
         $response->assertOk();
-        $response->assertSee('Low-performance article cleanup');
+        $response->assertSee('Destroy manager');
         $response->assertSeeInOrder(['Zero Click Article', 'Popular Article']);
     }
 
@@ -982,7 +982,7 @@ class NewsTest extends TestCase
             'source_name' => 'FIFA',
             'url' => 'https://example.com/delete-one',
             'hash' => 'delete-one-hash',
-            'published_at' => now(),
+            'published_at' => now()->subDays(4),
             'is_visible' => true,
         ]);
 
@@ -992,7 +992,7 @@ class NewsTest extends TestCase
             'source_name' => 'FIFA',
             'url' => 'https://example.com/delete-two',
             'hash' => 'delete-two-hash',
-            'published_at' => now()->subMinute(),
+            'published_at' => now()->subDays(4)->subMinute(),
             'is_visible' => true,
         ]);
 
@@ -1002,7 +1002,7 @@ class NewsTest extends TestCase
             'source_name' => 'FIFA',
             'url' => 'https://example.com/keep-me',
             'hash' => 'keep-me-hash',
-            'published_at' => now()->subMinutes(2),
+            'published_at' => now()->subDay(),
             'is_visible' => true,
         ]);
 

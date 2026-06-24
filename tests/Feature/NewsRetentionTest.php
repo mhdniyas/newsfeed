@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\NewsItem;
 use App\Models\NewsSection;
 use App\Models\NewsTopic;
+use App\Models\Setting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Tests\TestCase;
@@ -66,6 +67,52 @@ class NewsRetentionTest extends TestCase
             'id' => $article->id,
             'is_favorite' => true,
         ]);
+    }
+
+    public function test_prune_command_can_target_viewed_articles_with_no_clicks(): void
+    {
+        [$section, $topic] = $this->makeNewsContext();
+
+        $viewedNoClick = $this->makeArticle($section, $topic, 'Viewed No Click', 4, 0, false);
+        $viewedNoClick->update(['views_count' => 22]);
+
+        $noView = $this->makeArticle($section, $topic, 'No View Story', 4, 0, false);
+        $noView->update(['views_count' => 0]);
+
+        $clicked = $this->makeArticle($section, $topic, 'Clicked Story', 4, 7, false);
+        $clicked->update(['views_count' => 15]);
+
+        Artisan::call('news:prune-old', [
+            '--mode' => 'viewed_no_clicks',
+            '--days' => 3,
+            '--limit' => 500,
+        ]);
+
+        $this->assertDatabaseMissing('news_items', ['id' => $viewedNoClick->id]);
+        $this->assertDatabaseHas('news_items', ['id' => $noView->id]);
+        $this->assertDatabaseHas('news_items', ['id' => $clicked->id]);
+    }
+
+    public function test_admin_can_save_automatic_destroy_settings(): void
+    {
+        $response = $this->withSession(['admin_authenticated' => true])
+            ->post(route('admin.destroy.settings'), [
+                'enabled' => '1',
+                'days' => 2,
+                'click_threshold' => 0,
+                'batch_limit' => 1500,
+                'mode' => 'no_clicks',
+                'sort' => 'oldest',
+            ]);
+
+        $response->assertRedirect(route('admin.destroy'));
+        $response->assertSessionHas('success');
+        $this->assertSame('1', Setting::get('news_prune_enabled'));
+        $this->assertSame('2', Setting::get('news_prune_last_days'));
+        $this->assertSame('0', Setting::get('news_prune_last_click_threshold'));
+        $this->assertSame('1500', Setting::get('news_prune_batch_limit'));
+        $this->assertSame('no_clicks', Setting::get('news_prune_mode'));
+        $this->assertSame('oldest', Setting::get('news_prune_sort'));
     }
 
     protected function makeNewsContext(): array

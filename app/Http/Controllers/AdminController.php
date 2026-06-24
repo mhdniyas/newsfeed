@@ -140,27 +140,41 @@ class AdminController extends Controller
         $search = $request->input('search');
         $selectedTopicId = $request->input('topic');
         $selectedSectionId = $request->input('section', 'all');
-        $sort = $request->input('sort', 'least_clicked');
+        $savedSettings = $newsRetention->settings();
+        $sort = (string) $request->input('sort', $savedSettings['sort']);
+        $destroyMode = (string) $request->input('mode', $savedSettings['mode']);
+        $destroyDays = max(1, (int) $request->input('days', $savedSettings['days']));
+        $destroyClickThreshold = max(0, (int) $request->input('click_threshold', $savedSettings['click_threshold']));
+        $destroyBatchLimit = max(NewsRetentionService::MIN_BATCH_LIMIT, min(NewsRetentionService::MAX_BATCH_LIMIT, (int) $request->input('batch_limit', $savedSettings['batch_limit'])));
+        $destroySettings = $newsRetention->settings([
+            'days' => $destroyDays,
+            'click_threshold' => $destroyClickThreshold,
+            'mode' => $destroyMode,
+            'sort' => $sort,
+            'batch_limit' => $destroyBatchLimit,
+            'enabled' => $savedSettings['enabled'],
+        ]);
 
-        $articles = $this->buildDestroyQuery($selectedSectionId, $selectedTopicId, $search, $sort, $newsRetention)->paginate(25);
-        $statsQuery = $this->buildDestroyQuery($selectedSectionId, $selectedTopicId, $search, $sort, $newsRetention);
+        $articles = $this->buildDestroyQuery($selectedSectionId, $selectedTopicId, $search, $destroySettings, $newsRetention)->paginate(25)->withQueryString();
+        $statsQuery = $this->buildDestroyQuery($selectedSectionId, $selectedTopicId, $search, $destroySettings, $newsRetention);
         $destroyStats = [
             'eligible_articles' => (clone $statsQuery)->count(),
             'zero_click_articles' => (clone $statsQuery)->where('clicks_count', '<=', 0)->count(),
             'zero_view_articles' => (clone $statsQuery)->where('views_count', '<=', 0)->count(),
-            'favorite_articles' => (clone $statsQuery)->where('is_favorite', true)->count(),
+            'favorite_articles' => NewsItem::query()
+                ->whereNotNull('published_at')
+                ->where('published_at', '<', $destroySettings['cutoff_at'])
+                ->where('is_favorite', true)
+                ->count(),
         ];
-        $pruneDays = $newsRetention->retentionDays();
-        $pruneClickThreshold = $newsRetention->clickThreshold();
-        $pruneCutoff = $newsRetention->cutoff($pruneDays);
+        $autoSettings = $newsRetention->settings();
         $autoDeleteReport = [
-            'days' => $pruneDays,
-            'click_threshold' => $pruneClickThreshold,
-            'cutoff_at' => $pruneCutoff,
-            'eligible_now' => $newsRetention->eligibleQuery($pruneDays, $pruneClickThreshold)->count(),
-            'protected_now' => $newsRetention->protectedQuery($pruneDays, $pruneClickThreshold)->count(),
+            ...$autoSettings,
+            'cutoff_at' => $autoSettings['cutoff_at'],
+            'eligible_now' => $newsRetention->eligibleQuery($autoSettings)->count(),
+            'protected_now' => $newsRetention->protectedQuery($autoSettings)->count(),
             'favorite_protected_now' => NewsItem::query()
-                ->where('published_at', '<', $pruneCutoff)
+                ->where('published_at', '<', $autoSettings['cutoff_at'])
                 ->where('is_favorite', true)
                 ->count(),
             'last_run_at' => Setting::get('news_prune_last_run_at'),
@@ -179,7 +193,12 @@ class AdminController extends Controller
             'selectedSectionId',
             'search',
             'sort',
+            'destroyMode',
+            'destroyDays',
+            'destroyClickThreshold',
+            'destroyBatchLimit',
             'destroyStats',
+            'destroySettings',
             'autoDeleteReport',
             'fetchStats'
         ));
@@ -202,11 +221,43 @@ class AdminController extends Controller
 
     public function runDestroyProcess(Request $request, NewsRetentionService $newsRetention)
     {
-        $result = $newsRetention->prune();
+        $result = $newsRetention->prune([
+            'days' => (int) $request->input('days', $newsRetention->retentionDays()),
+            'click_threshold' => (int) $request->input('click_threshold', $newsRetention->clickThreshold()),
+            'mode' => $request->input('mode', $newsRetention->mode()),
+            'sort' => $request->input('sort', $newsRetention->sort()),
+            'batch_limit' => (int) $request->input('batch_limit', $newsRetention->batchLimit()),
+            'enabled' => $newsRetention->autoDeletionEnabled(),
+        ]);
 
         return redirect()
-            ->route('admin.destroy', $request->only(['section', 'topic', 'search', 'sort']))
-            ->with('success', "Destroy process completed. Deleted {$result['deleted_count']} article(s), protected {$result['protected_count']}, favorites protected {$result['favorite_protected_count']}.");
+            ->route('admin.destroy', $request->only(['section', 'topic', 'search', 'sort', 'mode', 'days', 'click_threshold', 'batch_limit']))
+            ->with('success', "Destroy process completed. Deleted {$result['deleted_count']} article(s) from {$result['eligible_count']} eligible using {$result['mode']} mode. Batch limit {$result['batch_limit']}, protected {$result['protected_count']}, favorites protected {$result['favorite_protected_count']}.");
+    }
+
+    public function saveDestroySettings(Request $request, NewsRetentionService $newsRetention)
+    {
+        $validated = $request->validate([
+            'enabled' => 'nullable|boolean',
+            'days' => 'required|integer|min:1|max:30',
+            'click_threshold' => 'required|integer|min:0|max:100000',
+            'batch_limit' => 'required|integer|min:500|max:3000',
+            'mode' => 'required|in:standard,no_clicks,no_views,viewed_no_clicks',
+            'sort' => 'required|in:oldest,latest,least_clicked,least_viewed,most_clicked,most_viewed,title',
+        ]);
+
+        $settings = $newsRetention->saveSettings([
+            'enabled' => $request->boolean('enabled'),
+            'days' => $validated['days'],
+            'click_threshold' => $validated['click_threshold'],
+            'batch_limit' => $validated['batch_limit'],
+            'mode' => $validated['mode'],
+            'sort' => $validated['sort'],
+        ]);
+
+        return redirect()
+            ->route('admin.destroy')
+            ->with('success', "Automatic destroy settings saved. Mode {$settings['mode']}, {$settings['days']} day window, {$settings['click_threshold']} click threshold, {$settings['batch_limit']} delete limit.");
     }
 
     public function trends(Request $request, AutomaticNewsSyncService $automaticNewsSync, AutomaticTrendSyncService $automaticTrendSync, TrendingNewsService $trendingNewsService)
@@ -464,9 +515,16 @@ class AdminController extends Controller
         $articles = NewsItem::query()
             ->whereIn('id', $validated['article_ids'])
             ->get();
+        $destroySettings = [
+            'days' => (int) $request->input('days', $newsRetention->retentionDays()),
+            'click_threshold' => (int) $request->input('click_threshold', $newsRetention->clickThreshold()),
+            'mode' => $request->input('mode', $newsRetention->mode()),
+            'sort' => $request->input('sort', $newsRetention->sort()),
+            'batch_limit' => (int) $request->input('batch_limit', $newsRetention->batchLimit()),
+        ];
 
         $eligibleIds = $articles
-            ->filter(fn (NewsItem $article) => $newsRetention->isEligibleForDeletion($article))
+            ->filter(fn (NewsItem $article) => $newsRetention->isEligibleForDeletion($article, $destroySettings))
             ->pluck('id');
 
         $deletedCount = NewsItem::query()
@@ -477,7 +535,7 @@ class AdminController extends Controller
         $skippedCount = $articles->count() - $deletedCount;
 
         return redirect()
-            ->route('admin.destroy', $request->only(['section', 'topic', 'search', 'sort']))
+            ->route('admin.destroy', $request->only(['section', 'topic', 'search', 'sort', 'mode', 'days', 'click_threshold', 'batch_limit']))
             ->with('success', "{$deletedCount} article(s) deleted. {$skippedCount} protected article(s) were skipped.");
     }
 
@@ -721,17 +779,12 @@ class AdminController extends Controller
         return $articlesQuery;
     }
 
-    protected function buildDestroyQuery($selectedSectionId, $selectedTopicId, ?string $search, string $sort, NewsRetentionService $newsRetention)
+    protected function buildDestroyQuery($selectedSectionId, $selectedTopicId, ?string $search, array $destroySettings, NewsRetentionService $newsRetention)
     {
-        $articlesQuery = $newsRetention->eligibleQuery()
-            ->with(['newsTopic', 'newsSection'])
-            ->when($sort === 'most_viewed', fn ($query) => $query->orderByDesc('views_count')->orderByDesc('published_at'))
-            ->when($sort === 'most_clicked', fn ($query) => $query->orderByDesc('clicks_count')->orderByDesc('published_at'))
-            ->when($sort === 'least_clicked', fn ($query) => $query->orderBy('clicks_count')->orderBy('views_count')->orderBy('published_at'))
-            ->when($sort === 'least_viewed', fn ($query) => $query->orderBy('views_count')->orderBy('clicks_count')->orderBy('published_at'))
-            ->when($sort === 'oldest', fn ($query) => $query->orderBy('published_at')->orderBy('id'))
-            ->when($sort === 'title', fn ($query) => $query->orderBy('title'))
-            ->when(!in_array($sort, ['most_viewed', 'most_clicked', 'least_clicked', 'least_viewed', 'oldest', 'title'], true), fn ($query) => $query->orderBy('published_at')->orderBy('id'));
+        $articlesQuery = $newsRetention->applySort(
+            $newsRetention->eligibleQuery($destroySettings)->with(['newsTopic', 'newsSection']),
+            $destroySettings['sort']
+        );
 
         if ($selectedSectionId && $selectedSectionId !== 'all') {
             $articlesQuery->where('news_section_id', $selectedSectionId);

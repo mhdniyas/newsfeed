@@ -34,8 +34,15 @@ class TrendLandingService
 
     public function homepagePages(int $dynamicLimit = 8): Collection
     {
+        $dynamicPages = $this->dynamicPages(max(1, $dynamicLimit))
+            ->unique('slug')
+            ->values();
+
+        if ($dynamicPages->isNotEmpty()) {
+            return $dynamicPages;
+        }
+
         return $this->fixedPages()
-            ->concat($this->dynamicPages($dynamicLimit))
             ->unique('slug')
             ->values();
     }
@@ -90,7 +97,11 @@ class TrendLandingService
 
     public function resolve(string $slug): ?array
     {
-        $page = $this->homepagePages(20)->firstWhere('slug', $slug);
+        $page = $this->fixedPages()
+            ->concat($this->dynamicPages(20))
+            ->unique('slug')
+            ->values()
+            ->firstWhere('slug', $slug);
 
         return $page ?: null;
     }

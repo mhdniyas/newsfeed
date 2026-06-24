@@ -13,9 +13,45 @@ class KeralaLotteryService
     public const LISTING_URL = 'https://result.keralalotteries.com/';
     public const STORAGE_DISK = 'local';
     public const STORAGE_DIR = 'lottery-results';
+    public const TIMEZONE = 'Asia/Kolkata';
+    public const FIRST_FETCH_HOUR = 16;
+    public const FIRST_FETCH_MINUTE = 10;
 
     public function syncLatest(int $limit = 10): array
     {
+        $this->recordAttempt('started');
+        $windowOpenAt = $this->firstFetchAt();
+
+        if (!$this->fetchWindowOpened()) {
+            $this->recordAttempt('waiting_for_window', [
+                'message' => 'Kerala lottery sync skipped before 4:10 PM IST.',
+                'next_attempt_at' => $windowOpenAt->toIso8601String(),
+            ]);
+
+            return [
+                'saved' => 0,
+                'rows' => 0,
+                'status' => 'waiting_for_window',
+                'message' => 'Waiting for 4:10 PM IST.',
+                'next_attempt_at' => $windowOpenAt,
+            ];
+        }
+
+        if ($this->hasTodayResult()) {
+            $this->recordAttempt('already_available', [
+                'message' => 'Today\'s Kerala lottery result is already available.',
+                'next_attempt_at' => $this->nextDayFirstFetchAt()->toIso8601String(),
+            ]);
+
+            return [
+                'saved' => 0,
+                'rows' => 0,
+                'status' => 'already_available',
+                'message' => 'Today\'s result already exists.',
+                'next_attempt_at' => $this->nextDayFirstFetchAt(),
+            ];
+        }
+
         $rows = $this->fetchListingRows($limit);
         $saved = 0;
 
@@ -24,9 +60,24 @@ class KeralaLotteryService
             $saved++;
         }
 
+        $status = $saved > 0 ? 'saved_today_result' : 'today_result_not_found';
+        $nextAttemptAt = $saved > 0 ? $this->nextDayFirstFetchAt() : $this->nextRetryAt();
+        $message = $saved > 0
+            ? 'Today\'s Kerala lottery result fetched successfully.'
+            : 'Today\'s Kerala lottery result is not published yet. Retry after 30 minutes.';
+
+        $this->recordAttempt($status, [
+            'message' => $message,
+            'next_attempt_at' => $nextAttemptAt->toIso8601String(),
+            'saved' => (string) $saved,
+        ]);
+
         return [
             'saved' => $saved,
             'rows' => count($rows),
+            'status' => $status,
+            'message' => $message,
+            'next_attempt_at' => $nextAttemptAt,
         ];
     }
 
@@ -49,12 +100,18 @@ class KeralaLotteryService
 
         $rows = [];
 
-        foreach (array_slice($matches, 0, $limit) as $match) {
+        $today = $this->todayInIndia()->toDateString();
+
+        foreach ($matches as $match) {
             $label = trim(html_entity_decode($match[1], ENT_QUOTES | ENT_HTML5));
             $date = Carbon::createFromFormat('d/m/Y', trim($match[2]))?->startOfDay();
             $relativePdfUrl = trim($match[3]);
 
             if (!$date) {
+                continue;
+            }
+
+            if ($date->toDateString() !== $today) {
                 continue;
             }
 
@@ -75,6 +132,10 @@ class KeralaLotteryService
                 'official_pdf_url' => $officialPdfUrl,
                 'source_url' => self::LISTING_URL,
             ];
+
+            if (count($rows) >= $limit) {
+                break;
+            }
         }
 
         return $rows;
@@ -344,5 +405,50 @@ class KeralaLotteryService
         }
 
         return null;
+    }
+
+    public function todayInIndia(): Carbon
+    {
+        return now(self::TIMEZONE)->startOfDay();
+    }
+
+    public function firstFetchAt(?Carbon $day = null): Carbon
+    {
+        $baseDay = ($day ? $day->copy() : now(self::TIMEZONE))->setTimezone(self::TIMEZONE);
+
+        return $baseDay->copy()->setTime(self::FIRST_FETCH_HOUR, self::FIRST_FETCH_MINUTE, 0);
+    }
+
+    public function nextRetryAt(): Carbon
+    {
+        return now(self::TIMEZONE)->addMinutes(30);
+    }
+
+    public function nextDayFirstFetchAt(): Carbon
+    {
+        return $this->firstFetchAt(now(self::TIMEZONE)->addDay());
+    }
+
+    public function fetchWindowOpened(): bool
+    {
+        return now(self::TIMEZONE)->greaterThanOrEqualTo($this->firstFetchAt());
+    }
+
+    public function hasTodayResult(): bool
+    {
+        return LotteryResult::query()
+            ->whereDate('result_date', $this->todayInIndia()->toDateString())
+            ->whereIn('status', ['pdf_available', 'available', 'parse_failed'])
+            ->exists();
+    }
+
+    protected function recordAttempt(string $status, array $meta = []): void
+    {
+        \App\Models\Setting::set('lottery_kerala_last_attempt_at', now(self::TIMEZONE)->toIso8601String());
+        \App\Models\Setting::set('lottery_kerala_last_status', $status);
+
+        foreach ($meta as $key => $value) {
+            \App\Models\Setting::set('lottery_kerala_' . $key, (string) $value);
+        }
     }
 }

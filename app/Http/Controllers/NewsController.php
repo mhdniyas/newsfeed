@@ -122,7 +122,7 @@ class NewsController extends Controller
 
             return $section;
         })->filter(fn (NewsSection $section) => $section->latestArticles->isNotEmpty())->values();
-        $trendPages = app(TrendLandingService::class)->homepagePages();
+        $trendPages = app(TrendLandingService::class)->homepagePages(3);
 
         return view('news.index', array_merge($sharedPublicData, compact('articles', 'sections', 'topics', 'selectedTopicId', 'selectedSection', 'search', 'featuredCount', 'homepageSections', 'showSectionLanding', 'trendPages')));
     }

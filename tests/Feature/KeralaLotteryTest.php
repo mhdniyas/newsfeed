@@ -67,6 +67,7 @@ class KeralaLotteryTest extends TestCase
     public function test_sync_service_fetches_listing_downloads_pdf_and_parses_top_prizes(): void
     {
         Storage::fake('local');
+        Carbon::setTestNow(Carbon::create(2026, 6, 23, 16, 30, 0, KeralaLotteryService::TIMEZONE));
 
         Http::fake([
             KeralaLotteryService::LISTING_URL => Http::response($this->listingHtml(), 200),
@@ -116,6 +117,42 @@ TEXT;
         $this->assertSame(['1234', '5678'], $result->other_prizes[1]['numbers']);
         
         Storage::disk('local')->assertExists($result->local_pdf_path);
+        Carbon::setTestNow();
+    }
+
+    public function test_sync_service_waits_until_fetch_window_opens_in_india(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 6, 23, 15, 45, 0, KeralaLotteryService::TIMEZONE));
+
+        $stats = app(KeralaLotteryService::class)->syncLatest(1);
+
+        $this->assertSame(0, $stats['saved']);
+        $this->assertSame('waiting_for_window', $stats['status']);
+        $this->assertSame(0, LotteryResult::count());
+
+        Carbon::setTestNow();
+    }
+
+    public function test_sync_service_ignores_previous_day_results_and_retries_later(): void
+    {
+        Carbon::setTestNow(Carbon::create(2026, 6, 23, 16, 30, 0, KeralaLotteryService::TIMEZONE));
+
+        Http::fake([
+            KeralaLotteryService::LISTING_URL => Http::response(<<<'HTML'
+<table>
+<tr><td class='stylealt' align="center">STHREE-SAKTHI(SS-524)</td><td class='stylealt' align="center">22/06/2026</td><td align="center" class='stylealt'><a href="viewlotisresult.php?drawserial=75297" target="_blank">View</a></td></tr>
+</table>
+HTML, 200),
+        ]);
+
+        $stats = app(KeralaLotteryService::class)->syncLatest(1);
+
+        $this->assertSame(0, $stats['saved']);
+        $this->assertSame(0, $stats['rows']);
+        $this->assertSame('today_result_not_found', $stats['status']);
+        $this->assertSame(0, LotteryResult::count());
+
+        Carbon::setTestNow();
     }
 
     protected function listingHtml(): string

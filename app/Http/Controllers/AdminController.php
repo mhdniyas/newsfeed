@@ -7,10 +7,12 @@ use App\Models\NewsItem;
 use App\Models\NewsItemDailyMetric;
 use App\Models\NewsSection;
 use App\Models\NewsTopic;
+use App\Models\LotteryResult;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\AutomaticNewsSyncService;
 use App\Services\AutomaticTrendSyncService;
+use App\Services\KeralaLotteryService;
 use App\Services\NewsRetentionService;
 use App\Services\PromotionHubService;
 use App\Services\TrendingNewsService;
@@ -20,6 +22,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class AdminController extends Controller
 {
@@ -108,6 +111,7 @@ class AdminController extends Controller
         $analyticsSummary = $this->analyticsSummary($visitorMetrics);
         $contentAnalytics = $this->contentAnalyticsSummary(app(NewsRetentionService::class));
         $trendsAnalyticsSummary = $visitorMetrics->trendsAnalyticsSummary();
+        $lotteryAnalyticsSummary = $this->keralaLotteryAnalyticsSummary();
         $analyticsCharts = [
             'live_users' => $this->liveUserChart(),
             'news_total' => $this->newsTotalChart(),
@@ -118,7 +122,7 @@ class AdminController extends Controller
         ];
         $fetchStats = $this->fetchStats();
 
-        return view('admin.analytics', compact('visitStats', 'analyticsSummary', 'contentAnalytics', 'trendsAnalyticsSummary', 'visitorSnapshot', 'analyticsCharts', 'contentCharts', 'fetchStats'));
+        return view('admin.analytics', compact('visitStats', 'analyticsSummary', 'contentAnalytics', 'trendsAnalyticsSummary', 'lotteryAnalyticsSummary', 'visitorSnapshot', 'analyticsCharts', 'contentCharts', 'fetchStats'));
     }
 
     public function rankingAnalytics(VisitorMetricsService $visitorMetrics)
@@ -747,6 +751,80 @@ class AdminController extends Controller
                 ->orderBy('name')
                 ->take(8)
                 ->get(),
+        ];
+    }
+
+    protected function keralaLotteryAnalyticsSummary(): array
+    {
+        $timezone = KeralaLotteryService::TIMEZONE;
+        $nowInIndia = now($timezone);
+        $today = $nowInIndia->toDateString();
+        $firstWindow = $nowInIndia->copy()->setTime(
+            KeralaLotteryService::FIRST_FETCH_HOUR,
+            KeralaLotteryService::FIRST_FETCH_MINUTE
+        );
+
+        if (!Schema::hasTable('lottery_results')) {
+            return [
+                'today_result' => null,
+                'latest_result' => null,
+                'recent_results' => collect(),
+                'total_results' => 0,
+                'available_results' => 0,
+                'parse_failed_results' => 0,
+                'pdf_waiting_results' => 0,
+                'today_result_count' => 0,
+                'today_status' => 'not_ready',
+                'last_attempt_at' => null,
+                'last_status' => 'not_ready',
+                'last_message' => 'Lottery results table is not ready yet.',
+                'next_attempt_at' => $firstWindow,
+                'window_opens_at' => $firstWindow,
+                'india_now' => $nowInIndia,
+            ];
+        }
+
+        $todayResult = LotteryResult::query()
+            ->whereDate('result_date', $today)
+            ->orderByDesc('id')
+            ->first();
+
+        $latestResult = LotteryResult::query()
+            ->orderByDesc('result_date')
+            ->orderByDesc('id')
+            ->first();
+
+        $lastAttemptAt = Setting::get('lottery_kerala_last_attempt_at');
+        $lastStatus = Setting::get('lottery_kerala_last_status', 'waiting_for_window');
+        $lastMessage = Setting::get('lottery_kerala_message', 'Waiting for the official Kerala lottery result.');
+        $storedNextAttemptAt = Setting::get('lottery_kerala_next_attempt_at');
+
+        $nextAttemptAt = $storedNextAttemptAt
+            ? Carbon::parse($storedNextAttemptAt)
+            : ($todayResult
+                ? $firstWindow->copy()->addDay()
+                : ($nowInIndia->lt($firstWindow) ? $firstWindow : $nowInIndia->copy()->addMinutes(30)));
+
+        return [
+            'today_result' => $todayResult,
+            'latest_result' => $latestResult,
+            'recent_results' => LotteryResult::query()
+                ->orderByDesc('result_date')
+                ->orderByDesc('id')
+                ->take(8)
+                ->get(),
+            'total_results' => LotteryResult::query()->count(),
+            'available_results' => LotteryResult::query()->where('status', 'available')->count(),
+            'parse_failed_results' => LotteryResult::query()->whereIn('status', ['parse_failed', 'failed'])->count(),
+            'pdf_waiting_results' => LotteryResult::query()->whereIn('status', ['waiting', 'pdf_available'])->count(),
+            'today_result_count' => LotteryResult::query()->whereDate('result_date', $today)->count(),
+            'today_status' => $todayResult?->status ?? $lastStatus,
+            'last_attempt_at' => $lastAttemptAt ? Carbon::parse($lastAttemptAt) : null,
+            'last_status' => $lastStatus,
+            'last_message' => $lastMessage,
+            'next_attempt_at' => $nextAttemptAt,
+            'window_opens_at' => $firstWindow,
+            'india_now' => $nowInIndia,
         ];
     }
 

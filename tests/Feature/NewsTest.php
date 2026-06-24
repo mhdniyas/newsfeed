@@ -547,6 +547,36 @@ class NewsTest extends TestCase
         $response->assertDontSee('{{ $chart[\'title\'] }}', false);
     }
 
+    public function test_admin_analytics_shows_kerala_lottery_tab_metrics()
+    {
+        \App\Models\LotteryResult::create([
+            'lottery_name' => 'Karunya Plus',
+            'lottery_code' => 'KN',
+            'draw_number' => 'KN-555',
+            'result_date' => now(\App\Services\KeralaLotteryService::TIMEZONE),
+            'slug' => 'karunya-plus-kn-555-result',
+            'status' => 'available',
+            'official_pdf_url' => 'https://result.keralalotteries.com/viewlotisresult.php?drawserial=77777',
+            'first_prize_ticket' => 'KN 123456',
+            'first_prize_amount' => '₹80 Lakh',
+        ]);
+
+        \App\Models\Setting::set('lottery_kerala_last_attempt_at', now(\App\Services\KeralaLotteryService::TIMEZONE)->toIso8601String());
+        \App\Models\Setting::set('lottery_kerala_last_status', 'saved_today_result');
+        \App\Models\Setting::set('lottery_kerala_message', 'Today\'s Kerala lottery result fetched successfully.');
+        \App\Models\Setting::set('lottery_kerala_next_attempt_at', now(\App\Services\KeralaLotteryService::TIMEZONE)->addDay()->setTime(16, 10)->toIso8601String());
+
+        $response = $this->withSession(['admin_authenticated' => true])
+            ->get(route('admin.analytics'));
+
+        $response->assertOk();
+        $response->assertSee('Kerala Lottery');
+        $response->assertSee('Kerala lottery fetch window');
+        $response->assertSee('Karunya Plus');
+        $response->assertSee('Today Saved');
+        $response->assertSee('Open Public Page');
+    }
+
     /**
      * Test admin auth login logic and redirects.
      */

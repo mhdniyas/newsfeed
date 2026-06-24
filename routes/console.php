@@ -31,6 +31,6 @@ Schedule::job(new RunTrendSyncCycle('Automatic 5-minute scheduler trend sync'))
     ->everyFiveMinutes()
     ->withoutOverlapping();
 
-Schedule::command('lottery:sync-kerala-results --limit=10')
+Schedule::command('lottery:sync-kerala-results --limit=1')
     ->everyThirtyMinutes()
     ->withoutOverlapping();

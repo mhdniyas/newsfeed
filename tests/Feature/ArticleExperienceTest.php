@@ -200,8 +200,8 @@ class ArticleExperienceTest extends TestCase
 
         $homepage = $this->get(route('news.index'));
         $homepage->assertOk();
-        $homepage->assertSee(route('news.trend-page', ['slug' => 'messi']), false);
         $homepage->assertSee(route('news.trend-page', ['slug' => 'mbappe']), false);
+        $homepage->assertDontSee(route('news.trend-page', ['slug' => 'messi']), false);
 
         $this->get(route('news.trend-page', ['slug' => 'middle-east']))
             ->assertOk()
@@ -210,6 +210,53 @@ class ArticleExperienceTest extends TestCase
         $this->get(route('news.trend-page', ['slug' => 'mbappe']))
             ->assertOk()
             ->assertSee('Mbappe reaches new milestone');
+    }
+
+    public function test_homepage_trending_pages_show_latest_top_three_dynamic_keywords(): void
+    {
+        $trendsSection = NewsSection::firstOrCreate([
+            'slug' => 'google-trends',
+        ], [
+            'name' => 'Google Trends',
+            'description' => 'Google Trends',
+            'sort_order' => 9,
+            'is_active' => true,
+            'is_default' => false,
+            'refresh_interval_minutes' => 5,
+            'card_limit' => 10,
+        ]);
+
+        foreach ([
+            ['name' => 'Trend One', 'keyword' => 'trend one', 'minutes' => 5],
+            ['name' => 'Trend Two', 'keyword' => 'trend two', 'minutes' => 4],
+            ['name' => 'Trend Three', 'keyword' => 'trend three', 'minutes' => 3],
+            ['name' => 'Trend Four', 'keyword' => 'trend four', 'minutes' => 2],
+            ['name' => 'Trend Five', 'keyword' => 'trend five', 'minutes' => 1],
+        ] as $trendTopic) {
+            $topic = NewsTopic::create([
+                'news_section_id' => $trendsSection->id,
+                'name' => $trendTopic['name'],
+                'keyword' => $trendTopic['keyword'],
+                'country' => 'US',
+                'language' => 'en',
+                'sort_order' => 1,
+                'is_active' => true,
+            ]);
+
+            $topic->forceFill([
+                'created_at' => now()->subMinutes($trendTopic['minutes']),
+                'updated_at' => now()->subMinutes($trendTopic['minutes']),
+            ])->saveQuietly();
+        }
+
+        $response = $this->get(route('news.index'));
+
+        $response->assertOk();
+        $response->assertSee(route('news.trend-page', ['slug' => 'trend-five']), false);
+        $response->assertSee(route('news.trend-page', ['slug' => 'trend-four']), false);
+        $response->assertSee(route('news.trend-page', ['slug' => 'trend-three']), false);
+        $response->assertDontSee(route('news.trend-page', ['slug' => 'trend-two']), false);
+        $response->assertDontSee(route('news.trend-page', ['slug' => 'messi']), false);
     }
 
     protected function makeContext(): array

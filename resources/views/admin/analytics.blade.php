@@ -70,6 +70,9 @@
         <button type="button" data-tab-target="content" class="analytics-tab inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
             Content
         </button>
+        <button type="button" data-tab-target="lottery" class="analytics-tab inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
+            Kerala Lottery
+        </button>
     </div>
 
     <div data-tab-panel="overview">
@@ -727,6 +730,111 @@
                     @empty
                         <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500">
                             No posts recorded yet.
+                        </div>
+                    @endforelse
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <div data-tab-panel="lottery" class="hidden">
+        <div class="mb-4 flex items-center justify-end">
+            <button type="button" data-refresh-tab="lottery" class="analytics-refresh inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
+                <span class="analytics-refresh-spinner hidden h-3.5 w-3.5 rounded-full border-2 border-slate-300 border-t-slate-700 animate-spin"></span>
+                <span class="analytics-refresh-label">Refresh Kerala Lottery</span>
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+            <div class="rounded-3xl border border-sky-200 bg-gradient-to-br from-sky-500 to-cyan-500 p-5 text-white shadow-lg shadow-sky-500/15">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-50/80">Today&apos;s Result</p>
+                <p class="mt-3 text-2xl font-black">{{ $lotteryAnalyticsSummary['today_result']?->lottery_name ?? 'Waiting' }}</p>
+                <p class="mt-2 text-xs text-sky-50/90">
+                    {{ $lotteryAnalyticsSummary['today_result']?->draw_number ?? 'Only today&apos;s Kerala result is saved after 4:10 PM IST.' }}
+                </p>
+            </div>
+            <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Last Attempt</p>
+                <p class="mt-2 text-2xl font-extrabold text-slate-900">{{ $lotteryAnalyticsSummary['last_attempt_at']?->timezone('Asia/Kolkata')->format('d M, h:i A') ?? 'Pending' }}</p>
+                <p class="mt-1 text-xs text-slate-500">{{ str_replace('_', ' ', $lotteryAnalyticsSummary['last_status']) }}</p>
+            </div>
+            <div class="rounded-3xl border border-emerald-200 bg-white p-4 shadow-sm">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700/80">Next Attempt</p>
+                <p class="mt-2 text-2xl font-extrabold text-emerald-700">{{ $lotteryAnalyticsSummary['next_attempt_at']?->timezone('Asia/Kolkata')->format('d M, h:i A') ?? 'Waiting' }}</p>
+                <p class="mt-1 text-xs text-slate-500">India time retry window for today&apos;s result only.</p>
+            </div>
+            <div class="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-4 shadow-sm">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-700/80">Saved Results</p>
+                <p class="mt-2 text-3xl font-extrabold text-amber-700">{{ number_format($lotteryAnalyticsSummary['total_results']) }}</p>
+                <p class="mt-1 text-xs text-amber-700/70">Available {{ number_format($lotteryAnalyticsSummary['available_results']) }} · waiting {{ number_format($lotteryAnalyticsSummary['pdf_waiting_results']) }}</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-[1.1fr_0.9fr] gap-6">
+            <section class="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                <div class="border-b border-slate-200 bg-slate-50/70 px-5 py-4">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">Scheduler State</p>
+                    <h2 class="mt-1 text-xl font-extrabold text-slate-950">Kerala lottery fetch window</h2>
+                    <p class="mt-1 text-xs text-slate-500">{{ $lotteryAnalyticsSummary['last_message'] }}</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5">
+                    <div class="rounded-[1.6rem] border border-slate-200 bg-slate-50 p-4">
+                        <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Window Opens</p>
+                        <p class="mt-2 text-xl font-black text-slate-950">{{ $lotteryAnalyticsSummary['window_opens_at']->timezone('Asia/Kolkata')->format('d M, h:i A') }}</p>
+                        <p class="mt-1 text-xs text-slate-500">First fetch is allowed only after 4:10 PM IST.</p>
+                    </div>
+                    <div class="rounded-[1.6rem] border border-slate-200 bg-slate-50 p-4">
+                        <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">India Time Now</p>
+                        <p class="mt-2 text-xl font-black text-slate-950">{{ $lotteryAnalyticsSummary['india_now']->format('d M, h:i A') }}</p>
+                        <p class="mt-1 text-xs text-slate-500">Retry runs stay on a 30-minute loop until today&apos;s result arrives.</p>
+                    </div>
+                    <div class="rounded-[1.6rem] border border-emerald-200 bg-emerald-50 p-4">
+                        <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700/80">Today Saved</p>
+                        <p class="mt-2 text-3xl font-black text-emerald-700">{{ number_format($lotteryAnalyticsSummary['today_result_count']) }}</p>
+                        <p class="mt-1 text-xs text-emerald-700/70">The crawler ignores previous-day Kerala results.</p>
+                    </div>
+                    <div class="rounded-[1.6rem] border border-rose-200 bg-rose-50 p-4">
+                        <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-rose-700/80">Parse / Fetch Failed</p>
+                        <p class="mt-2 text-3xl font-black text-rose-700">{{ number_format($lotteryAnalyticsSummary['parse_failed_results']) }}</p>
+                        <p class="mt-1 text-xs text-rose-700/70">Results that need manual repair or PDF reparse.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900">Recent Kerala Results</h2>
+                        <p class="text-xs text-slate-500 mt-1">Latest fetched lottery results and parse status.</p>
+                    </div>
+                    <a href="{{ route('kerala-lottery.index') }}" class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-700 transition hover:bg-slate-100">
+                        Open Public Page
+                    </a>
+                </div>
+                <div class="mt-4 space-y-3">
+                    @forelse($lotteryAnalyticsSummary['recent_results'] as $result)
+                        <div class="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="text-sm font-bold text-slate-900">{{ $result->lottery_name }}</p>
+                                    <p class="mt-1 text-[11px] text-slate-500">{{ optional($result->result_date)->format('d M Y') }} · {{ $result->draw_number ?: 'Draw pending' }}</p>
+                                </div>
+                                <span class="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-600 border border-slate-200">
+                                    {{ str_replace('_', ' ', $result->status) }}
+                                </span>
+                            </div>
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                <a href="{{ route('kerala-lottery.show', $result) }}" class="inline-flex items-center rounded-full bg-slate-900 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-slate-800">
+                                    Open Result
+                                </a>
+                                <a href="{{ route('kerala-lottery.pdf.view', $result) }}" target="_blank" class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-700 transition hover:bg-slate-100">
+                                    PDF
+                                </a>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500">
+                            No Kerala lottery results saved yet.
                         </div>
                     @endforelse
                 </div>

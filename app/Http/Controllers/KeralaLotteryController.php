@@ -185,7 +185,7 @@ class KeralaLotteryController extends Controller
         }
 
         return LotteryResult::query()
-            ->whereDate('result_date', today())
+            ->whereDate('result_date', now(KeralaLotteryService::TIMEZONE)->toDateString())
             ->orderByDesc('id')
             ->first();
     }

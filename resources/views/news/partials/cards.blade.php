@@ -2,7 +2,7 @@
     <article class="relative flex flex-col justify-between overflow-hidden rounded-[1.6rem] bg-white border @if($article->is_featured) border-amber-400 shadow-lg shadow-amber-400/10 @else border-slate-200/70 shadow-sm shadow-slate-200/50 @endif hover:shadow-xl hover:shadow-slate-300/40 hover:border-emerald-300/60 transition-all duration-300 group">
         
         <!-- Article Thumbnail Image -->
-        <div class="h-44 w-full overflow-hidden bg-slate-50 border-b border-slate-100 relative">
+        <a href="{{ route('news.article', ['article' => $article->slug]) }}" class="block h-44 w-full overflow-hidden bg-slate-50 border-b border-slate-100 relative">
             <img src="{{ $article->image_url ?: route('media.news-image', $article) }}"
                  data-proxy-src="{{ route('media.news-image', $article) }}"
                  data-placeholder-src="{{ '/media/fifa-placeholder/' . rawurlencode($article->hash ?: (string) $article->id) . '.svg' }}"
@@ -21,7 +21,10 @@
                     {{ $article->newsSection->name }}
                 </span>
             @endif
-        </div>
+            <span class="absolute bottom-3 left-3 inline-flex items-center rounded-full bg-white/92 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-900 shadow-sm">
+                Open Story Page
+            </span>
+        </a>
 
         <div class="p-5 flex-grow">
             <!-- Metadata line -->
@@ -39,7 +42,9 @@
 
             <!-- Title -->
             <h3 class="text-[1.02rem] font-extrabold text-slate-950 leading-snug group-hover:text-emerald-600 transition-colors duration-200 line-clamp-3 mb-2">
-                {{ $article->title }}
+                <a href="{{ route('news.article', ['article' => $article->slug]) }}" class="hover:text-emerald-600">
+                    {{ $article->title }}
+                </a>
             </h3>
 
             <!-- Description -->
@@ -58,7 +63,7 @@
 
                 <!-- Explore More Button -->
                 <a href="{{ route('news.article', ['article' => $article->slug]) }}" class="inline-flex items-center space-x-1 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors duration-200 group/btn">
-                    <span>Read Detail</span>
+                    <span>Open Story Page</span>
                     <svg class="w-3 h-3 transform group-hover/btn:translate-x-0.5 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
                     </svg>

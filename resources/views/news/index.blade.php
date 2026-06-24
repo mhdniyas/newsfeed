@@ -130,6 +130,7 @@
                         </a>
                     @endforeach
                 </div>
+                <p class="mt-4 text-xs font-medium text-slate-500">Story cards below open internal article pages first, then the original source link is available inside each page.</p>
             </section>
         @endif
 

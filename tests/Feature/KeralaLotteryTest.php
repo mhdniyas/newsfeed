@@ -206,6 +206,77 @@ TEXT;
         Carbon::setTestNow();
     }
 
+    public function test_history_backfill_imports_recent_months_from_listing(): void
+    {
+        Storage::fake('local');
+        Carbon::setTestNow(Carbon::create(2026, 6, 24, 18, 0, 0, KeralaLotteryService::TIMEZONE));
+
+        Http::fake([
+            KeralaLotteryService::LISTING_URL => Http::response(<<<'HTML'
+<table>
+<tr><td class='stylealt' align="center">DHANALEKSHMI(DL-58)</td><td class='stylealt' align="center">24/06/2026</td><td align="center" class='stylealt'><a href="viewlotisresult.php?drawserial=75299" target="_blank">View</a></td></tr>
+<tr><td class='stylealt' align="center">SUVARNA KERALAM(SK-46)</td><td class='stylealt' align="center">28/03/2026</td><td align="center" class='stylealt'><a href="viewlotisresult.php?drawserial=75212" target="_blank">View</a></td></tr>
+<tr><td class='stylealt' align="center">KARUNYA PLUS(KN-580)</td><td class='stylealt' align="center">01/03/2026</td><td align="center" class='stylealt'><a href="viewlotisresult.php?drawserial=75186" target="_blank">View</a></td></tr>
+</table>
+HTML, 200),
+            'https://result.keralalotteries.com/viewlotisresult.php?drawserial=75299' => Http::response('%PDF-1.4 fake', 200, ['Content-Type' => 'application/pdf']),
+            'https://result.keralalotteries.com/viewlotisresult.php?drawserial=75212' => Http::response('%PDF-1.4 fake', 200, ['Content-Type' => 'application/pdf']),
+        ]);
+
+        $service = new class extends KeralaLotteryService
+        {
+            public function extractPdfText(string $absolutePath): ?string
+            {
+                $filename = basename($absolutePath);
+
+                if (str_contains($filename, 'dhanalekshmi-dl-58')) {
+                    return <<<TEXT
+KERALA STATE LOTTERIES - RESULT
+DHANALEKSHMI LOTTERY NO.DL-58th DRAW held on:- 24/06/2026,3:00 PM
+1st Prize Rs :10000000/- 1) DT 308547 (THRISSUR)
+TEXT;
+                }
+
+                return <<<TEXT
+KERALA STATE LOTTERIES - RESULT
+SUVARNA KERALAM LOTTERY NO.SK-46th DRAW held on:- 28/03/2026,3:00 PM
+1st Prize Rs :10000000/- 1) RT 520875 (NEYYATTINKARA)
+TEXT;
+            }
+        };
+
+        $stats = $service->syncHistoryMonths(3);
+
+        $this->assertSame(2, $stats['saved']);
+        $this->assertDatabaseHas('lottery_results', ['draw_number' => 'DL-58', 'status' => 'available']);
+        $this->assertDatabaseHas('lottery_results', ['draw_number' => 'SK-46', 'status' => 'available']);
+        $this->assertDatabaseMissing('lottery_results', ['draw_number' => 'KN-580']);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_admin_can_trigger_three_month_history_backfill(): void
+    {
+        $mock = \Mockery::mock(KeralaLotteryService::class);
+        $mock->shouldReceive('syncHistoryMonths')
+            ->once()
+            ->with(3)
+            ->andReturn([
+                'saved' => 22,
+                'processed' => 22,
+                'months' => 3,
+                'serial_lookups' => 0,
+            ]);
+
+        $this->app->instance(KeralaLotteryService::class, $mock);
+
+        $response = $this->withSession(['admin_authenticated' => true])
+            ->post(route('admin.lottery.backfill'), ['months' => 3]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+    }
+
     public function test_sync_service_ignores_previous_day_results_and_retries_later(): void
     {
         Carbon::setTestNow(Carbon::create(2026, 6, 23, 16, 30, 0, KeralaLotteryService::TIMEZONE));

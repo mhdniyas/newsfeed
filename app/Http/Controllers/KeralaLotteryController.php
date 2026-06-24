@@ -212,6 +212,22 @@ class KeralaLotteryController extends Controller
         }
     }
 
+    public function adminBackfill(Request $request, KeralaLotteryService $service)
+    {
+        $months = max(1, min(12, (int) $request->input('months', 3)));
+
+        try {
+            $stats = $service->syncHistoryMonths($months);
+
+            return back()->with(
+                'success',
+                "Lottery backfill complete. Saved {$stats['saved']} results for the last {$stats['months']} month(s), processed {$stats['processed']} rows, serial lookups {$stats['serial_lookups']}."
+            );
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Lottery backfill failed: ' . $e->getMessage());
+        }
+    }
+
     public function adminReparse(Request $request, KeralaLotteryService $service)
     {
         $query = LotteryResult::query()->whereNotNull('local_pdf_path');

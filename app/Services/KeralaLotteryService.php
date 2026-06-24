@@ -16,6 +16,7 @@ class KeralaLotteryService
     public const TIMEZONE = 'Asia/Kolkata';
     public const FIRST_FETCH_HOUR = 16;
     public const FIRST_FETCH_MINUTE = 10;
+    public const HISTORY_MAX_SERIAL_LOOKBACK = 180;
 
     public function syncLatest(int $limit = 10): array
     {
@@ -81,7 +82,71 @@ class KeralaLotteryService
         ];
     }
 
-    public function fetchListingRows(int $limit = 10): array
+    public function syncHistoryMonths(int $months = 3): array
+    {
+        $months = max(1, min(12, $months));
+        $cutoffDate = $this->todayInIndia()->copy()->subMonthsNoOverflow($months)->toDateString();
+        $rows = $this->fetchListingRows(120, false);
+        $saved = 0;
+        $processed = 0;
+        $oldestDate = null;
+        $oldestSerial = null;
+
+        foreach ($rows as $row) {
+            $rowDate = $row['result_date']?->toDateString();
+
+            if (!$rowDate || $rowDate < $cutoffDate) {
+                continue;
+            }
+
+            $this->saveResultFromRow($row);
+            $saved++;
+            $processed++;
+        }
+
+        if (!empty($rows)) {
+            $lastRow = end($rows);
+            $oldestDate = $lastRow['result_date']?->toDateString();
+            $oldestSerial = $lastRow['draw_serial'] ?? null;
+            reset($rows);
+        }
+
+        $serialLookups = 0;
+
+        if ($oldestDate && $oldestDate > $cutoffDate && $oldestSerial) {
+            for ($serial = $oldestSerial - 1; $serial > 0 && $serialLookups < self::HISTORY_MAX_SERIAL_LOOKBACK; $serial--, $serialLookups++) {
+                $historyRow = $this->fetchRowFromDrawSerial($serial);
+
+                if (!$historyRow) {
+                    continue;
+                }
+
+                $historyDate = $historyRow['result_date']?->toDateString();
+
+                if (!$historyDate) {
+                    continue;
+                }
+
+                if ($historyDate < $cutoffDate) {
+                    break;
+                }
+
+                $this->saveResultFromRow($historyRow);
+                $saved++;
+                $processed++;
+            }
+        }
+
+        return [
+            'saved' => $saved,
+            'processed' => $processed,
+            'months' => $months,
+            'cutoff_date' => $cutoffDate,
+            'serial_lookups' => $serialLookups,
+        ];
+    }
+
+    public function fetchListingRows(int $limit = 10, bool $todayOnly = true): array
     {
         $response = Http::timeout(20)
             ->withoutVerifying()
@@ -100,8 +165,6 @@ class KeralaLotteryService
 
         $rows = [];
 
-        $today = $this->todayInIndia()->toDateString();
-
         foreach ($matches as $match) {
             $label = trim(html_entity_decode($match[1], ENT_QUOTES | ENT_HTML5));
             $date = Carbon::createFromFormat('d/m/Y', trim($match[2]))?->startOfDay();
@@ -111,11 +174,12 @@ class KeralaLotteryService
                 continue;
             }
 
-            if ($date->toDateString() !== $today) {
+            if ($todayOnly && $date->toDateString() !== $this->todayInIndia()->toDateString()) {
                 continue;
             }
 
             preg_match('/^(.*?)\(([^)]+)\)$/', $label, $labelMatch);
+            preg_match('/drawserial=(\d+)/i', $relativePdfUrl, $serialMatch);
 
             $lotteryName = trim($labelMatch[1] ?? $label);
             $drawNumber = trim($labelMatch[2] ?? '');
@@ -131,6 +195,7 @@ class KeralaLotteryService
                 'result_date' => $date,
                 'official_pdf_url' => $officialPdfUrl,
                 'source_url' => self::LISTING_URL,
+                'draw_serial' => isset($serialMatch[1]) ? (int) $serialMatch[1] : null,
             ];
 
             if (count($rows) >= $limit) {
@@ -206,6 +271,61 @@ class KeralaLotteryService
         $result->save();
 
         return $result;
+    }
+
+    protected function fetchRowFromDrawSerial(int $drawSerial): ?array
+    {
+        $officialPdfUrl = 'https://result.keralalotteries.com/viewlotisresult.php?drawserial=' . $drawSerial;
+
+        try {
+            $response = Http::timeout(30)
+                ->withoutVerifying()
+                ->retry(2, 1000)
+                ->withUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+                ->get($officialPdfUrl);
+
+            if (!$response->successful()) {
+                return null;
+            }
+
+            $body = $response->body();
+
+            if (!str_starts_with($body, '%PDF')) {
+                return null;
+            }
+
+            $tmpPath = tempnam(sys_get_temp_dir(), 'kerala-history-');
+
+            if ($tmpPath === false) {
+                return null;
+            }
+
+            file_put_contents($tmpPath, $body);
+            $rawText = $this->extractPdfText($tmpPath);
+            @unlink($tmpPath);
+
+            if (!filled($rawText)) {
+                return null;
+            }
+
+            $parsed = $this->parseRawText($rawText);
+
+            if (blank($parsed['lottery_name'] ?? null) || blank($parsed['result_date'] ?? null)) {
+                return null;
+            }
+
+            return [
+                'lottery_name' => $parsed['lottery_name'],
+                'lottery_code' => $parsed['lottery_code'] ?? null,
+                'draw_number' => $parsed['draw_number'] ?? null,
+                'result_date' => $parsed['result_date'],
+                'official_pdf_url' => $officialPdfUrl,
+                'source_url' => self::LISTING_URL,
+                'draw_serial' => $drawSerial,
+            ];
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     public function parseRawText(string $rawText, array $fallback = []): array

@@ -238,6 +238,14 @@
                             Sync Latest (10)
                         </button>
                     </form>
+                    <form action="{{ route('admin.lottery.backfill') }}" method="POST" class="flex items-center gap-2">
+                        @csrf
+                        <input type="hidden" name="months" value="3">
+                        <button type="submit" class="inline-flex items-center gap-1.5 rounded-xl border border-sky-200 bg-sky-50 px-4 py-2 text-xs font-bold text-sky-700 shadow-sm transition hover:bg-sky-100">
+                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v12m6-6H6"/></svg>
+                            Backfill 3 Months
+                        </button>
+                    </form>
                     <form action="{{ route('admin.lottery.reparse') }}" method="POST">
                         @csrf
                         <button type="submit" class="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-bold text-indigo-700 shadow-sm transition hover:bg-indigo-100">
@@ -272,6 +280,7 @@
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                     <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Total Results</p>
                     <p class="mt-1 text-2xl font-black text-slate-900">{{ $lotteryStats['total'] }}</p>
+                    <p class="mt-1 text-[11px] text-slate-500">Use backfill to import the last 3 months of official results.</p>
                 </div>
                 <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
                     <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700/80">Available ✓</p>

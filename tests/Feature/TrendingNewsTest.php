@@ -144,6 +144,48 @@ class TrendingNewsTest extends TestCase
         $this->assertTrue(NewsTopic::where('keyword', 'Fresh Keyword 10')->first()->is_active);
     }
 
+    public function test_stale_trend_keywords_are_automatically_destroyed_after_24_hours()
+    {
+        $section = NewsSection::where('slug', 'google-trends')->first();
+
+        $staleTopic = NewsTopic::create([
+            'news_section_id' => $section->id,
+            'name' => 'Old Trend',
+            'keyword' => 'Old Trend',
+            'country' => 'US',
+            'language' => 'en',
+            'sort_order' => 1,
+            'is_active' => false,
+        ]);
+
+        $staleTopic->forceFill([
+            'updated_at' => now()->subHours(25),
+            'created_at' => now()->subHours(25),
+        ])->saveQuietly();
+
+        $freshTopic = NewsTopic::create([
+            'news_section_id' => $section->id,
+            'name' => 'Fresh Trend',
+            'keyword' => 'Fresh Trend',
+            'country' => 'US',
+            'language' => 'en',
+            'sort_order' => 2,
+            'is_active' => false,
+        ]);
+
+        $freshTopic->forceFill([
+            'updated_at' => now()->subHours(2),
+            'created_at' => now()->subHours(2),
+        ])->saveQuietly();
+
+        app(TrendingNewsService::class)->updateKeywordSpots([
+            'US' => ['Fresh Keyword 1'],
+        ]);
+
+        $this->assertDatabaseMissing('news_topics', ['id' => $staleTopic->id]);
+        $this->assertDatabaseHas('news_topics', ['id' => $freshTopic->id]);
+    }
+
     /**
      * Test news articles fetched matching trending keywords are marked as featured.
      */
@@ -290,6 +332,43 @@ class TrendingNewsTest extends TestCase
         $response->assertSee('Trend crawler progress');
         $response->assertSee('United States');
         $response->assertSee('Apple Watch');
+    }
+
+    public function test_manual_trend_cleanup_deletes_keywords_older_than_24_hours()
+    {
+        $section = NewsSection::where('slug', 'google-trends')->first();
+
+        $expiredTopic = NewsTopic::create([
+            'news_section_id' => $section->id,
+            'name' => 'Expired Trend',
+            'keyword' => 'Expired Trend',
+            'country' => 'US',
+            'language' => 'en',
+            'sort_order' => 1,
+            'is_active' => false,
+        ]);
+
+        $expiredTopic->forceFill([
+            'updated_at' => now()->subHours(26),
+            'created_at' => now()->subHours(26),
+        ])->saveQuietly();
+
+        $freshTopic = NewsTopic::create([
+            'news_section_id' => $section->id,
+            'name' => 'Fresh Trend',
+            'keyword' => 'Fresh Trend',
+            'country' => 'US',
+            'language' => 'en',
+            'sort_order' => 2,
+            'is_active' => false,
+        ]);
+
+        $response = $this->withSession(['admin_authenticated' => true])
+            ->post(route('admin.trends.cleanup'));
+
+        $response->assertRedirect(route('admin.trends'));
+        $this->assertDatabaseMissing('news_topics', ['id' => $expiredTopic->id]);
+        $this->assertDatabaseHas('news_topics', ['id' => $freshTopic->id]);
     }
 
     public function test_admin_trend_sync_status_endpoint_returns_monitor_payload()

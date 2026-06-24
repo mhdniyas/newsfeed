@@ -355,6 +355,15 @@ class AdminController extends Controller
             ->with('success', "Trend keywords refreshed. {$countrySummary}");
     }
 
+    public function cleanupTrendKeywords(TrendingNewsService $trendingNewsService)
+    {
+        $deletedCount = $trendingNewsService->cleanupExpiredKeywords();
+
+        return redirect()
+            ->route('admin.trends')
+            ->with('success', "Trend keyword cleanup complete. Deleted {$deletedCount} keyword(s) older than 24 hours.");
+    }
+
     public function stopAndResyncTrends(AutomaticTrendSyncService $automaticTrendSync)
     {
         $automaticTrendSync->stopTrackedSyncProcess('Active trend sync was stopped manually before restarting.');

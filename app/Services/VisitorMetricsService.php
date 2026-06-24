@@ -474,6 +474,16 @@ class VisitorMetricsService
             return;
         }
 
+        $today = now()->toDateString();
+        Setting::set(
+            'article_detail_page_views_total',
+            (string) (((int) Setting::get('article_detail_page_views_total', '0')) + 1)
+        );
+        Setting::set(
+            'article_detail_page_views_' . $today,
+            (string) (((int) Setting::get('article_detail_page_views_' . $today, '0')) + 1)
+        );
+
         DB::table('news_items')
             ->where('id', $articleId)
             ->increment('detail_views_count');

@@ -507,7 +507,7 @@ class NewsTest extends TestCase
     {
         $topic = NewsTopic::create(['name' => 'Content Topic', 'keyword' => 'content-topic']);
 
-        NewsItem::create([
+        $freshStory = NewsItem::create([
             'news_topic_id' => $topic->id,
             'title' => 'Fresh Story',
             'source_name' => 'FIFA',
@@ -516,6 +516,9 @@ class NewsTest extends TestCase
             'published_at' => now()->subMinutes(20),
             'is_visible' => true,
             'is_featured' => true,
+            'detail_views_count' => 8,
+            'clicks_count' => 2,
+            'extraction_status' => 'extracted',
         ]);
 
         NewsItem::create([
@@ -545,6 +548,48 @@ class NewsTest extends TestCase
         $response->assertSee('Top Sections By Posts');
         $response->assertDontSee('@foreach($contentChartCards as $chartCard)', false);
         $response->assertDontSee('{{ $chart[\'title\'] }}', false);
+        $response->assertSee('Open Page');
+        $response->assertSee(route('news.article', ['article' => $freshStory->slug]), false);
+        $response->assertSee(route('news.visit', $freshStory), false);
+    }
+
+    public function test_admin_analytics_shows_story_pages_tab_metrics()
+    {
+        $topic = NewsTopic::create(['name' => 'Story Topic', 'keyword' => 'story-topic']);
+
+        $story = NewsItem::create([
+            'news_topic_id' => $topic->id,
+            'title' => 'Story Page Headline',
+            'source_name' => 'Signalz',
+            'url' => 'https://example.com/story-page-headline',
+            'hash' => 'story-page-headline',
+            'published_at' => now()->subMinutes(10),
+            'is_visible' => true,
+            'detail_views_count' => 14,
+            'clicks_count' => 5,
+            'extraction_status' => 'extracted',
+        ]);
+
+        Setting::set('article_detail_page_views_total', '14');
+        Setting::set('article_detail_page_views_' . now()->toDateString(), '4');
+
+        NewsItemDailyMetric::create([
+            'news_item_id' => $story->id,
+            'metric_date' => now()->toDateString(),
+            'views_count' => 10,
+            'clicks_count' => 3,
+        ]);
+
+        $response = $this->withSession(['admin_authenticated' => true])
+            ->get(route('admin.analytics'));
+
+        $response->assertOk();
+        $response->assertSee('Story Pages');
+        $response->assertSee('Most opened story pages');
+        $response->assertSee('Latest Story Links');
+        $response->assertSee('Story Page Headline');
+        $response->assertSee(route('news.article', ['article' => $story->slug]), false);
+        $response->assertSee(route('news.visit', $story), false);
     }
 
     public function test_admin_analytics_shows_kerala_lottery_tab_metrics()

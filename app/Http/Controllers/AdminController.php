@@ -110,6 +110,7 @@ class AdminController extends Controller
         $visitorSnapshot = $visitorMetrics->adminAnalyticsSnapshot();
         $analyticsSummary = $this->analyticsSummary($visitorMetrics);
         $contentAnalytics = $this->contentAnalyticsSummary(app(NewsRetentionService::class));
+        $articlePageAnalytics = $this->articlePageAnalyticsSummary();
         $trendsAnalyticsSummary = $visitorMetrics->trendsAnalyticsSummary();
         $lotteryAnalyticsSummary = $this->keralaLotteryAnalyticsSummary();
         $analyticsCharts = [
@@ -122,7 +123,7 @@ class AdminController extends Controller
         ];
         $fetchStats = $this->fetchStats();
 
-        return view('admin.analytics', compact('visitStats', 'analyticsSummary', 'contentAnalytics', 'trendsAnalyticsSummary', 'lotteryAnalyticsSummary', 'visitorSnapshot', 'analyticsCharts', 'contentCharts', 'fetchStats'));
+        return view('admin.analytics', compact('visitStats', 'analyticsSummary', 'contentAnalytics', 'articlePageAnalytics', 'trendsAnalyticsSummary', 'lotteryAnalyticsSummary', 'visitorSnapshot', 'analyticsCharts', 'contentCharts', 'fetchStats'));
     }
 
     public function rankingAnalytics(VisitorMetricsService $visitorMetrics)
@@ -731,7 +732,7 @@ class AdminController extends Controller
         $trendPosts = NewsItem::query()
             ->whereHas('newsSection', fn ($query) => $query->where('slug', 'google-trends'))
             ->count();
-        $extractedPosts = NewsItem::query()->where('extraction_status', 'completed')->count();
+        $extractedPosts = NewsItem::query()->whereIn('extraction_status', ['completed', 'extracted'])->count();
         $destroyReady = $newsRetention->eligibleQuery()->count();
         $destroyProtected = $newsRetention->protectedQuery()->count();
 
@@ -759,6 +760,52 @@ class AdminController extends Controller
                 ->orderByDesc('news_items_count')
                 ->orderBy('name')
                 ->take(8)
+                ->get(),
+        ];
+    }
+
+    protected function articlePageAnalyticsSummary(): array
+    {
+        $today = now()->toDateString();
+        $detailViewsTotal = (int) Setting::get(
+            'article_detail_page_views_total',
+            (string) NewsItem::query()->sum('detail_views_count')
+        );
+        $detailViewsToday = (int) Setting::get('article_detail_page_views_' . $today, '0');
+        $totalPages = NewsItem::query()->whereNotNull('slug')->where('slug', '!=', '')->count();
+        $livePages = NewsItem::query()->where('is_visible', true)->whereNotNull('slug')->where('slug', '!=', '')->count();
+        $sourceClicksTotal = (int) NewsItem::query()->sum('clicks_count');
+        $sourceClicksToday = (int) NewsItemDailyMetric::query()->whereDate('metric_date', $today)->sum('clicks_count');
+        $readyPages = NewsItem::query()->whereIn('extraction_status', ['completed', 'extracted'])->count();
+        $pendingPages = NewsItem::query()->whereIn('extraction_status', ['pending', 'retry'])->count();
+        $detailClickRate = $detailViewsTotal > 0 ? round(($sourceClicksTotal / $detailViewsTotal) * 100, 2) : 0.0;
+
+        return [
+            'total_pages' => $totalPages,
+            'live_pages' => $livePages,
+            'detail_views_total' => $detailViewsTotal,
+            'detail_views_today' => $detailViewsToday,
+            'source_clicks_total' => $sourceClicksTotal,
+            'source_clicks_today' => $sourceClicksToday,
+            'ready_pages' => $readyPages,
+            'pending_pages' => $pendingPages,
+            'detail_click_rate' => $detailClickRate,
+            'top_pages' => NewsItem::query()
+                ->with(['newsTopic', 'newsSection'])
+                ->whereNotNull('slug')
+                ->where('slug', '!=', '')
+                ->orderByDesc('detail_views_count')
+                ->orderByDesc('published_at')
+                ->take(10)
+                ->get(),
+            'latest_links' => NewsItem::query()
+                ->with(['newsTopic', 'newsSection'])
+                ->where('is_visible', true)
+                ->whereNotNull('slug')
+                ->where('slug', '!=', '')
+                ->orderByDesc('published_at')
+                ->orderByDesc('id')
+                ->take(12)
                 ->get(),
         ];
     }

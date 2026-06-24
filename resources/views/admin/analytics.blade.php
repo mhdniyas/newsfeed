@@ -70,6 +70,9 @@
         <button type="button" data-tab-target="content" class="analytics-tab inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
             Content
         </button>
+        <button type="button" data-tab-target="stories" class="analytics-tab inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
+            Story Pages
+        </button>
         <button type="button" data-tab-target="lottery" class="analytics-tab inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
             Kerala Lottery
         </button>
@@ -726,10 +729,145 @@
                                 </div>
                                 <span class="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-600 shadow-sm">{{ $article->is_visible ? 'Live' : 'Hidden' }}</span>
                             </div>
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                <a href="{{ route('news.article', ['article' => $article->slug]) }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center rounded-full bg-slate-950 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-slate-800">
+                                    Open Page
+                                </a>
+                                <a href="{{ route('news.visit', $article) }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-700 transition hover:bg-slate-100">
+                                    Source
+                                </a>
+                            </div>
                         </div>
                     @empty
                         <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500">
                             No posts recorded yet.
+                        </div>
+                    @endforelse
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <div data-tab-panel="stories" class="hidden">
+        <div class="mb-4 flex items-center justify-end">
+            <button type="button" data-refresh-tab="stories" class="analytics-refresh inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
+                <span class="analytics-refresh-spinner hidden h-3.5 w-3.5 rounded-full border-2 border-slate-300 border-t-slate-700 animate-spin"></span>
+                <span class="analytics-refresh-label">Refresh Story Pages</span>
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 mb-6">
+            <div class="rounded-3xl border border-sky-200 bg-gradient-to-br from-sky-500 to-cyan-500 p-5 text-white shadow-lg shadow-sky-500/15">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-50/80">Total Story Pages</p>
+                <p class="mt-3 text-3xl font-black">{{ number_format($articlePageAnalytics['total_pages']) }}</p>
+                <p class="mt-1 text-xs text-sky-50/90">{{ number_format($articlePageAnalytics['live_pages']) }} public pages live now.</p>
+            </div>
+            <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Story Views</p>
+                <p class="mt-2 text-2xl font-extrabold text-slate-900">{{ number_format($articlePageAnalytics['detail_views_total']) }}</p>
+                <p class="mt-1 text-xs text-slate-500">{{ number_format($articlePageAnalytics['detail_views_today']) }} today on internal article pages.</p>
+            </div>
+            <div class="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-4 shadow-sm">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-700/80">Source Clicks</p>
+                <p class="mt-2 text-2xl font-extrabold text-amber-700">{{ number_format($articlePageAnalytics['source_clicks_total']) }}</p>
+                <p class="mt-1 text-xs text-amber-700/70">{{ number_format($articlePageAnalytics['source_clicks_today']) }} today from story pages and cards.</p>
+            </div>
+            <div class="rounded-3xl border border-emerald-200 bg-white p-4 shadow-sm">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700/80">Readable Ready</p>
+                <p class="mt-2 text-2xl font-extrabold text-emerald-700">{{ number_format($articlePageAnalytics['ready_pages']) }}</p>
+                <p class="mt-1 text-xs text-slate-500">{{ number_format($articlePageAnalytics['pending_pages']) }} still waiting for extraction.</p>
+            </div>
+            <div class="rounded-3xl border border-violet-200 bg-white p-4 shadow-sm">
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-violet-700/80">Story CTR</p>
+                <p class="mt-2 text-2xl font-extrabold text-violet-700">{{ $articlePageAnalytics['detail_click_rate'] }}%</p>
+                <p class="mt-1 text-xs text-slate-500">Original-source clicks divided by internal story page views.</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-[1.15fr_0.85fr] gap-6">
+            <section class="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                <div class="border-b border-slate-200 bg-slate-50/70 px-5 py-4">
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">Top Internal Pages</p>
+                    <h2 class="mt-1 text-xl font-extrabold text-slate-950">Most opened story pages</h2>
+                    <p class="mt-1 text-xs text-slate-500">Internal article page views, clicks, and direct access links.</p>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200 text-sm">
+                        <thead class="bg-slate-50 text-left text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                            <tr>
+                                <th class="px-4 py-3">Story</th>
+                                <th class="px-4 py-3">Views</th>
+                                <th class="px-4 py-3">Clicks</th>
+                                <th class="px-4 py-3">Status</th>
+                                <th class="px-4 py-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @forelse($articlePageAnalytics['top_pages'] as $article)
+                                <tr class="align-top">
+                                    <td class="px-4 py-4">
+                                        <p class="font-bold text-slate-900 line-clamp-2">{{ $article->title }}</p>
+                                        <p class="mt-1 text-[11px] text-slate-500">{{ $article->newsSection?->name }} · {{ $article->newsTopic?->name }}</p>
+                                    </td>
+                                    <td class="px-4 py-4 font-extrabold text-slate-900">{{ number_format($article->detail_views_count) }}</td>
+                                    <td class="px-4 py-4 font-extrabold text-amber-700">{{ number_format($article->clicks_count) }}</td>
+                                    <td class="px-4 py-4">
+                                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-600 border border-slate-200">
+                                            {{ $article->is_visible ? 'Live' : 'Hidden' }}
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-4">
+                                        <div class="flex justify-end gap-2">
+                                            <a href="{{ route('news.article', ['article' => $article->slug]) }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center rounded-full bg-slate-950 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-slate-800">
+                                                Open Page
+                                            </a>
+                                            <a href="{{ route('news.visit', $article) }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-700 transition hover:bg-slate-100">
+                                                Source
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="px-4 py-6 text-sm text-slate-500">No internal story pages recorded yet.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900">Latest Story Links</h2>
+                        <p class="text-xs text-slate-500 mt-1">Direct internal links for quick access to live story pages.</p>
+                    </div>
+                </div>
+                <div class="mt-4 space-y-3">
+                    @forelse($articlePageAnalytics['latest_links'] as $article)
+                        <div class="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-4">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="text-sm font-bold text-slate-900 line-clamp-2">{{ $article->title }}</p>
+                                    <p class="mt-1 text-[11px] text-slate-500">{{ $article->newsSection?->name }} · {{ $article->newsTopic?->name }}</p>
+                                    <p class="mt-1 text-[11px] font-semibold text-slate-400">{{ optional($article->published_at)->diffForHumans() ?? 'Unknown' }}</p>
+                                </div>
+                                <span class="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-600 shadow-sm">{{ $article->source_courtesy ?: $article->source_name }}</span>
+                            </div>
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                <a href="{{ route('news.article', ['article' => $article->slug]) }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center rounded-full bg-slate-950 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-slate-800">
+                                    Open Page
+                                </a>
+                                <a href="{{ route('news.visit', $article) }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-700 transition hover:bg-slate-100">
+                                    Source
+                                </a>
+                            </div>
+                            <p class="mt-2 break-all text-[11px] text-slate-400">{{ route('news.article', ['article' => $article->slug]) }}</p>
+                        </div>
+                    @empty
+                        <div class="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-500">
+                            No live story page links available yet.
                         </div>
                     @endforelse
                 </div>

@@ -17,6 +17,7 @@ class KeralaLotteryController extends Controller
     public function index(Request $request, VisitorMetricsService $visitorMetrics)
     {
         $pageContext = $this->publicPageContext($request, $visitorMetrics);
+        $visitorMetrics->trackLotteryPageView();
         $todayResult = $this->todayResult();
         $search      = trim((string) $request->input('q', ''));
 
@@ -46,6 +47,7 @@ class KeralaLotteryController extends Controller
     {
         $pageContext = $this->publicPageContext($request, $visitorMetrics);
         $result = $this->todayResult();
+        $visitorMetrics->trackLotteryPageView($result?->id);
 
         return view('lottery.show', array_merge($pageContext, [
             'result' => $result,
@@ -56,6 +58,7 @@ class KeralaLotteryController extends Controller
     public function show(LotteryResult $result, Request $request, VisitorMetricsService $visitorMetrics)
     {
         abort_unless($this->schemaReady(), 404);
+        $visitorMetrics->trackLotteryPageView($result->id);
 
         return view('lottery.show', array_merge($this->publicPageContext($request, $visitorMetrics), [
             'result' => $result,

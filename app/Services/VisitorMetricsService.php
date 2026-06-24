@@ -492,6 +492,32 @@ class VisitorMetricsService
         Setting::set($totalKey, (string) (((int) Setting::get($totalKey, '0')) + 1));
     }
 
+    public function trackLotteryPageView(?int $resultId = null): array
+    {
+        $today = now()->toDateString();
+        $todayKey = 'lottery_page_views_' . $today;
+        $totalKey = 'lottery_page_views_total';
+
+        $todayViews = ((int) Setting::get($todayKey, '0')) + 1;
+        $totalViews = ((int) Setting::get($totalKey, '0')) + 1;
+
+        Setting::set($todayKey, (string) $todayViews);
+        Setting::set($totalKey, (string) $totalViews);
+
+        if ($resultId) {
+            $resultTodayKey = 'lottery_result_views_' . $today . '_' . $resultId;
+            $resultTotalKey = 'lottery_result_views_total_' . $resultId;
+
+            Setting::set($resultTodayKey, (string) (((int) Setting::get($resultTodayKey, '0')) + 1));
+            Setting::set($resultTotalKey, (string) (((int) Setting::get($resultTotalKey, '0')) + 1));
+        }
+
+        return [
+            'today' => $todayViews,
+            'total' => $totalViews,
+        ];
+    }
+
     public function fingerprintForRequest(Request $request): string
     {
         return $this->fingerprint($request);

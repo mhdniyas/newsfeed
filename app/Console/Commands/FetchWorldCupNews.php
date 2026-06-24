@@ -10,7 +10,7 @@ use Illuminate\Console\Command;
 
 class FetchWorldCupNews extends Command
 {
-    protected $signature = 'news:fetch {--section= : Specific section ID to fetch} {--topic= : Specific topic ID to fetch} {--limit=120 : Maximum new articles to save in one run}';
+    protected $signature = 'news:fetch {--section= : Specific section ID to fetch} {--topic= : Specific topic ID to fetch} {--limit=500 : Maximum new articles to save in one run}';
 
     protected $description = 'Fetch the latest news across active sections and topics';
 
@@ -27,7 +27,7 @@ class FetchWorldCupNews extends Command
             @set_time_limit(0);
         }
 
-        $limit = max(1, min(120, (int) $this->option('limit')));
+        $limit = max(1, min(500, (int) $this->option('limit')));
         $sectionId = $this->option('section');
         $topicId = $this->option('topic');
 

@@ -565,6 +565,10 @@ class NewsTest extends TestCase
         \App\Models\Setting::set('lottery_kerala_last_status', 'saved_today_result');
         \App\Models\Setting::set('lottery_kerala_message', 'Today\'s Kerala lottery result fetched successfully.');
         \App\Models\Setting::set('lottery_kerala_next_attempt_at', now(\App\Services\KeralaLotteryService::TIMEZONE)->addDay()->setTime(16, 10)->toIso8601String());
+        \App\Models\Setting::set('lottery_page_views_total', '44');
+        \App\Models\Setting::set('lottery_page_views_' . now()->toDateString(), '9');
+        \App\Models\Setting::set('lottery_result_views_total_1', '18');
+        \App\Models\Setting::set('lottery_result_views_' . now()->toDateString() . '_1', '5');
 
         $response = $this->withSession(['admin_authenticated' => true])
             ->get(route('admin.analytics'));
@@ -573,6 +577,8 @@ class NewsTest extends TestCase
         $response->assertSee('Kerala Lottery');
         $response->assertSee('Kerala lottery fetch window');
         $response->assertSee('Karunya Plus');
+        $response->assertSee('Lottery Views');
+        $response->assertSee('Today Result Views');
         $response->assertSee('Today Saved');
         $response->assertSee('Open Public Page');
     }
@@ -649,7 +655,7 @@ class NewsTest extends TestCase
     }
 
     /**
-     * Test news:fetch never saves more than 120 new articles in one run.
+     * Test news:fetch never saves more than 500 new articles in one run.
      */
     public function test_news_fetch_command_caps_saved_articles_per_run()
     {
@@ -700,8 +706,8 @@ class NewsTest extends TestCase
 
         Artisan::call('news:fetch');
 
-        $this->assertEquals(120, NewsItem::count());
-        $this->assertStringContainsString('Saved 120/120 allowed articles', \App\Models\Setting::get('news_sync_last_output'));
+        $this->assertEquals(500, NewsItem::count());
+        $this->assertStringContainsString('Saved 500/500 allowed articles', \App\Models\Setting::get('news_sync_last_output'));
     }
 
     public function test_news_prune_old_command_deletes_only_low_click_old_articles()

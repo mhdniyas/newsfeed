@@ -3,6 +3,10 @@
 @section('title', 'Admin Dashboard - World Cup News Explorer')
 
 @section('content')
+@php
+    $totalSections = $sections->count();
+    $totalTopics = (int) $sections->sum('news_topics_count');
+@endphp
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     
     <!-- Dashboard Header -->
@@ -10,6 +14,14 @@
         <div>
             <h1 class="text-2xl font-extrabold text-slate-900">Admin Dashboard</h1>
             <p class="text-xs text-slate-500 mt-1">Manage homepage sections, nested fetch keywords, visibility, and the 2-minute multi-category sync cycle.</p>
+            <div class="mt-3 flex flex-wrap gap-2">
+                <span class="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-700 shadow-sm">
+                    {{ number_format($totalSections) }} sections
+                </span>
+                <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-700 shadow-sm">
+                    {{ number_format($totalTopics) }} topics
+                </span>
+            </div>
         </div>
         
         <div class="flex items-center space-x-3">

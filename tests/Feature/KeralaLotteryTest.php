@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\LotteryResult;
+use App\Models\Setting;
 use App\Services\KeralaLotteryService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -62,6 +63,28 @@ class KeralaLotteryTest extends TestCase
         $this->get(route('kerala-lottery.pdf.view', $result))
             ->assertOk()
             ->assertHeader('content-type', 'application/pdf');
+    }
+
+    public function test_kerala_lottery_public_pages_track_view_metrics(): void
+    {
+        $result = LotteryResult::create([
+            'lottery_name' => 'Sthree Sakthi',
+            'draw_number' => 'SS-525',
+            'result_date' => now(KeralaLotteryService::TIMEZONE),
+            'slug' => 'sthree-sakthi-ss-525-result-23-06-2026',
+            'status' => 'available',
+        ]);
+
+        $this->get(route('kerala-lottery.index'))->assertOk();
+        $this->get(route('kerala-lottery.today'))->assertOk();
+        $this->get(route('kerala-lottery.show', $result))->assertOk();
+
+        $today = now()->toDateString();
+
+        $this->assertSame('3', Setting::get('lottery_page_views_' . $today));
+        $this->assertSame('3', Setting::get('lottery_page_views_total'));
+        $this->assertSame('2', Setting::get('lottery_result_views_' . $today . '_' . $result->id));
+        $this->assertSame('2', Setting::get('lottery_result_views_total_' . $result->id));
     }
 
     public function test_sync_service_fetches_listing_downloads_pdf_and_parses_top_prizes(): void

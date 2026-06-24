@@ -12,7 +12,7 @@ class FetchTrendingNews extends Command
      *
      * @var string
      */
-    protected $signature = 'news:fetch-trends {--limit=120 : Maximum new articles to save in one run} {--sync-news : Also fetch news immediately after refreshing trend keywords}';
+    protected $signature = 'news:fetch-trends {--limit=500 : Maximum new articles to save in one run} {--sync-news : Also fetch news immediately after refreshing trend keywords}';
 
     /**
      * The console command description.
@@ -48,7 +48,7 @@ class FetchTrendingNews extends Command
             return self::SUCCESS;
         }
 
-        $limit = max(1, min(120, (int) $this->option('limit')));
+        $limit = max(1, min(500, (int) $this->option('limit')));
         $this->info("Fetching news articles for active trend keywords now (max new articles: {$limit})...");
 
         $savedArticlesCount = $trendingNewsService->syncTrendingNews($limit);

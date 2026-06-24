@@ -754,14 +754,14 @@
                 </p>
             </div>
             <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Last Attempt</p>
-                <p class="mt-2 text-2xl font-extrabold text-slate-900">{{ $lotteryAnalyticsSummary['last_attempt_at']?->timezone('Asia/Kolkata')->format('d M, h:i A') ?? 'Pending' }}</p>
-                <p class="mt-1 text-xs text-slate-500">{{ str_replace('_', ' ', $lotteryAnalyticsSummary['last_status']) }}</p>
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Lottery Views</p>
+                <p class="mt-2 text-2xl font-extrabold text-slate-900">{{ number_format($lotteryAnalyticsSummary['page_views_total']) }}</p>
+                <p class="mt-1 text-xs text-slate-500">{{ number_format($lotteryAnalyticsSummary['page_views_today']) }} today across Kerala lottery pages.</p>
             </div>
             <div class="rounded-3xl border border-emerald-200 bg-white p-4 shadow-sm">
-                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700/80">Next Attempt</p>
-                <p class="mt-2 text-2xl font-extrabold text-emerald-700">{{ $lotteryAnalyticsSummary['next_attempt_at']?->timezone('Asia/Kolkata')->format('d M, h:i A') ?? 'Waiting' }}</p>
-                <p class="mt-1 text-xs text-slate-500">India time retry window for today&apos;s result only.</p>
+                <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-emerald-700/80">Today Result Views</p>
+                <p class="mt-2 text-2xl font-extrabold text-emerald-700">{{ number_format($lotteryAnalyticsSummary['today_result_views_total']) }}</p>
+                <p class="mt-1 text-xs text-slate-500">{{ number_format($lotteryAnalyticsSummary['today_result_views_today']) }} today for the current result page.</p>
             </div>
             <div class="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-4 shadow-sm">
                 <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-700/80">Saved Results</p>
@@ -778,6 +778,16 @@
                     <p class="mt-1 text-xs text-slate-500">{{ $lotteryAnalyticsSummary['last_message'] }}</p>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 p-5">
+                    <div class="rounded-[1.6rem] border border-slate-200 bg-slate-50 p-4">
+                        <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Last Attempt</p>
+                        <p class="mt-2 text-xl font-black text-slate-950">{{ $lotteryAnalyticsSummary['last_attempt_at']?->timezone('Asia/Kolkata')->format('d M, h:i A') ?? 'Pending' }}</p>
+                        <p class="mt-1 text-xs text-slate-500">{{ str_replace('_', ' ', $lotteryAnalyticsSummary['last_status']) }}</p>
+                    </div>
+                    <div class="rounded-[1.6rem] border border-slate-200 bg-slate-50 p-4">
+                        <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Next Attempt</p>
+                        <p class="mt-2 text-xl font-black text-slate-950">{{ $lotteryAnalyticsSummary['next_attempt_at']?->timezone('Asia/Kolkata')->format('d M, h:i A') ?? 'Waiting' }}</p>
+                        <p class="mt-1 text-xs text-slate-500">India time retry window for today&apos;s result only.</p>
+                    </div>
                     <div class="rounded-[1.6rem] border border-slate-200 bg-slate-50 p-4">
                         <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Window Opens</p>
                         <p class="mt-2 text-xl font-black text-slate-950">{{ $lotteryAnalyticsSummary['window_opens_at']->timezone('Asia/Kolkata')->format('d M, h:i A') }}</p>

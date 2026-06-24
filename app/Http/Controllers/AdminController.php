@@ -388,7 +388,7 @@ class AdminController extends Controller
             'is_active' => true,
             'is_default' => NewsSection::query()->doesntExist(),
             'refresh_interval_minutes' => 10,
-            'card_limit' => 6,
+            'card_limit' => 20,
         ]);
 
         return back()->with('success', 'News section created successfully.');
@@ -818,6 +818,10 @@ class AdminController extends Controller
             'parse_failed_results' => LotteryResult::query()->whereIn('status', ['parse_failed', 'failed'])->count(),
             'pdf_waiting_results' => LotteryResult::query()->whereIn('status', ['waiting', 'pdf_available'])->count(),
             'today_result_count' => LotteryResult::query()->whereDate('result_date', $today)->count(),
+            'page_views_total' => (int) Setting::get('lottery_page_views_total', '0'),
+            'page_views_today' => (int) Setting::get('lottery_page_views_' . $today, '0'),
+            'today_result_views_total' => $todayResult ? (int) Setting::get('lottery_result_views_total_' . $todayResult->id, '0') : 0,
+            'today_result_views_today' => $todayResult ? (int) Setting::get('lottery_result_views_' . $today . '_' . $todayResult->id, '0') : 0,
             'today_status' => $todayResult?->status ?? $lastStatus,
             'last_attempt_at' => $lastAttemptAt ? Carbon::parse($lastAttemptAt) : null,
             'last_status' => $lastStatus,

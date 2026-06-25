@@ -352,7 +352,7 @@
     </main>
 
     <!-- Footer -->
-    <footer class="border-t border-slate-200 bg-gradient-to-b from-white to-slate-50 pt-10 pb-6 shadow-inner mt-auto">
+    <footer class="border-t border-slate-200 bg-gradient-to-b from-white to-slate-50 pt-10 pb-28 md:pb-10 shadow-inner mt-auto">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-8 border-b border-slate-200/60">
                 <!-- Brand & Description -->
@@ -784,38 +784,119 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // ── Cookie Consent Logic ──────────────────────────────────────────
             const cookieBanner = document.getElementById('cookie-consent-banner');
             const acceptBtn = document.getElementById('btn-accept-cookies');
             const declineBtn = document.getElementById('btn-decline-cookies');
             const consentKey = 'signalz-cookie-consent';
 
-            if (!cookieBanner || !acceptBtn || !declineBtn) {
-                return;
+            if (cookieBanner && acceptBtn && declineBtn) {
+                const consentStatus = localStorage.getItem(consentKey);
+
+                if (!consentStatus) {
+                    window.setTimeout(() => {
+                        cookieBanner.classList.remove('pointer-events-none', 'translate-y-4', 'opacity-0');
+                        cookieBanner.classList.add('translate-y-0', 'opacity-100');
+                    }, 2000);
+                }
+
+                const hideBanner = () => {
+                    cookieBanner.classList.remove('translate-y-0', 'opacity-100');
+                    cookieBanner.classList.add('pointer-events-none', 'translate-y-4', 'opacity-0');
+                };
+
+                acceptBtn.addEventListener('click', () => {
+                    localStorage.setItem(consentKey, 'accepted');
+                    hideBanner();
+                });
+
+                declineBtn.addEventListener('click', () => {
+                    localStorage.setItem(consentKey, 'declined');
+                    hideBanner();
+                });
             }
 
-            const consentStatus = localStorage.getItem(consentKey);
+            // ── Country, Local Time & Visitor Heartbeat Analytics ────────────
+            const countryNode = document.getElementById('viewer-country');
+            const timeNode = document.getElementById('viewer-time');
+            
+            if (countryNode || timeNode) {
+                let region = (navigator.language || '').split('-')[1] || '';
+                const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
 
-            if (!consentStatus) {
-                window.setTimeout(() => {
-                    cookieBanner.classList.remove('pointer-events-none', 'translate-y-4', 'opacity-0');
-                    cookieBanner.classList.add('translate-y-0', 'opacity-100');
-                }, 2000);
+                const setLocalTime = (tz = undefined) => {
+                    if (timeNode) {
+                        try {
+                            timeNode.textContent = `Local ${new Intl.DateTimeFormat(undefined, {
+                                dateStyle: 'medium',
+                                timeStyle: 'short',
+                                timeZone: tz
+                            }).format(new Date())}`;
+                        } catch (e) {
+                            timeNode.textContent = `Local ${new Intl.DateTimeFormat(undefined, {
+                                dateStyle: 'medium',
+                                timeStyle: 'short'
+                            }).format(new Date())}`;
+                        }
+                    }
+                };
+
+                const updateCountryText = (code, name) => {
+                    if (countryNode) {
+                        if (name) {
+                            countryNode.textContent = `Country ${name}`;
+                        } else {
+                            try {
+                                const displayNames = new Intl.DisplayNames([navigator.language || 'en'], { type: 'region' });
+                                countryNode.textContent = code ? `Country ${displayNames.of(code) || code}` : 'Country unavailable';
+                            } catch (error) {
+                                countryNode.textContent = code ? `Country ${code}` : 'Country unavailable';
+                            }
+                        }
+                    }
+                };
+
+                const sendVisitorHeartbeat = (currentRegion) => {
+                    fetch(`{{ route('analytics.visitor-context') }}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        },
+                        body: JSON.stringify({
+                            timezone: timezone,
+                            country_code: currentRegion || region,
+                            page_path: window.location.pathname,
+                        }),
+                    }).catch(() => {});
+                };
+
+                // Initialize local time and default language-based country
+                setLocalTime();
+                updateCountryText(region);
+
+                // Fetch real geoIP to accurately identify India vs. default US language locales
+                fetch('https://ipapi.co/json/')
+                    .then(res => res.ok ? res.json() : Promise.reject())
+                    .then(data => {
+                        if (data.country_code) {
+                            region = data.country_code;
+                            updateCountryText(data.country_code, data.country_name);
+                            if (data.timezone) {
+                                setLocalTime(data.timezone);
+                            }
+                            sendVisitorHeartbeat(data.country_code);
+                        } else {
+                            sendVisitorHeartbeat(region);
+                        }
+                    })
+                    .catch(() => {
+                        sendVisitorHeartbeat(region);
+                    });
+
+                // Heartbeat interval (every 60s)
+                window.setInterval(() => sendVisitorHeartbeat(region), 60000);
             }
-
-            const hideBanner = () => {
-                cookieBanner.classList.remove('translate-y-0', 'opacity-100');
-                cookieBanner.classList.add('pointer-events-none', 'translate-y-4', 'opacity-0');
-            };
-
-            acceptBtn.addEventListener('click', () => {
-                localStorage.setItem(consentKey, 'accepted');
-                hideBanner();
-            });
-
-            declineBtn.addEventListener('click', () => {
-                localStorage.setItem(consentKey, 'declined');
-                hideBanner();
-            });
         });
     </script>
 </body>

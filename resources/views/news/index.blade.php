@@ -312,45 +312,6 @@
         const btnText = document.getElementById('btn-text');
         const btnLoading = document.getElementById('btn-loading');
 
-        const region = (navigator.language || '').split('-')[1] || '';
-        const countryNode = document.getElementById('viewer-country');
-        const timeNode = document.getElementById('viewer-time');
-        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-
-        if (countryNode) {
-            try {
-                const displayNames = new Intl.DisplayNames([navigator.language || 'en'], { type: 'region' });
-                countryNode.textContent = region ? `Country ${displayNames.of(region) || region}` : 'Country unavailable';
-            } catch (error) {
-                countryNode.textContent = region ? `Country ${region}` : 'Country unavailable';
-            }
-        }
-
-        if (timeNode) {
-            timeNode.textContent = `Local ${new Intl.DateTimeFormat(undefined, {
-                dateStyle: 'medium',
-                timeStyle: 'short',
-            }).format(new Date())}`;
-        }
-
-        const sendVisitorHeartbeat = () => {
-            fetch(`{{ route('analytics.visitor-context') }}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                },
-                body: JSON.stringify({
-                    timezone: timezone,
-                    country_code: region,
-                    page_path: window.location.pathname,
-                }),
-            }).catch(() => {});
-        };
-
-        sendVisitorHeartbeat();
-        window.setInterval(sendVisitorHeartbeat, 60000);
-
         if (window.adsbygoogle) {
             document.querySelectorAll('.adsbygoogle').forEach(() => {
                 try {

@@ -352,75 +352,95 @@
     </main>
 
     <!-- Footer -->
-    <footer class="border-t border-slate-200 bg-gradient-to-b from-white to-slate-50 py-5 shadow-inner">
-        <div class="max-w-7xl mx-auto px-4">
-            @if(isset($visitStats) || isset($fetchStats))
-                <div class="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm">
-                    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                        <div class="flex items-center gap-2">
-                            <span class="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.14)]"></span>
-                            <span class="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">{{ isset($visitStats) ? 'Audience Snapshot' : 'Sync Snapshot' }}</span>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:flex lg:flex-wrap lg:justify-end">
-                            @if(isset($visitStats))
-                                <div class="rounded-xl bg-slate-50 px-3 py-2 text-left">
-                                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Visits</p>
-                                    <p class="mt-1 text-sm font-extrabold text-slate-900">{{ number_format($visitStats['total']) }}</p>
-                                </div>
-                                <div class="rounded-xl bg-emerald-50 px-3 py-2 text-left">
-                                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700/70">Today</p>
-                                    <p class="mt-1 text-sm font-extrabold text-emerald-700">{{ number_format($visitStats['today']) }}</p>
-                                </div>
-                                <div class="rounded-xl bg-slate-50 px-3 py-2 text-left">
-                                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Unique Today</p>
-                                    <p class="mt-1 text-sm font-extrabold text-slate-900">{{ number_format($visitStats['unique_today']) }}</p>
-                                </div>
-                                <div class="rounded-xl bg-amber-50 px-3 py-2 text-left">
-                                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-700/70">All Unique</p>
-                                    <p class="mt-1 text-sm font-extrabold text-amber-700">{{ number_format($visitStats['unique_total']) }}</p>
-                                </div>
-                            @elseif(isset($fetchStats))
-                                <div class="rounded-xl bg-slate-50 px-3 py-2 text-left">
-                                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Fetch Runs</p>
-                                    <p class="mt-1 text-sm font-extrabold text-slate-900">{{ number_format($fetchStats['total_runs']) }}</p>
-                                </div>
-                                <div class="rounded-xl bg-emerald-50 px-3 py-2 text-left">
-                                    <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700/70">Interval</p>
-                                    <p class="mt-1 text-sm font-extrabold text-emerald-700">{{ $fetchStats['interval_minutes'] }} min</p>
-                                </div>
-                            @endif
-                        </div>
+    <footer class="border-t border-slate-200 bg-gradient-to-b from-white to-slate-50 pt-10 pb-6 shadow-inner mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-8 border-b border-slate-200/60">
+                <!-- Brand & Description -->
+                <div class="lg:col-span-4 space-y-3">
+                    <div class="flex items-center gap-2">
+                        <span class="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-xs font-black tracking-widest text-slate-700 shadow-sm">SZ</span>
+                        <span class="text-sm font-extrabold text-slate-900 tracking-wider uppercase">Signalz Online</span>
                     </div>
-                    <div class="mt-3 flex flex-col gap-1 border-t border-slate-100 pt-3 text-[11px] text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-                        @if(isset($visitStats))
-                            <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
-                                <span id="viewer-country" class="font-medium">Country detecting...</span>
-                                <span id="viewer-time" class="font-medium">Local time loading...</span>
-                            </div>
-                        @else
-                            <div class="flex flex-col gap-1">
-                                <span class="font-medium text-slate-600">Admin sync footer mirrors fetch activity</span>
-                                <span class="text-slate-500">Track refresh timing without leaving the dashboard.</span>
-                            </div>
-                        @endif
-                        @if(isset($fetchStats))
-                            <div class="flex flex-col gap-1 text-[11px] sm:items-end">
-                                <span class="font-medium text-slate-600">Fetched {{ number_format($fetchStats['total_runs']) }} times</span>
-                                <span class="text-slate-500">Last refresh {{ $fetchStats['last_success_at'] ? \Carbon\Carbon::parse($fetchStats['last_success_at'])->diffForHumans() : 'not yet available' }}</span>
-                                <span class="text-slate-500">Next fetch in <span class="font-semibold text-slate-700 js-fetch-countdown" data-next-fetch="{{ $fetchStats['next_scheduled_at'] ?? '' }}">calculating...</span></span>
-                            </div>
-                        @endif
-                    </div>
+                    <p class="text-xs leading-relaxed text-slate-500 max-w-sm">
+                        Signalz Online is an independent real-time sports portal tracking FIFA World Cup 2026 match schedules, news, live updates, and sporting analysis.
+                    </p>
                 </div>
-            @endif
 
-            <div class="mt-4 flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs font-semibold text-slate-500 border-t border-slate-200/60 pt-4">
-                <a href="{{ route('pages.about') }}" class="hover:text-slate-950 transition">About Us</a>
-                <a href="{{ route('pages.contact') }}" class="hover:text-slate-950 transition">Contact Us</a>
-                <a href="{{ route('pages.privacy') }}" class="hover:text-slate-950 transition">Privacy Policy</a>
-                <a href="{{ route('pages.terms') }}" class="hover:text-slate-950 transition">Terms</a>
-                <a href="{{ route('pages.disclaimer') }}" class="hover:text-slate-950 transition">Disclaimer</a>
-                <a href="{{ route('pages.affiliate') }}" class="hover:text-slate-950 transition">Affiliate Disclosure</a>
+                <!-- Stats card -->
+                <div class="lg:col-span-8">
+                    @if(isset($visitStats) || isset($fetchStats))
+                        <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                            <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.14)]"></span>
+                                    <span class="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500">{{ isset($visitStats) ? 'Audience Snapshot' : 'Sync Snapshot' }}</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:flex lg:flex-wrap lg:justify-end">
+                                    @if(isset($visitStats))
+                                        <div class="rounded-xl bg-slate-50 px-3 py-2 text-left">
+                                            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Visits</p>
+                                            <p class="mt-1 text-sm font-extrabold text-slate-900">{{ number_format($visitStats['total']) }}</p>
+                                        </div>
+                                        <div class="rounded-xl bg-emerald-50 px-3 py-2 text-left">
+                                            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700/70">Today</p>
+                                            <p class="mt-1 text-sm font-extrabold text-emerald-700">{{ number_format($visitStats['today']) }}</p>
+                                        </div>
+                                        <div class="rounded-xl bg-slate-50 px-3 py-2 text-left">
+                                            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Unique Today</p>
+                                            <p class="mt-1 text-sm font-extrabold text-slate-900">{{ number_format($visitStats['unique_today']) }}</p>
+                                        </div>
+                                        <div class="rounded-xl bg-amber-50 px-3 py-2 text-left">
+                                            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-700/70">All Unique</p>
+                                            <p class="mt-1 text-sm font-extrabold text-amber-700">{{ number_format($visitStats['unique_total']) }}</p>
+                                        </div>
+                                    @elseif(isset($fetchStats))
+                                        <div class="rounded-xl bg-slate-50 px-3 py-2 text-left">
+                                            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Fetch Runs</p>
+                                            <p class="mt-1 text-sm font-extrabold text-slate-900">{{ number_format($fetchStats['total_runs']) }}</p>
+                                        </div>
+                                        <div class="rounded-xl bg-emerald-50 px-3 py-2 text-left">
+                                            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700/70">Interval</p>
+                                            <p class="mt-1 text-sm font-extrabold text-emerald-700">{{ $fetchStats['interval_minutes'] }} min</p>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="mt-3 flex flex-col gap-1 border-t border-slate-100 pt-3 text-[11px] text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+                                @if(isset($visitStats))
+                                    <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
+                                        <span id="viewer-country" class="font-medium">Country detecting...</span>
+                                        <span id="viewer-time" class="font-medium">Local time loading...</span>
+                                    </div>
+                                @else
+                                    <div class="flex flex-col gap-1">
+                                        <span class="font-medium text-slate-600">Admin sync footer mirrors fetch activity</span>
+                                        <span class="text-slate-500">Track refresh timing without leaving the dashboard.</span>
+                                    </div>
+                                @endif
+                                @if(isset($fetchStats))
+                                    <div class="flex flex-col gap-1 text-[11px] sm:items-end">
+                                        <span class="font-medium text-slate-600">Fetched {{ number_format($fetchStats['total_runs']) }} times</span>
+                                        <span class="text-slate-500">Last refresh {{ $fetchStats['last_success_at'] ? \Carbon\Carbon::parse($fetchStats['last_success_at'])->diffForHumans() : 'not yet available' }}</span>
+                                        <span class="text-slate-500">Next fetch in <span class="font-semibold text-slate-700 js-fetch-countdown" data-next-fetch="{{ $fetchStats['next_scheduled_at'] ?? '' }}">calculating...</span></span>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Bottom Copyright & Links -->
+            <div class="mt-6 pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+                <p>&copy; {{ date('Y') }} Signalz Online. All rights reserved.</p>
+                <div class="flex flex-wrap justify-center gap-x-6 gap-y-2 font-semibold text-slate-500">
+                    <a href="{{ route('pages.about') }}" class="hover:text-slate-950 transition font-medium">About Us</a>
+                    <a href="{{ route('pages.contact') }}" class="hover:text-slate-950 transition font-medium">Contact Us</a>
+                    <a href="{{ route('pages.privacy') }}" class="hover:text-slate-950 transition font-medium">Privacy Policy</a>
+                    <a href="{{ route('pages.terms') }}" class="hover:text-slate-950 transition font-medium">Terms</a>
+                    <a href="{{ route('pages.disclaimer') }}" class="hover:text-slate-950 transition font-medium">Disclaimer</a>
+                    <a href="{{ route('pages.affiliate') }}" class="hover:text-slate-950 transition font-medium">Affiliate Disclosure</a>
+                </div>
             </div>
         </div>
     </footer>
@@ -730,5 +750,73 @@
             }
         }
     </style>
+
+    <!-- Cookie Consent Banner -->
+    <div id="cookie-consent-banner" class="pointer-events-none fixed bottom-4 right-4 z-[99] max-w-md translate-y-4 opacity-0 transition-all duration-500 ease-out px-4 sm:px-0">
+        <div class="rounded-3xl border border-slate-200 bg-white/95 p-5 shadow-[0_20px_50px_rgba(15,23,42,0.15)] backdrop-blur-md pointer-events-auto">
+            <div class="flex items-start gap-4">
+                <span class="p-2.5 rounded-2xl bg-emerald-50 text-emerald-600 shrink-0">
+                    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5Z"></path>
+                        <path d="M12 12h.01"></path>
+                        <path d="M16 16h.01"></path>
+                        <path d="M8 14h.01"></path>
+                        <path d="M9 9h.01"></path>
+                    </svg>
+                </span>
+                <div class="space-y-3">
+                    <h4 class="text-sm font-bold text-slate-900">Cookie Preference</h4>
+                    <p class="text-xs text-slate-500 leading-relaxed">
+                        We use cookies to optimize site features, deliver relevant advertisements via Google AdSense, and track visitor analytics. Please view our <a href="{{ route('pages.privacy') }}" class="text-emerald-600 hover:underline font-semibold">Privacy Policy</a> for more details.
+                    </p>
+                    <div class="flex items-center gap-3 pt-2">
+                        <button id="btn-accept-cookies" type="button" class="flex-1 rounded-xl bg-slate-950 px-4 py-2.5 text-xs font-bold text-white hover:bg-slate-800 transition">
+                            Accept All
+                        </button>
+                        <button id="btn-decline-cookies" type="button" class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition">
+                            Decline
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const cookieBanner = document.getElementById('cookie-consent-banner');
+            const acceptBtn = document.getElementById('btn-accept-cookies');
+            const declineBtn = document.getElementById('btn-decline-cookies');
+            const consentKey = 'signalz-cookie-consent';
+
+            if (!cookieBanner || !acceptBtn || !declineBtn) {
+                return;
+            }
+
+            const consentStatus = localStorage.getItem(consentKey);
+
+            if (!consentStatus) {
+                window.setTimeout(() => {
+                    cookieBanner.classList.remove('pointer-events-none', 'translate-y-4', 'opacity-0');
+                    cookieBanner.classList.add('translate-y-0', 'opacity-100');
+                }, 2000);
+            }
+
+            const hideBanner = () => {
+                cookieBanner.classList.remove('translate-y-0', 'opacity-100');
+                cookieBanner.classList.add('pointer-events-none', 'translate-y-4', 'opacity-0');
+            };
+
+            acceptBtn.addEventListener('click', () => {
+                localStorage.setItem(consentKey, 'accepted');
+                hideBanner();
+            });
+
+            declineBtn.addEventListener('click', () => {
+                localStorage.setItem(consentKey, 'declined');
+                hideBanner();
+            });
+        });
+    </script>
 </body>
 </html>

@@ -413,6 +413,15 @@
                     </div>
                 </div>
             @endif
+
+            <div class="mt-4 flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs font-semibold text-slate-500 border-t border-slate-200/60 pt-4">
+                <a href="{{ route('pages.about') }}" class="hover:text-slate-950 transition">About Us</a>
+                <a href="{{ route('pages.contact') }}" class="hover:text-slate-950 transition">Contact Us</a>
+                <a href="{{ route('pages.privacy') }}" class="hover:text-slate-950 transition">Privacy Policy</a>
+                <a href="{{ route('pages.terms') }}" class="hover:text-slate-950 transition">Terms</a>
+                <a href="{{ route('pages.disclaimer') }}" class="hover:text-slate-950 transition">Disclaimer</a>
+                <a href="{{ route('pages.affiliate') }}" class="hover:text-slate-950 transition">Affiliate Disclosure</a>
+            </div>
         </div>
     </footer>
     </div>

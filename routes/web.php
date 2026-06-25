@@ -29,6 +29,14 @@ Route::get('/news/{article}/visit', [NewsController::class, 'trackArticleClick']
 Route::post('/analytics/visitor-context', [NewsController::class, 'updateVisitorContext'])->name('analytics.visitor-context');
 Route::get('/api/section/{section}/more', [NewsController::class, 'sectionMoreArticles'])->name('news.section.more');
 
+// Static Informational Pages
+Route::get('/about-us', [NewsController::class, 'staticPage'])->defaults('page', 'about-us')->name('pages.about');
+Route::get('/contact-us', [NewsController::class, 'staticPage'])->defaults('page', 'contact-us')->name('pages.contact');
+Route::get('/privacy-policy', [NewsController::class, 'staticPage'])->defaults('page', 'privacy-policy')->name('pages.privacy');
+Route::get('/terms', [NewsController::class, 'staticPage'])->defaults('page', 'terms')->name('pages.terms');
+Route::get('/disclaimer', [NewsController::class, 'staticPage'])->defaults('page', 'disclaimer')->name('pages.disclaimer');
+Route::get('/affiliate-disclosure', [NewsController::class, 'staticPage'])->defaults('page', 'affiliate-disclosure')->name('pages.affiliate');
+
 // Admin Auth Routes
 Route::get('/admin/login', [AdminController::class, 'showLoginForm'])->name('admin.login');
 Route::post('/admin/login', [AdminController::class, 'login'])->name('admin.login.submit');

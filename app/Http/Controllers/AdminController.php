@@ -83,6 +83,7 @@ class AdminController extends Controller
                 'newsTopics',
                 'newsItems',
             ])
+            ->where('slug', '!=', 'google-trends')
             ->with(['newsTopics' => fn ($query) => $query->withCount('newsItems')->orderBy('sort_order')->orderBy('id')])
             ->orderBy('sort_order')
             ->orderBy('id')
@@ -901,6 +902,13 @@ class AdminController extends Controller
 
         if ($selectedSectionId && $selectedSectionId !== 'all') {
             $articlesQuery->where('news_section_id', $selectedSectionId);
+        } else {
+            $articlesQuery->where(function ($q) {
+                $q->whereNull('news_section_id')
+                    ->orWhereHas('newsSection', function ($sub) {
+                        $sub->where('slug', '!=', 'google-trends');
+                    });
+            });
         }
 
         if ($selectedTopicId && $selectedTopicId !== 'all') {

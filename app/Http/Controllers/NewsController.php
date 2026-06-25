@@ -404,6 +404,12 @@ class NewsController extends Controller
         return array_merge($this->publicFallbackContext(), [
             'visitStats' => $visitStats,
             'tickerArticles' => NewsItem::visible()
+                ->where(function ($query) {
+                    $query->whereNull('news_section_id')
+                        ->orWhereHas('newsSection', function ($q) {
+                            $q->where('slug', '!=', 'google-trends');
+                        });
+                })
                 ->orderByDesc('published_at')
                 ->orderByDesc('id')
                 ->take(8)
@@ -566,6 +572,30 @@ class NewsController extends Controller
         }
 
         return true;
+    }
+
+    /**
+     * Display a static policy or info page.
+     */
+    public function staticPage(string $page, Request $request, VisitorMetricsService $visitorMetrics)
+    {
+        $allowedPages = [
+            'about-us' => 'about',
+            'contact-us' => 'contact',
+            'privacy-policy' => 'privacy',
+            'terms' => 'terms',
+            'disclaimer' => 'disclaimer',
+            'affiliate-disclosure' => 'affiliate',
+        ];
+
+        if (!array_key_exists($page, $allowedPages)) {
+            abort(404);
+        }
+
+        $viewName = 'news.' . $allowedPages[$page];
+        $pageContext = $this->publicPageContext($request, $visitorMetrics);
+
+        return view($viewName, $pageContext);
     }
 
     /**

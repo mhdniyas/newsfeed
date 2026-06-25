@@ -8,7 +8,7 @@
         <div>
             <p class="text-[11px] font-semibold uppercase tracking-[0.26em] text-rose-500">Admin Destroy</p>
             <h1 class="mt-1 text-2xl sm:text-3xl font-extrabold text-slate-900">Destroy manager</h1>
-            <p class="mt-2 max-w-3xl text-sm text-slate-500">Low-performance article cleanup with manual delete filters, zero-view and zero-click modes, plus automatic daily rules with protected favorites.</p>
+            <p class="mt-2 max-w-3xl text-sm text-slate-500">Low-performance article cleanup with manual delete filters, zero-view and zero-click modes, and protected favorites. Automatic destroy is disabled.</p>
         </div>
         <div class="flex flex-wrap gap-2">
             <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold transition-colors shadow-sm">
@@ -51,26 +51,25 @@
         <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
             <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Favorites Protected</p>
             <p class="mt-2 text-3xl font-extrabold text-amber-600">{{ number_format($destroyStats['favorite_articles']) }}</p>
-            <p class="mt-1 text-xs text-slate-500">Favorite posts are skipped from manual and automatic deletion.</p>
+            <p class="mt-1 text-xs text-slate-500">Favorite posts are skipped from manual deletion.</p>
         </div>
     </div>
 
     <div class="mb-8 grid gap-6 xl:grid-cols-[1.25fr_0.95fr]">
         <div class="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white shadow-sm overflow-hidden">
             <div class="border-b border-amber-200 px-5 py-4">
-                <h2 class="text-base font-bold text-slate-900">Automatic deletion setup</h2>
-                <p class="mt-1 text-xs text-slate-500">Daily cleanup can run automatically with your saved rules. Set the age window, mode, click threshold, sort order, and delete cycle size from 500 to 3000.</p>
+                <h2 class="text-base font-bold text-slate-900">Manual delete defaults</h2>
+                <p class="mt-1 text-xs text-slate-500">Automatic deletion has been removed. Save the manual age window, mode, click threshold, sort order, and delete cycle size from 500 to 3000.</p>
             </div>
             <form action="{{ route('admin.destroy.settings') }}" method="POST" class="px-5 py-4">
                 @csrf
                 <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                     <label class="rounded-2xl border border-slate-200 bg-white p-4">
                         <span class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Auto Run</span>
-                        <div class="mt-3 flex items-center justify-between gap-3">
-                            <span class="text-sm font-bold text-slate-900">Enable daily destroy</span>
-                            <input type="hidden" name="enabled" value="0">
-                            <input type="checkbox" name="enabled" value="1" @checked($autoDeleteReport['enabled']) class="h-5 w-5 rounded border-slate-300 text-rose-600 focus:ring-rose-500">
+                        <div class="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-bold text-slate-900">
+                            Disabled permanently
                         </div>
+                        <input type="hidden" name="enabled" value="0">
                     </label>
                     <label class="rounded-2xl border border-slate-200 bg-white p-4">
                         <span class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Age Window</span>
@@ -114,10 +113,10 @@
                 </div>
                 <div class="mt-4 flex flex-wrap gap-3">
                     <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800">
-                        Save Automatic Setup
+                        Save Manual Defaults
                     </button>
                     <span class="inline-flex items-center rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-700">
-                        @if($autoDeleteReport['enabled']) Daily auto destroy is enabled @else Daily auto destroy is disabled @endif
+                        Automatic destroy is disabled
                     </span>
                 </div>
             </form>
@@ -125,8 +124,8 @@
 
         <div class="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white shadow-sm overflow-hidden">
             <div class="border-b border-amber-200 px-5 py-4">
-                <h2 class="text-base font-bold text-slate-900">Auto-delete report</h2>
-                <p class="mt-1 text-xs text-slate-500">Saved rule snapshot and last run details.</p>
+                <h2 class="text-base font-bold text-slate-900">Destroy defaults report</h2>
+                <p class="mt-1 text-xs text-slate-500">Saved manual rule snapshot and last run details.</p>
             </div>
             <div class="grid gap-3 px-5 py-4 md:grid-cols-2">
             <div class="rounded-2xl border border-amber-200 bg-white p-4">

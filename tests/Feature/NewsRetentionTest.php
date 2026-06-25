@@ -93,7 +93,7 @@ class NewsRetentionTest extends TestCase
         $this->assertDatabaseHas('news_items', ['id' => $clicked->id]);
     }
 
-    public function test_admin_can_save_automatic_destroy_settings(): void
+    public function test_admin_can_save_manual_destroy_defaults_while_auto_destroy_stays_disabled(): void
     {
         $response = $this->withSession(['admin_authenticated' => true])
             ->post(route('admin.destroy.settings'), [
@@ -107,7 +107,7 @@ class NewsRetentionTest extends TestCase
 
         $response->assertRedirect(route('admin.destroy'));
         $response->assertSessionHas('success');
-        $this->assertSame('1', Setting::get('news_prune_enabled'));
+        $this->assertSame('0', Setting::get('news_prune_enabled'));
         $this->assertSame('2', Setting::get('news_prune_last_days'));
         $this->assertSame('0', Setting::get('news_prune_last_click_threshold'));
         $this->assertSame('1500', Setting::get('news_prune_batch_limit'));

@@ -36,7 +36,7 @@ class NewsRetentionService
 
     public function autoDeletionEnabled(): bool
     {
-        return filter_var(Setting::get(self::AUTO_ENABLED_KEY, '0'), FILTER_VALIDATE_BOOL);
+        return false;
     }
 
     public function retentionDays(): int
@@ -90,9 +90,7 @@ class NewsRetentionService
         $sort = array_key_exists('sort', $overrides) && is_string($overrides['sort']) && in_array($overrides['sort'], self::SORTS, true)
             ? $overrides['sort']
             : $this->sort();
-        $enabled = array_key_exists('enabled', $overrides)
-            ? (bool) $overrides['enabled']
-            : $this->autoDeletionEnabled();
+        $enabled = false;
 
         return [
             'enabled' => $enabled,
@@ -109,7 +107,7 @@ class NewsRetentionService
     {
         $resolved = $this->settings($settings);
 
-        Setting::set(self::AUTO_ENABLED_KEY, $resolved['enabled'] ? '1' : '0');
+        Setting::set(self::AUTO_ENABLED_KEY, '0');
         Setting::set('news_prune_last_days', (string) $resolved['days']);
         Setting::set('news_prune_last_click_threshold', (string) $resolved['click_threshold']);
         Setting::set('news_prune_batch_limit', (string) $resolved['batch_limit']);

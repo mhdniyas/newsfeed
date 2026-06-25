@@ -14,6 +14,7 @@ class AutomaticNewsSyncService
     public const SYNC_INTERVAL_MINUTES = 2;
     public const SECTION_BATCH_SIZE = 20;
     public const CYCLE_ARTICLE_LIMIT = 500;
+    public const TOPIC_TARGET = 500;
 
     public function maybeTriggerDueSync(string $message = 'Automatic fallback sync triggered from web request.'): bool
     {
@@ -86,14 +87,18 @@ class AutomaticNewsSyncService
     public function fetchStats(): array
     {
         $health = $this->newsContentHealth();
+        $sectionCount = (clone $this->generalSectionsQuery())->count();
+        $topicCount = (clone $this->generalTopicsQuery())->count();
 
         return [
             'total_runs' => (int) Setting::get('news_sync_total_runs', '0'),
             'last_success_at' => Setting::get('news_sync_last_success_at'),
             'interval_minutes' => self::SYNC_INTERVAL_MINUTES,
-            'section_count' => (int) NewsSection::where('is_active', true)->count(),
+            'section_count' => $sectionCount,
             'section_batch_size' => self::SECTION_BATCH_SIZE,
-            'cycles_to_cover_all_sections' => (int) ceil(max(1, (int) NewsSection::where('is_active', true)->count()) / self::SECTION_BATCH_SIZE),
+            'cycles_to_cover_all_sections' => (int) ceil(max(1, $sectionCount) / self::SECTION_BATCH_SIZE),
+            'topic_count' => $topicCount,
+            'topic_target' => self::TOPIC_TARGET,
             'next_scheduled_at' => $this->nextScheduledFetchAt(self::SYNC_INTERVAL_MINUTES)?->toIso8601String(),
             'news_total' => $health['news_total'],
             'content_health' => $health['status'],
@@ -108,7 +113,7 @@ class AutomaticNewsSyncService
     {
         $windowMinutes = 15;
         $now = now();
-        $currentTotal = NewsItem::query()->count();
+        $currentTotal = (clone $this->generalNewsItemsQuery())->count();
         $baselineTotal = Setting::get('news_sync_health_baseline_total');
         $baselineCheckedAt = Setting::get('news_sync_health_baseline_checked_at');
         $storedStatus = Setting::get('news_sync_health_status', 'warming_up');
@@ -174,6 +179,28 @@ class AutomaticNewsSyncService
             'checked_at' => $storedCheckedAt ?: $baselineAt->toIso8601String(),
             'next_check_at' => $baselineAt->copy()->addMinutes($windowMinutes)->toIso8601String(),
         ];
+    }
+
+    protected function generalSectionsQuery()
+    {
+        return NewsSection::query()
+            ->where('is_active', true)
+            ->where('slug', '!=', 'google-trends');
+    }
+
+    protected function generalTopicsQuery()
+    {
+        return \App\Models\NewsTopic::query()
+            ->where('is_active', true)
+            ->whereHas('newsSection', fn ($query) => $query
+                ->where('is_active', true)
+                ->where('slug', '!=', 'google-trends'));
+    }
+
+    protected function generalNewsItemsQuery()
+    {
+        return NewsItem::query()
+            ->whereHas('newsSection', fn ($query) => $query->where('slug', '!=', 'google-trends'));
     }
 
     protected function currentSlotStart(int $intervalMinutes): Carbon

@@ -33,6 +33,7 @@ class FetchWorldCupNews extends Command
 
         $sections = NewsSection::query()
             ->where('is_active', true)
+            ->where('slug', '!=', 'google-trends')
             ->when($sectionId, fn ($query) => $query->whereKey($sectionId))
             ->when($topicId, fn ($query) => $query->whereHas('newsTopics', fn ($topicQuery) => $topicQuery->whereKey($topicId)))
             ->with(['newsTopics' => function ($query) use ($topicId) {

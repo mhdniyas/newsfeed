@@ -19,10 +19,6 @@ Schedule::command('queue:work --stop-when-empty --queue=syncs,default --tries=1 
     ->withoutOverlapping()
     ->runInBackground();
 
-Schedule::command('news:prune-old --scheduled')
-    ->daily()
-    ->withoutOverlapping();
-
 Schedule::command('news:extract-articles --limit=10')
     ->everyTenMinutes()
     ->withoutOverlapping();

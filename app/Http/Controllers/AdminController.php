@@ -266,7 +266,7 @@ class AdminController extends Controller
 
         return redirect()
             ->route('admin.destroy')
-            ->with('success', "Automatic destroy settings saved. Mode {$settings['mode']}, {$settings['days']} day window, {$settings['click_threshold']} click threshold, {$settings['batch_limit']} delete limit.");
+            ->with('success', "Manual destroy defaults saved. Automatic scheduler remains disabled. Mode {$settings['mode']}, {$settings['days']} day window, {$settings['click_threshold']} click threshold, {$settings['batch_limit']} delete limit.");
     }
 
     public function trends(Request $request, AutomaticNewsSyncService $automaticNewsSync, AutomaticTrendSyncService $automaticTrendSync, TrendingNewsService $trendingNewsService)
@@ -725,18 +725,19 @@ class AdminController extends Controller
     {
         $today = now()->toDateString();
         $lastHour = now()->subHour();
+        $contentQuery = $this->editorialNewsItemsQuery();
 
-        $totalPosts = NewsItem::query()->count();
-        $visiblePosts = NewsItem::query()->where('is_visible', true)->count();
+        $totalPosts = (clone $contentQuery)->count();
+        $visiblePosts = (clone $contentQuery)->where('is_visible', true)->count();
         $hiddenPosts = max(0, $totalPosts - $visiblePosts);
-        $todayPosts = NewsItem::query()->whereDate('published_at', $today)->count();
-        $lastHourPosts = NewsItem::query()->where('published_at', '>=', $lastHour)->count();
-        $featuredPosts = NewsItem::query()->where('is_featured', true)->count();
-        $favoritePosts = NewsItem::query()->where('is_favorite', true)->count();
+        $todayPosts = (clone $contentQuery)->whereDate('created_at', $today)->count();
+        $lastHourPosts = (clone $contentQuery)->where('created_at', '>=', $lastHour)->count();
+        $featuredPosts = (clone $contentQuery)->where('is_featured', true)->count();
+        $favoritePosts = (clone $contentQuery)->where('is_favorite', true)->count();
         $trendPosts = NewsItem::query()
             ->whereHas('newsSection', fn ($query) => $query->where('slug', 'google-trends'))
             ->count();
-        $extractedPosts = NewsItem::query()->whereIn('extraction_status', ['completed', 'extracted'])->count();
+        $extractedPosts = (clone $contentQuery)->whereIn('extraction_status', ['completed', 'extracted'])->count();
         $destroyReady = $newsRetention->eligibleQuery()->count();
         $destroyProtected = $newsRetention->protectedQuery()->count();
 
@@ -754,12 +755,14 @@ class AdminController extends Controller
             'destroyed_last_run' => (int) Setting::get('news_prune_last_deleted_count', '0'),
             'destroy_ready' => $destroyReady,
             'destroy_protected' => $destroyProtected,
-            'latest_posts' => NewsItem::query()
+            'latest_posts' => (clone $contentQuery)
                 ->with(['newsTopic', 'newsSection'])
-                ->orderByDesc('published_at')
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
                 ->take(8)
                 ->get(),
             'top_sections' => NewsSection::query()
+                ->where('slug', '!=', 'google-trends')
                 ->withCount('newsItems')
                 ->orderByDesc('news_items_count')
                 ->orderBy('name')
@@ -992,8 +995,8 @@ class AdminController extends Controller
 
                 return [
                     'label' => $day->format('M d'),
-                    'value' => NewsItem::query()
-                        ->whereDate('published_at', $day->toDateString())
+                    'value' => $this->editorialNewsItemsQuery()
+                        ->whereDate('created_at', $day->toDateString())
                         ->count(),
                 ];
             })
@@ -1001,9 +1004,9 @@ class AdminController extends Controller
 
         return [
             'title' => 'Total News On Site',
-            'subtitle' => 'Stories published over the last 7 days',
-            'total' => NewsItem::query()->count(),
-            'headline' => NewsItem::query()->count(),
+            'subtitle' => 'Stories saved on site over the last 7 days',
+            'total' => $this->editorialNewsItemsQuery()->count(),
+            'headline' => $this->editorialNewsItemsQuery()->count(),
             'headline_label' => 'stories total',
             'points' => $points->all(),
             'max' => max(1, (int) $points->max('value')),
@@ -1018,8 +1021,8 @@ class AdminController extends Controller
 
                 return [
                     'label' => $hour->format('H:00'),
-                    'value' => NewsItem::query()
-                        ->whereBetween('published_at', [$hour, $hour->copy()->endOfHour()])
+                    'value' => $this->editorialNewsItemsQuery()
+                        ->whereBetween('created_at', [$hour, $hour->copy()->endOfHour()])
                         ->count(),
                 ];
             })
@@ -1027,13 +1030,19 @@ class AdminController extends Controller
 
         return [
             'title' => 'Last 12 Hours',
-            'subtitle' => 'Publishing volume in the last 12 hours',
+            'subtitle' => 'Posts saved on site in the last 12 hours',
             'total' => (int) $points->sum('value'),
-            'headline' => NewsItem::query()->where('published_at', '>=', now()->subHour())->count(),
+            'headline' => $this->editorialNewsItemsQuery()->where('created_at', '>=', now()->subHour())->count(),
             'headline_label' => 'posts in last hour',
             'points' => $points->all(),
             'max' => max(1, (int) $points->max('value')),
         ];
+    }
+
+    protected function editorialNewsItemsQuery()
+    {
+        return NewsItem::query()
+            ->whereHas('newsSection', fn ($query) => $query->where('slug', '!=', 'google-trends'));
     }
 
     protected function registeredUsersChart(): array

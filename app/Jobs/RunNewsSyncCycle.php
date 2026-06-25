@@ -33,6 +33,7 @@ class RunNewsSyncCycle implements ShouldQueue, ShouldBeUnique
     {
         $allSections = NewsSection::query()
             ->where('is_active', true)
+            ->where('slug', '!=', 'google-trends')
             ->withCount(['newsTopics' => fn ($query) => $query->where('is_active', true)])
             ->orderBy('sort_order')
             ->orderBy('id')

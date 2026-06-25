@@ -152,6 +152,24 @@
             </div>
         </section>
 
+        <section class="mb-8 rounded-[1.9rem] border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-yellow-50 p-5 shadow-sm">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-700/70">Daily Prices</p>
+                    <h2 class="mt-1 text-2xl font-extrabold text-slate-950">Gold Rates Today</h2>
+                    <p class="mt-1 text-sm text-slate-500">Check India, Mumbai, Delhi, Chennai, and Kerala gold prices with 24K, 22K, and 18K comparisons.</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <a href="{{ route('news.gold-rate.index') }}" class="inline-flex items-center rounded-full border border-slate-950 bg-slate-950 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-800">
+                        Open Gold Rates
+                    </a>
+                    <a href="{{ route('news.gold-rate', 'kerala') }}" class="inline-flex items-center rounded-full border border-amber-200 bg-white px-4 py-2 text-xs font-bold text-amber-700 transition hover:bg-amber-50">
+                        Kerala Gold Rate
+                    </a>
+                </div>
+            </div>
+        </section>
+
         @if(!empty($mobilePromos))
             <div class="mb-8 space-y-4 xl:hidden">
                 @foreach($mobilePromos as $mobilePromo)

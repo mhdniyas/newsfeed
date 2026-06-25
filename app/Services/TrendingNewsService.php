@@ -28,7 +28,6 @@ class TrendingNewsService
     public const KEYWORD_POOL_LIMIT = 250;
     public const NEWS_ARTICLE_LIMIT = 120;
     public const ARTICLES_PER_COUNTRY = 10;
-    public const KEYWORD_TTL_HOURS = 24;
 
     public function __construct(
         protected NewsFetchService $newsFetchService
@@ -140,7 +139,6 @@ class TrendingNewsService
             ];
         }
 
-        $this->trimKeywordPool($section);
         $this->rememberSnapshot($stats);
 
         return $stats;
@@ -341,46 +339,6 @@ class TrendingNewsService
 
     public function cleanupExpiredKeywords(?NewsSection $section = null): int
     {
-        $section ??= $this->trendsSection();
-
-        if (!$section) {
-            return 0;
-        }
-
-        $cutoff = now()->subHours(self::KEYWORD_TTL_HOURS);
-        $deleted = 0;
-
-        $expiredIds = NewsTopic::query()
-            ->where('news_section_id', $section->id)
-            ->where('updated_at', '<', $cutoff)
-            ->pluck('id');
-
-        if ($expiredIds->isNotEmpty()) {
-            $deleted += NewsTopic::query()
-                ->whereIn('id', $expiredIds)
-                ->delete();
-        }
-
-        $topicsToTrim = NewsTopic::query()
-            ->where('news_section_id', $section->id)
-            ->orderByDesc('updated_at')
-            ->orderBy('sort_order')
-            ->orderByDesc('id')
-            ->skip(self::KEYWORD_POOL_LIMIT)
-            ->take(PHP_INT_MAX)
-            ->pluck('id');
-
-        if ($topicsToTrim->isNotEmpty()) {
-            $deleted += NewsTopic::query()
-                ->whereIn('id', $topicsToTrim)
-                ->delete();
-        }
-
-        return $deleted;
-    }
-
-    protected function trimKeywordPool(NewsSection $section): void
-    {
-        $this->cleanupExpiredKeywords($section);
+        return 0;
     }
 }

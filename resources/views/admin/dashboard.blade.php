@@ -6,6 +6,8 @@
 @php
     $totalSections = $sections->count();
     $totalTopics = (int) $sections->sum('news_topics_count');
+    $syncTopicCount = (int) ($fetchStats['topic_count'] ?? 0);
+    $syncTopicTarget = (int) ($fetchStats['topic_target'] ?? 500);
 @endphp
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     
@@ -20,6 +22,9 @@
                 </span>
                 <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-700 shadow-sm">
                     {{ number_format($totalTopics) }} topics
+                </span>
+                <span class="inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.16em] text-sky-700 shadow-sm">
+                    {{ number_format($syncTopicCount) }} / {{ number_format($syncTopicTarget) }} fetch topics
                 </span>
             </div>
         </div>
@@ -111,7 +116,7 @@
                 <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3">
                     <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Next Auto Fetch</p>
                     <p id="sync-auto-next-at" class="mt-1 text-sm font-bold text-slate-900">Calculating...</p>
-                    <p id="sync-auto-note" class="mt-1 text-xs text-slate-500">Laravel scheduler watches this every minute, and web fallback can recover missed slots.</p>
+                    <p id="sync-auto-note" class="mt-1 text-xs text-slate-500">General news runs here without Google Trends, and web fallback can recover missed slots.</p>
                 </div>
                 <div class="rounded-2xl border border-slate-200 bg-white px-4 py-3">
                     <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Fetch Runs</p>
@@ -123,7 +128,7 @@
                 <div class="rounded-2xl border border-slate-200 bg-slate-950 px-4 py-3 text-white">
                     <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Run Type</p>
                     <p class="mt-1 text-sm font-black">Async queue worker</p>
-                    <p id="sync-auto-interval" class="mt-1 text-xs text-slate-300">Every {{ $fetchStats['interval_minutes'] }} minutes fetch {{ $fetchStats['section_batch_size'] ?? 12 }} of {{ $fetchStats['section_count'] }} active sections. Full rotation in {{ $fetchStats['cycles_to_cover_all_sections'] ?? 1 }} runs.</p>
+                    <p id="sync-auto-interval" class="mt-1 text-xs text-slate-300">Every {{ $fetchStats['interval_minutes'] }} minutes fetch {{ $fetchStats['section_batch_size'] ?? 12 }} of {{ $fetchStats['section_count'] }} active non-trend sections. {{ number_format($fetchStats['topic_count'] ?? 0) }} active non-trend topics tracked. Full rotation in {{ $fetchStats['cycles_to_cover_all_sections'] ?? 1 }} runs.</p>
                 </div>
             </div>
 
@@ -1019,7 +1024,7 @@
             }
 
             if (els.autoInterval) {
-                els.autoInterval.textContent = `Every ${fetchStats.interval_minutes || 2} minutes fetch ${fetchStats.section_batch_size || 12} of ${fetchStats.section_count || 0} active sections. Full rotation in ${fetchStats.cycles_to_cover_all_sections || 1} runs.`;
+                els.autoInterval.textContent = `Every ${fetchStats.interval_minutes || 2} minutes fetch ${fetchStats.section_batch_size || 12} of ${fetchStats.section_count || 0} active non-trend sections. ${new Intl.NumberFormat().format(Number(fetchStats.topic_count || 0))} active non-trend topics tracked. Full rotation in ${fetchStats.cycles_to_cover_all_sections || 1} runs.`;
             }
 
             if (els.autoHealth) {

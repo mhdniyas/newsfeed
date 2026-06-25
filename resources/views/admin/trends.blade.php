@@ -27,12 +27,6 @@
                     Refresh Keywords + Fetch News
                 </button>
             </form>
-            <form action="{{ route('admin.trends.cleanup') }}" method="POST">
-                @csrf
-                <button type="submit" class="inline-flex items-center rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs font-bold text-amber-800 shadow-sm transition hover:bg-amber-100">
-                    Clean 24h+ Keywords
-                </button>
-            </form>
             <form action="{{ route('admin.trends.restart') }}" method="POST" id="trend-sync-restart-form" class="{{ in_array($trendSyncState['status'], ['queued', 'running', 'stalled'], true) ? '' : 'hidden' }}">
                 @csrf
                 <button type="submit" id="trend-sync-restart-button" class="inline-flex items-center rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs font-bold text-rose-700 shadow-sm transition hover:bg-rose-100">
@@ -67,7 +61,7 @@
         <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Keyword Pool</p>
             <p class="mt-2 text-3xl font-black text-slate-900">{{ number_format($trendsSnapshot['keyword_pool_limit']) }}</p>
-            <p class="mt-1 text-xs text-slate-500">Maximum stored trend keywords total</p>
+            <p class="mt-1 text-xs text-slate-500">Legacy dashboard target for trend keyword capacity</p>
         </div>
         <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Last Refresh</p>
@@ -195,7 +189,7 @@
                         <div class="flex items-start justify-between gap-3">
                             <div>
                                 <h3 class="text-sm font-bold text-slate-900">Keyword Flow</h3>
-                                <p class="mt-1 text-xs text-slate-500">Google Trends RSS currently exposes up to {{ $trendsSnapshot['keywords_per_country'] }} live keywords per country. The crawler keeps those active, and trend keywords older than 24 hours are automatically destroyed.</p>
+                                <p class="mt-1 text-xs text-slate-500">Google Trends RSS currently exposes up to {{ $trendsSnapshot['keywords_per_country'] }} live keywords per country. The crawler refreshes the active set on each cycle and keeps older keywords in history instead of auto-deleting them.</p>
                             </div>
                             <span class="inline-flex rounded-full border border-emerald-200 bg-white px-3 py-2 text-[11px] font-bold text-emerald-700">
                                 {{ number_format($trendsSnapshot['total_active_keyword_limit']) }} active max
@@ -235,7 +229,7 @@
         <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Stored Pool Limit</p>
             <p class="mt-2 text-3xl font-black text-slate-900">{{ number_format($trendsSnapshot['keyword_pool_limit']) }}</p>
-            <p class="mt-1 text-xs text-slate-500">Keywords older than 24 hours are automatically removed from the stored pool</p>
+            <p class="mt-1 text-xs text-slate-500">Older keywords stay available for history, while only the latest active set is fetched each cycle</p>
         </div>
         <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Trend News Cap</p>

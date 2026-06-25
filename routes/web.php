@@ -83,7 +83,6 @@ Route::middleware(\App\Http\Middleware\AdminAuth::class)->group(function () {
     Route::post('/admin/profile', [AdminController::class, 'updateProfile'])->name('admin.profile.update');
     Route::post('/admin/promotions', [AdminController::class, 'updatePromotions'])->name('admin.promotions.update');
     Route::post('/admin/trends/refresh', [AdminController::class, 'refreshTrends'])->name('admin.trends.refresh');
-    Route::post('/admin/trends/cleanup', [AdminController::class, 'cleanupTrendKeywords'])->name('admin.trends.cleanup');
     Route::post('/admin/trends/restart', [AdminController::class, 'stopAndResyncTrends'])->name('admin.trends.restart');
 
     // Manual Fetch

@@ -10,6 +10,8 @@ use App\Models\NewsTopic;
 use App\Models\LotteryResult;
 use App\Models\Setting;
 use App\Models\User;
+use App\Models\GoldRate;
+use App\Services\GoldRateFetchService;
 use App\Services\AutomaticNewsSyncService;
 use App\Services\AutomaticTrendSyncService;
 use App\Services\KeralaLotteryService;
@@ -114,6 +116,7 @@ class AdminController extends Controller
         $articlePageAnalytics = $this->articlePageAnalyticsSummary();
         $trendsAnalyticsSummary = $visitorMetrics->trendsAnalyticsSummary();
         $lotteryAnalyticsSummary = $this->keralaLotteryAnalyticsSummary();
+        $goldAnalyticsSummary = $this->goldRatesAnalyticsSummary();
         $analyticsCharts = [
             'live_users' => $this->liveUserChart(),
             'news_total' => $this->newsTotalChart(),
@@ -124,7 +127,7 @@ class AdminController extends Controller
         ];
         $fetchStats = $this->fetchStats();
 
-        return view('admin.analytics', compact('visitStats', 'analyticsSummary', 'contentAnalytics', 'articlePageAnalytics', 'trendsAnalyticsSummary', 'lotteryAnalyticsSummary', 'visitorSnapshot', 'analyticsCharts', 'contentCharts', 'fetchStats'));
+        return view('admin.analytics', compact('visitStats', 'analyticsSummary', 'contentAnalytics', 'articlePageAnalytics', 'trendsAnalyticsSummary', 'lotteryAnalyticsSummary', 'goldAnalyticsSummary', 'visitorSnapshot', 'analyticsCharts', 'contentCharts', 'fetchStats'));
     }
 
     public function rankingAnalytics(VisitorMetricsService $visitorMetrics)
@@ -1319,5 +1322,89 @@ class AdminController extends Controller
         }
 
         return false;
+    }
+
+    /**
+     * Gold Rates analytics summary data.
+     */
+    protected function goldRatesAnalyticsSummary(): array
+    {
+        $today = now()->toDateString();
+        return [
+            'total_records' => GoldRate::count(),
+            'pending_review_count' => GoldRate::where('is_pending_review', true)->count(),
+            'page_views_total' => (int) Setting::get('gold_page_views_total', '0'),
+            'page_views_today' => (int) Setting::get('gold_page_views_' . $today, '0'),
+            'city_views' => [
+                'India' => (int) Setting::get('gold_city_views_total_india', '0'),
+                'Mumbai' => (int) Setting::get('gold_city_views_total_mumbai', '0'),
+                'Delhi' => (int) Setting::get('gold_city_views_total_delhi', '0'),
+                'Chennai' => (int) Setting::get('gold_city_views_total_chennai', '0'),
+                'Kerala' => (int) Setting::get('gold_city_views_total_kerala', '0'),
+            ],
+            'recent_rates' => GoldRate::query()
+                ->orderByDesc('rate_date')
+                ->orderBy('city')
+                ->orderBy('purity')
+                ->take(15)
+                ->get(),
+        ];
+    }
+
+    /**
+     * Display the gold rates admin list page.
+     */
+    public function goldRatesIndex(Request $request)
+    {
+        $pendingRates = GoldRate::where('is_pending_review', true)
+            ->orderByDesc('rate_date')
+            ->orderBy('city')
+            ->get();
+
+        $allRates = GoldRate::orderByDesc('rate_date')
+            ->orderBy('city')
+            ->orderBy('purity')
+            ->paginate(30);
+
+        $fetchStats = $this->fetchStats();
+        $goldAnalyticsSummary = $this->goldRatesAnalyticsSummary();
+
+        return view('admin.gold-rates', compact('pendingRates', 'allRates', 'fetchStats', 'goldAnalyticsSummary'));
+    }
+
+    /**
+     * Trigger manual sync of gold rates.
+     */
+    public function goldRatesSync(GoldRateFetchService $fetchService)
+    {
+        try {
+            $results = $fetchService->sync();
+            return back()->with('success', 'Gold rates manual synchronization completed. Synchronized: ' . implode(', ', array_keys($results)));
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Failed to synchronize gold rates: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Approve a pending gold rate.
+     */
+    public function goldRatesApprove(int $id)
+    {
+        $rate = GoldRate::findOrFail($id);
+        $rate->is_pending_review = false;
+        $rate->save();
+
+        return back()->with('success', "Approved price of {$rate->price_1g} per gram for {$rate->city} ({$rate->purity}) on " . $rate->rate_date->format('d M Y'));
+    }
+
+    /**
+     * Reject/Delete a pending gold rate.
+     */
+    public function goldRatesReject(int $id)
+    {
+        $rate = GoldRate::findOrFail($id);
+        $rate->delete();
+
+        return back()->with('success', 'Rejected and deleted the flagged gold rate entry.');
     }
 }

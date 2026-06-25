@@ -528,6 +528,33 @@ class VisitorMetricsService
         ];
     }
 
+    public function trackGoldRatePageView(?string $city = null): array
+    {
+        $today = now()->toDateString();
+        $todayKey = 'gold_page_views_' . $today;
+        $totalKey = 'gold_page_views_total';
+
+        $todayViews = ((int) Setting::get($todayKey, '0')) + 1;
+        $totalViews = ((int) Setting::get($totalKey, '0')) + 1;
+
+        Setting::set($todayKey, (string) $todayViews);
+        Setting::set($totalKey, (string) $totalViews);
+
+        if ($city) {
+            $city = strtolower($city);
+            $cityTodayKey = 'gold_city_views_' . $today . '_' . $city;
+            $cityTotalKey = 'gold_city_views_total_' . $city;
+
+            Setting::set($cityTodayKey, (string) (((int) Setting::get($cityTodayKey, '0')) + 1));
+            Setting::set($cityTotalKey, (string) (((int) Setting::get($cityTotalKey, '0')) + 1));
+        }
+
+        return [
+            'today' => $todayViews,
+            'total' => $totalViews,
+        ];
+    }
+
     public function fingerprintForRequest(Request $request): string
     {
         return $this->fingerprint($request);

@@ -34,3 +34,24 @@ Schedule::job(new RunTrendSyncCycle('Automatic 5-minute scheduler trend sync'))
 Schedule::command('lottery:sync-kerala-results --limit=1')
     ->everyThirtyMinutes()
     ->withoutOverlapping();
+
+// Gold Rates Fetch Schedule (10:30 AM, 12:30 PM, 4:30 PM, 8:30 PM IST)
+Schedule::command('gold:fetch-rates')
+    ->timezone('Asia/Kolkata')
+    ->at('10:30')
+    ->withoutOverlapping();
+
+Schedule::command('gold:fetch-rates')
+    ->timezone('Asia/Kolkata')
+    ->at('12:30')
+    ->withoutOverlapping();
+
+Schedule::command('gold:fetch-rates')
+    ->timezone('Asia/Kolkata')
+    ->at('16:30')
+    ->withoutOverlapping();
+
+Schedule::command('gold:fetch-rates')
+    ->timezone('Asia/Kolkata')
+    ->at('20:30')
+    ->withoutOverlapping();

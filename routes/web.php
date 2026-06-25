@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\KeralaLotteryController;
 use App\Http\Controllers\NewsController;
+use App\Http\Controllers\GoldRateController;
 use Illuminate\Support\Facades\Route;
 
 // Public News Explorer Routes
@@ -15,6 +16,11 @@ Route::get('/kerala-lottery/today', [KeralaLotteryController::class, 'today'])->
 Route::get('/kerala-lottery/{result:slug}/view-pdf', [KeralaLotteryController::class, 'viewPdf'])->name('kerala-lottery.pdf.view');
 Route::get('/kerala-lottery/{result:slug}/download-pdf', [KeralaLotteryController::class, 'downloadPdf'])->name('kerala-lottery.pdf.download');
 Route::get('/kerala-lottery/{result:slug}', [KeralaLotteryController::class, 'show'])->name('kerala-lottery.show');
+
+// Public Gold Rate Routes
+Route::get('/gold-rate-today', [GoldRateController::class, 'index'])->name('news.gold-rate.index');
+Route::get('/gold-rate/{city}', [GoldRateController::class, 'show'])->name('news.gold-rate');
+
 Route::get('/world-cup-news/top-stories', [NewsController::class, 'topStories'])->name('news.top');
 Route::get('/world-cup-news/trending', [NewsController::class, 'trending'])->name('news.trending');
 Route::get('/world-cup-news/fifa', [NewsController::class, 'fifa'])->name('news.fifa');
@@ -89,4 +95,10 @@ Route::middleware(\App\Http\Middleware\AdminAuth::class)->group(function () {
     Route::post('/admin/lottery/backfill', [KeralaLotteryController::class, 'adminBackfill'])->name('admin.lottery.backfill');
     Route::post('/admin/lottery/reparse', [KeralaLotteryController::class, 'adminReparse'])->name('admin.lottery.reparse');
     Route::post('/admin/lottery/{result}/official-url', [KeralaLotteryController::class, 'adminUpdateOfficialUrl'])->name('admin.lottery.update-url');
+
+    // Gold Rates Admin
+    Route::get('/admin/gold-rates', [AdminController::class, 'goldRatesIndex'])->name('admin.gold-rates.index');
+    Route::post('/admin/gold-rates/sync', [AdminController::class, 'goldRatesSync'])->name('admin.gold-rates.sync');
+    Route::post('/admin/gold-rates/approve/{id}', [AdminController::class, 'goldRatesApprove'])->name('admin.gold-rates.approve');
+    Route::post('/admin/gold-rates/reject/{id}', [AdminController::class, 'goldRatesReject'])->name('admin.gold-rates.reject');
 });

@@ -88,99 +88,175 @@
             <span class="analytics-refresh-label">Refresh Overview</span>
         </button>
     </div>
-    <div class="grid grid-cols-3 gap-3 sm:gap-4 lg:grid-cols-4 mb-6">
-        <div class="rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-500 to-emerald-600 p-3 sm:p-4 text-white shadow-lg shadow-emerald-500/15">
-            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-50/80">Live Now</p>
-            <p class="mt-2 text-xl sm:text-3xl font-black leading-none">{{ number_format($visitorSnapshot['live_now_count']) }}</p>
-            <p class="mt-2 hidden text-xs text-emerald-50/90 sm:block">Visitors active in the last 5 minutes.</p>
-        </div>
-        <div class="rounded-3xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
-            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Site Views</p>
-            <p class="mt-2 text-xl sm:text-3xl font-extrabold leading-none text-slate-900">{{ number_format($visitStats['page_views_total']) }}</p>
-            <p class="mt-2 hidden text-xs text-slate-500 sm:block">All public page loads across the site.</p>
-        </div>
-        <div class="rounded-3xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
-            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Public Visits</p>
-            <p class="mt-2 text-xl sm:text-3xl font-extrabold leading-none text-slate-900">{{ number_format($visitStats['total']) }}</p>
-            <p class="mt-2 hidden text-xs text-slate-500 sm:block">Deduped public page visits.</p>
-        </div>
-        <div class="rounded-3xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
-            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Views Today</p>
-            <p class="mt-2 text-xl sm:text-3xl font-extrabold leading-none text-slate-900">{{ number_format($visitStats['page_views_today']) }}</p>
-            <p class="mt-2 hidden text-xs text-slate-500 sm:block">Public page loads recorded today.</p>
-        </div>
-        <div class="rounded-3xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
-            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Visits Today</p>
-            <p class="mt-2 text-xl sm:text-3xl font-extrabold leading-none text-slate-900">{{ number_format($visitStats['today']) }}</p>
-            <p class="mt-2 hidden text-xs text-slate-500 sm:block">Deduped visits recorded today.</p>
-        </div>
-        <div class="rounded-3xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
-            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Unique Today</p>
-            <p class="mt-2 text-xl sm:text-3xl font-extrabold leading-none text-emerald-600">{{ number_format($visitStats['unique_today']) }}</p>
-            <p class="mt-2 hidden text-xs text-slate-500 sm:block">Distinct fingerprints seen today.</p>
-        </div>
-        <div class="rounded-3xl border border-slate-200 bg-white p-3 sm:p-4 shadow-sm">
-            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Article Views</p>
-            <p class="mt-2 text-xl sm:text-3xl font-extrabold leading-none text-slate-900">{{ number_format($analyticsSummary['article_views']) }}</p>
-            <p class="mt-2 hidden text-xs text-slate-500 sm:block">Deduped article impressions across public feeds.</p>
-        </div>
-        <div class="rounded-3xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-3 sm:p-4 shadow-sm">
-            <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-600">Conversions</p>
-            <p class="mt-2 text-xl sm:text-3xl font-extrabold leading-none text-amber-700">{{ number_format($analyticsSummary['article_clicks']) }}</p>
-            <p class="mt-1 text-[11px] font-black text-amber-800">{{ $analyticsSummary['conversion']['overall_rate'] }}% <span class="hidden font-semibold text-amber-600 sm:inline">overall rate</span></p>
-            <p class="mt-2 hidden text-xs text-amber-600/80 sm:block">Outbound article link clicks.</p>
-        </div>
-    </div>
+    {{-- V2 VISITOR ANALYTICS DASHBOARD --}}
+    <script id="v2-trends-data" type="application/json">
+        {!! json_encode($v2Trends) !!}
+    </script>
 
-    {{-- Conversion Rate Breakdown --}}
-    @php
-        $conv = $analyticsSummary['conversion'];
-        $periods = [
-            ['label' => 'Today',        'key' => 'today', 'tone' => 'emerald'],
-            ['label' => 'This Week',    'key' => 'week',  'tone' => 'sky'],
-            ['label' => 'This Month',   'key' => 'month', 'tone' => 'violet'],
-        ];
-    @endphp
-    <div class="mb-6 rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <div class="flex items-center justify-between gap-3 px-5 py-4 border-b border-slate-100 bg-slate-50/60">
+    <div class="mb-8 border border-slate-200 rounded-[2rem] bg-white p-6 shadow-sm">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
             <div>
-                <p class="text-[11px] font-semibold uppercase tracking-[0.26em] text-slate-400">Conversion Rate</p>
-                <h2 class="mt-0.5 text-base font-extrabold text-slate-900">Views → Conversions by Period</h2>
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+                    <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    v2 Analytics Active
+                </span>
+                <h2 class="mt-2 text-xl font-extrabold text-slate-900">Cookie-Based Visitor Analytics</h2>
+                <p class="text-xs text-slate-500 mt-1">Privacy-friendly, 90-95% accurate tracking system utilizing client cookies and activity sessions.</p>
             </div>
-            <span class="rounded-full border border-amber-200 bg-amber-50 px-4 py-1.5 text-sm font-black text-amber-700">{{ $conv['overall_rate'] }}% all-time</span>
         </div>
-        <div class="px-5 pt-4 text-xs text-slate-500">
-            Period cards use per-day tracked article metrics, so one old article click no longer inflates the full day or week total.
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
-            @foreach($periods as $p)
-                @php
-                    $d = $conv[$p['key']];
-                    $barWidth = min(100, max(4, $d['rate'] * 6));
-                    $toneBar   = match($p['tone']) { 'sky' => 'bg-sky-500', 'violet' => 'bg-violet-500', default => 'bg-emerald-500' };
-                    $toneBadge = match($p['tone']) { 'sky' => 'bg-sky-50 text-sky-700 border-sky-200', 'violet' => 'bg-violet-50 text-violet-700 border-violet-200', default => 'bg-emerald-50 text-emerald-700 border-emerald-200' };
-                    $toneNum   = match($p['tone']) { 'sky' => 'text-sky-700', 'violet' => 'text-violet-700', default => 'text-emerald-700' };
-                @endphp
-                <div class="px-5 py-5">
-                    <p class="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">{{ $p['label'] }}</p>
-                    <p class="mt-2 text-3xl font-black {{ $toneNum }}">{{ $d['rate'] }}<span class="text-lg">%</span></p>
-                    <div class="mt-3 h-2 rounded-full bg-slate-100 overflow-hidden">
-                        <div class="h-full rounded-full {{ $toneBar }} transition-all duration-700" style="width: {{ $barWidth }}%"></div>
+
+        {{-- Row 1: Audience & Sessions Grid --}}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            {{-- Audience Card --}}
+            <div class="bg-slate-50 rounded-3xl p-5 border border-slate-100">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Audience Metrics</h3>
+                    <span class="text-xs font-semibold text-slate-400">Today</span>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200/60 shadow-sm">
+                        <p class="text-xs font-medium text-slate-400">Unique Today</p>
+                        <p class="text-2xl font-black text-slate-900 mt-1">{{ number_format($v2Audience['unique_today']) }}</p>
                     </div>
-                    <div class="mt-3 flex items-center justify-between">
-                        <div class="text-center">
-                            <p class="text-[10px] uppercase tracking-[0.16em] text-slate-400">Views</p>
-                            <p class="text-sm font-extrabold text-slate-800">{{ number_format($d['views']) }}</p>
-                        </div>
-                        <span class="text-slate-300 text-lg font-light">→</span>
-                        <div class="text-center">
-                            <p class="text-[10px] uppercase tracking-[0.16em] text-slate-400">Conversions</p>
-                            <p class="text-sm font-extrabold text-amber-600">{{ number_format($d['clicks']) }}</p>
-                        </div>
-                        <span class="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-bold {{ $toneBadge }}">{{ $d['rate'] }}%</span>
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200/60 shadow-sm">
+                        <p class="text-xs font-medium text-slate-400">Total Visitors</p>
+                        <p class="text-2xl font-black text-slate-900 mt-1">{{ number_format($v2Audience['total_visitors']) }}</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200/60 shadow-sm">
+                        <p class="text-xs font-medium text-slate-400">Returning Today</p>
+                        <p class="text-2xl font-black text-slate-900 mt-1">{{ number_format($v2Audience['returning_visitors']) }}</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200/60 shadow-sm">
+                        <p class="text-xs font-medium text-slate-400">Active Now</p>
+                        <p class="text-2xl font-black text-emerald-600 mt-1 flex items-center gap-1.5">
+                            <span class="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                            {{ number_format($v2Audience['active_now']) }}
+                        </p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200/60 shadow-sm col-span-2 sm:col-span-1">
+                        <p class="text-xs font-medium text-slate-400">Page Views Today</p>
+                        <p class="text-2xl font-black text-slate-900 mt-1">{{ number_format($v2Audience['page_views_today']) }}</p>
                     </div>
                 </div>
-            @endforeach
+            </div>
+
+            {{-- Session Card --}}
+            <div class="bg-slate-50 rounded-3xl p-5 border border-slate-100">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400">Session Behavior</h3>
+                    <span class="text-xs font-semibold text-slate-400">Today</span>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200/60 shadow-sm">
+                        <p class="text-xs font-medium text-slate-400">Sessions Today</p>
+                        <p class="text-2xl font-black text-slate-900 mt-1">{{ number_format($v2Session['sessions_today']) }}</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200/60 shadow-sm">
+                        <p class="text-xs font-medium text-slate-400">Avg. Session Duration</p>
+                        @php
+                            $m = floor($v2Session['avg_duration'] / 60);
+                            $s = $v2Session['avg_duration'] % 60;
+                        @endphp
+                        <p class="text-2xl font-black text-slate-900 mt-1">{{ $m }}m {{ $s }}s</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200/60 shadow-sm">
+                        <p class="text-xs font-medium text-slate-400">Pages per Session</p>
+                        <p class="text-2xl font-black text-slate-900 mt-1">{{ $v2Session['pages_per_session'] }}</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200/60 shadow-sm">
+                        <p class="text-xs font-medium text-slate-400">Bounce Rate</p>
+                        <p class="text-2xl font-black text-amber-600 mt-1">{{ $v2Session['bounce_rate'] }}%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Row 2: Trends Card --}}
+        <div class="bg-slate-50 rounded-3xl p-5 border border-slate-100 mb-6">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-200/60 pb-4 mb-4 gap-4">
+                <div>
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500" id="trends-chart-title">Daily Visitors</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Historical traffic analytics summary.</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    {{-- Metric Switcher --}}
+                    <div class="inline-flex rounded-xl bg-slate-200/80 p-0.5 shadow-inner">
+                        <button type="button" onclick="setTrendsMetric('visitors')" id="btn-metric-visitors" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-950 text-white transition">Visitors</button>
+                        <button type="button" onclick="setTrendsMetric('page_views')" id="btn-metric-page_views" class="px-3 py-1.5 text-xs font-bold rounded-lg text-slate-700 hover:text-slate-950 transition">Page Views</button>
+                        <button type="button" onclick="setTrendsMetric('sessions')" id="btn-metric-sessions" class="px-3 py-1.5 text-xs font-bold rounded-lg text-slate-700 hover:text-slate-950 transition">Sessions</button>
+                    </div>
+                    {{-- Period Switcher --}}
+                    <div class="inline-flex rounded-xl bg-slate-200/80 p-0.5 shadow-inner">
+                        <button type="button" onclick="setTrendsPeriod(7)" id="btn-period-7" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-950 text-white transition">7d</button>
+                        <button type="button" onclick="setTrendsPeriod(30)" id="btn-period-30" class="px-3 py-1.5 text-xs font-bold rounded-lg text-slate-700 hover:text-slate-950 transition">30d</button>
+                        <button type="button" onclick="setTrendsPeriod(90)" id="btn-period-90" class="px-3 py-1.5 text-xs font-bold rounded-lg text-slate-700 hover:text-slate-950 transition">90d</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-2xl border border-slate-200/60 p-4 shadow-sm">
+                <div class="mb-4 flex items-center justify-between">
+                    <span class="text-xs font-semibold text-slate-400">Traffic Graph</span>
+                    <span class="text-xs font-black text-slate-700" id="trends-chart-total">Total: 0</span>
+                </div>
+                <div class="h-44 flex items-end gap-1 sm:gap-2 pb-2 border-b border-slate-100" id="trends-chart-bars">
+                    {{-- Bars rendered dynamically by JS --}}
+                </div>
+            </div>
+        </div>
+
+        {{-- Row 3: Content Card --}}
+        <div class="bg-slate-50 rounded-3xl p-5 border border-slate-100">
+            <div class="border-b border-slate-200/60 pb-3 mb-4">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500">Popular Content (Today)</h3>
+                <p class="text-xs text-slate-400 mt-0.5">Where users are landing, navigating, and exiting today.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {{-- Top Pages --}}
+                <div class="bg-white rounded-2xl border border-slate-200/60 p-4 shadow-sm">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2 mb-3">Top Visited Pages</h4>
+                    <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
+                        @forelse($v2Content['top_pages'] as $page)
+                            <div class="flex items-center justify-between gap-3 text-xs py-1 border-b border-slate-50 last:border-0">
+                                <span class="font-semibold text-slate-700 truncate block max-w-[150px] sm:max-w-none" title="{{ $page['url'] }}">{{ $page['url'] }}</span>
+                                <span class="font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded-full shrink-0">{{ number_format($page['count']) }}</span>
+                            </div>
+                        @empty
+                            <p class="text-xs text-slate-500 py-4 text-center">No visits logged yet.</p>
+                        @endforelse
+                    </div>
+                </div>
+
+                {{-- Top Landing Pages --}}
+                <div class="bg-white rounded-2xl border border-slate-200/60 p-4 shadow-sm">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2 mb-3">Top Landing Pages</h4>
+                    <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
+                        @forelse($v2Content['top_landing'] as $page)
+                            <div class="flex items-center justify-between gap-3 text-xs py-1 border-b border-slate-50 last:border-0">
+                                <span class="font-semibold text-slate-700 truncate block max-w-[150px] sm:max-w-none" title="{{ $page['url'] }}">{{ $page['url'] }}</span>
+                                <span class="font-bold text-slate-900 bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full shrink-0">{{ number_format($page['count']) }}</span>
+                            </div>
+                        @empty
+                            <p class="text-xs text-slate-500 py-4 text-center">No landings logged yet.</p>
+                        @endforelse
+                    </div>
+                </div>
+
+                {{-- Top Exit Pages --}}
+                <div class="bg-white rounded-2xl border border-slate-200/60 p-4 shadow-sm">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2 mb-3">Top Exit Pages</h4>
+                    <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
+                        @forelse($v2Content['top_exit'] as $page)
+                            <div class="flex items-center justify-between gap-3 text-xs py-1 border-b border-slate-50 last:border-0">
+                                <span class="font-semibold text-slate-700 truncate block max-w-[150px] sm:max-w-none" title="{{ $page['url'] }}">{{ $page['url'] }}</span>
+                                <span class="font-bold text-slate-900 bg-rose-50 text-rose-700 px-2 py-0.5 rounded-full shrink-0">{{ number_format($page['count']) }}</span>
+                            </div>
+                        @empty
+                            <p class="text-xs text-slate-500 py-4 text-center">No exits logged yet.</p>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1096,6 +1172,91 @@
 @section('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        // Trends Card Chart Rendering
+        const trendsData = JSON.parse(document.getElementById('v2-trends-data').textContent);
+        let currentMetric = 'visitors';
+        let currentPeriod = 7;
+
+        window.setTrendsMetric = (metric) => {
+            currentMetric = metric;
+            ['visitors', 'page_views', 'sessions'].forEach(m => {
+                const btn = document.getElementById(`btn-metric-${m}`);
+                if (btn) {
+                    btn.classList.toggle('bg-slate-950', m === metric);
+                    btn.classList.toggle('text-white', m === metric);
+                    btn.classList.toggle('text-slate-700', m !== metric);
+                }
+            });
+            renderTrendsChart();
+        };
+
+        window.setTrendsPeriod = (period) => {
+            currentPeriod = period;
+            [7, 30, 90].forEach(p => {
+                const btn = document.getElementById(`btn-period-${p}`);
+                if (btn) {
+                    btn.classList.toggle('bg-slate-950', p === period);
+                    btn.classList.toggle('text-white', p === period);
+                    btn.classList.toggle('text-slate-700', p !== period);
+                }
+            });
+            renderTrendsChart();
+        };
+
+        const renderTrendsChart = () => {
+            const titleElem = document.getElementById('trends-chart-title');
+            const totalElem = document.getElementById('trends-chart-total');
+            const container = document.getElementById('trends-chart-bars');
+
+            if (!container) return;
+
+            // Slice data to period
+            const slicedData = trendsData.slice(-currentPeriod);
+
+            // Compute max value for scaling
+            const maxVal = Math.max(1, ...slicedData.map(d => d[currentMetric]));
+            const totalVal = slicedData.reduce((acc, curr) => acc + curr[currentMetric], 0);
+
+            // Update title & total labels
+            const metricLabels = {
+                visitors: 'Daily Visitors',
+                page_views: 'Daily Page Views',
+                sessions: 'Daily Sessions'
+            };
+            titleElem.textContent = `${metricLabels[currentMetric]} (last ${currentPeriod} days)`;
+            totalElem.textContent = `Total: ${totalVal.toLocaleString()}`;
+
+            // Render bars
+            container.innerHTML = '';
+            slicedData.forEach(d => {
+                const val = d[currentMetric];
+                const heightPercent = Math.max(4, Math.round((val / maxVal) * 100));
+
+                const barWrapper = document.createElement('div');
+                barWrapper.className = 'flex flex-col items-center flex-1 min-w-0 group relative h-full justify-end';
+                barWrapper.title = `${d.date}: ${val.toLocaleString()}`;
+
+                const bar = document.createElement('div');
+                bar.className = 'w-full bg-emerald-500 rounded-t hover:bg-emerald-600 transition-all duration-300';
+                bar.style.height = `${heightPercent}%`;
+
+                if (currentPeriod === 7) {
+                    const label = document.createElement('span');
+                    label.className = 'text-[9px] font-bold text-slate-400 mt-2 truncate w-full text-center block';
+                    label.textContent = d.label;
+                    barWrapper.appendChild(bar);
+                    barWrapper.appendChild(label);
+                } else {
+                    barWrapper.appendChild(bar);
+                }
+
+                container.appendChild(barWrapper);
+            });
+        };
+
+        // Initial render
+        renderTrendsChart();
+
         const tabButtons = Array.from(document.querySelectorAll('.analytics-tab'));
         const panels = Array.from(document.querySelectorAll('[data-tab-panel]'));
         const refreshButtons = Array.from(document.querySelectorAll('.analytics-refresh'));

@@ -38,10 +38,10 @@ class NewsTest extends TestCase
     /**
      * Test homepage redirects to public news hub.
      */
-    public function test_world_cup_news_redirects_to_homepage()
+    public function test_homepage_redirects_to_world_cup_news()
     {
-        $response = $this->get('/world-cup-news');
-        $response->assertRedirect('/');
+        $response = $this->get('/');
+        $response->assertRedirect('/world-cup-news');
     }
 
     /**
@@ -68,7 +68,7 @@ class NewsTest extends TestCase
             'is_visible' => true,
         ]);
 
-        $response = $this->get('/');
+        $response = $this->get('/world-cup-news');
         $response->assertStatus(200);
         $response->assertSee('Test News Article');
         $response->assertSee('ESPN');
@@ -105,7 +105,7 @@ class NewsTest extends TestCase
         ]);
 
         // Filter by topic 1
-        $response = $this->get('/?topic=' . $topic1->id);
+        $response = $this->get('/world-cup-news?topic=' . $topic1->id);
         $response->assertSee('Topic One Article');
         $response->assertSee('Topic 1');
     }
@@ -885,8 +885,8 @@ class NewsTest extends TestCase
             'is_visible' => true,
         ]);
 
-        $this->get('/')->assertOk();
-        $this->get('/')->assertOk();
+        $this->get('/world-cup-news')->assertOk();
+        $this->get('/world-cup-news')->assertOk();
 
         $this->assertEquals('2', \App\Models\Setting::get('visits_public_total'));
         $this->assertEquals('2', \App\Models\Setting::get('visits_public_' . now()->toDateString()));
@@ -911,19 +911,15 @@ class NewsTest extends TestCase
 
         $userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
 
-        $response = $this->withHeader('User-Agent', $userAgent)
-            ->get('/')
+        $this->withHeader('User-Agent', $userAgent)
+            ->get('/world-cup-news')
             ->assertOk();
 
-        $visitorId = $response->getCookie('visitor_id')?->getValue();
-
         $this->withHeader('User-Agent', $userAgent)
-            ->withCookie('visitor_id', $visitorId)
-            ->withCredentials()
             ->postJson(route('analytics.visitor-context'), [
                 'timezone' => 'Asia/Kolkata',
                 'country_code' => 'IN',
-                'page_path' => '/',
+                'page_path' => '/world-cup-news',
             ])
             ->assertOk();
 
@@ -934,7 +930,7 @@ class NewsTest extends TestCase
         $this->assertSame('Safari', $visitor->browser_name);
         $this->assertSame('iOS', $visitor->os_name);
         $this->assertSame('IN', $visitor->country_code);
-        $this->assertSame('/', $visitor->page_path);
+        $this->assertSame('/world-cup-news', $visitor->page_path);
         $this->assertNotNull($visitor->ip_address);
     }
 

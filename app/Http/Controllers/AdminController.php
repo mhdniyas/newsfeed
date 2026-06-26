@@ -127,28 +127,7 @@ class AdminController extends Controller
         ];
         $fetchStats = $this->fetchStats();
 
-        $v2Audience = $visitorMetrics->getAudienceCardData();
-        $v2Session = $visitorMetrics->getSessionCardData();
-        $v2Content = $visitorMetrics->getContentCardData();
-        $v2Trends = $visitorMetrics->getTrendsCardData();
-
-        return view('admin.analytics', compact(
-            'visitStats',
-            'analyticsSummary',
-            'contentAnalytics',
-            'articlePageAnalytics',
-            'trendsAnalyticsSummary',
-            'lotteryAnalyticsSummary',
-            'goldAnalyticsSummary',
-            'visitorSnapshot',
-            'analyticsCharts',
-            'contentCharts',
-            'fetchStats',
-            'v2Audience',
-            'v2Session',
-            'v2Content',
-            'v2Trends'
-        ));
+        return view('admin.analytics', compact('visitStats', 'analyticsSummary', 'contentAnalytics', 'articlePageAnalytics', 'trendsAnalyticsSummary', 'lotteryAnalyticsSummary', 'goldAnalyticsSummary', 'visitorSnapshot', 'analyticsCharts', 'contentCharts', 'fetchStats'));
     }
 
     public function rankingAnalytics(VisitorMetricsService $visitorMetrics)

@@ -303,11 +303,10 @@ class KeralaLotteryController extends Controller
     protected function publicPageContext(Request $request, VisitorMetricsService $visitorMetrics): array
     {
         app(AutomaticNewsSyncService::class)->maybeTriggerDueSync('Automatic fallback sync triggered from Kerala lottery page request.');
-        $visitStats = $visitorMetrics->recordPublicVisit($request);
         $homepagePromo = app(PromotionHubService::class)->publicPayload();
 
         return [
-            'visitStats' => $visitStats,
+            'visitStats' => null,
             'tickerArticles' => collect(),
             'adsense' => [
                 'client' => config('services.adsense.client'),

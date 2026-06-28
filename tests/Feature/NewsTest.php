@@ -868,71 +868,7 @@ class NewsTest extends TestCase
         $response->assertSee('FIFA 2026', false);
     }
 
-    /**
-     * Test public visit counters increment on full page loads.
-     */
-    public function test_public_visit_counter_increments_on_page_load()
-    {
-        $topic = NewsTopic::create(['name' => 'Topic', 'keyword' => 'topic']);
 
-        NewsItem::create([
-            'news_topic_id' => $topic->id,
-            'title' => 'Counter Article',
-            'source_name' => 'FIFA',
-            'url' => 'https://example.com/counter',
-            'hash' => 'counter-hash',
-            'published_at' => now(),
-            'is_visible' => true,
-        ]);
-
-        $this->get('/world-cup-news')->assertOk();
-        $this->get('/world-cup-news')->assertOk();
-
-        $this->assertEquals('2', \App\Models\Setting::get('visits_public_total'));
-        $this->assertEquals('2', \App\Models\Setting::get('visits_public_' . now()->toDateString()));
-    }
-
-    /**
-     * Test visitor analytics store device, browser, IP, and live context.
-     */
-    public function test_visitor_context_updates_device_details_and_live_presence()
-    {
-        $topic = NewsTopic::create(['name' => 'Topic', 'keyword' => 'topic']);
-
-        NewsItem::create([
-            'news_topic_id' => $topic->id,
-            'title' => 'Tracking Article',
-            'source_name' => 'FIFA',
-            'url' => 'https://example.com/tracking',
-            'hash' => 'tracking-hash',
-            'published_at' => now(),
-            'is_visible' => true,
-        ]);
-
-        $userAgent = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
-
-        $this->withHeader('User-Agent', $userAgent)
-            ->get('/world-cup-news')
-            ->assertOk();
-
-        $this->withHeader('User-Agent', $userAgent)
-            ->postJson(route('analytics.visitor-context'), [
-                'timezone' => 'Asia/Kolkata',
-                'country_code' => 'IN',
-                'page_path' => '/world-cup-news',
-            ])
-            ->assertOk();
-
-        $visitor = VisitorAnalytic::first();
-
-        $this->assertNotNull($visitor);
-        $this->assertSame('Mobile', $visitor->device_type);
-        $this->assertSame('Safari', $visitor->browser_name);
-        $this->assertSame('iOS', $visitor->os_name);
-        $this->assertSame('IN', $visitor->country_code);
-        $this->assertSame('/world-cup-news', $visitor->page_path);
-        $this->assertNotNull($visitor->ip_address);
-    }
 
     /**
      * Test tracked article click increments analytics and redirects.

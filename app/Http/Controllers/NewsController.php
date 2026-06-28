@@ -399,10 +399,8 @@ class NewsController extends Controller
     {
         app(AutomaticNewsSyncService::class)->maybeTriggerDueSync('Automatic fallback sync triggered from public page request.');
 
-        $visitStats = $visitorMetrics->recordPublicVisit($request);
-
         return array_merge($this->publicFallbackContext(), [
-            'visitStats' => $visitStats,
+            'visitStats' => null,
             'tickerArticles' => NewsItem::visible()
                 ->where(function ($query) {
                     $query->whereNull('news_section_id')

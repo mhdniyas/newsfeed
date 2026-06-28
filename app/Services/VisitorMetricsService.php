@@ -28,103 +28,26 @@ class VisitorMetricsService
 
     public function recordPublicVisit(Request $request): array
     {
-        $fingerprint = $this->fingerprint($request);
-        $todayDate = now()->toDateString();
-        $pagePath = $this->normalizedPagePath($request);
-
-        $pageViewsTodayKey = 'page_views_public_' . $todayDate;
-        $pageViewsTotal = ((int) Setting::get('page_views_public_total', '0')) + 1;
-        $pageViewsToday = ((int) Setting::get($pageViewsTodayKey, '0')) + 1;
-
-        Setting::set('page_views_public_total', (string) $pageViewsTotal);
-        Setting::set($pageViewsTodayKey, (string) $pageViewsToday);
-
-        $visitor = VisitorAnalytic::where('fingerprint', $fingerprint)
-            ->whereDate('visit_date', $todayDate)
-            ->first();
-
-        if (!$visitor) {
-            $visitor = new VisitorAnalytic([
-                'fingerprint' => $fingerprint,
-                'visit_date' => $todayDate,
-                'visit_count' => 0,
-            ]);
-        }
-
-        $shouldCountVisit = $this->shouldCountVisit($fingerprint, $pagePath);
-
-        if ($shouldCountVisit) {
-            $todayKey = 'visits_public_' . $todayDate;
-            $total = ((int) Setting::get('visits_public_total', '0')) + 1;
-            $today = ((int) Setting::get($todayKey, '0')) + 1;
-
-            Setting::set('visits_public_total', (string) $total);
-            Setting::set($todayKey, (string) $today);
-        }
-
-        Setting::set('visits_public_last_seen_at', now()->toIso8601String());
-
-        $visitor->fill(array_merge(
-            $this->parseRequestContext($request),
-            [
-                'ip_address' => $request->ip(),
-                'last_seen_at' => now(),
-                'page_path' => $pagePath,
-                'visit_count' => ((int) $visitor->visit_count) + ($shouldCountVisit ? 1 : 0),
-            ]
-        ));
-        $visitor->save();
-
         return $this->getPublicStats();
     }
 
     public function getPublicStats(): array
     {
         return [
-            'total' => (int) Setting::get('visits_public_total', '0'),
-            'today' => (int) Setting::get('visits_public_' . now()->toDateString(), '0'),
-            'page_views_total' => (int) Setting::get('page_views_public_total', '0'),
-            'page_views_today' => (int) Setting::get('page_views_public_' . now()->toDateString(), '0'),
-            'unique_today' => VisitorAnalytic::whereDate('visit_date', now()->toDateString())->count(),
-            'unique_total' => VisitorAnalytic::distinct('fingerprint')->count('fingerprint'),
-            'live_now' => $this->liveVisitorsQuery()->count(),
-            'last_seen_at' => Setting::get('visits_public_last_seen_at'),
+            'total' => 0,
+            'today' => 0,
+            'page_views_total' => 0,
+            'page_views_today' => 0,
+            'unique_today' => 0,
+            'unique_total' => 0,
+            'live_now' => 0,
+            'last_seen_at' => null,
         ];
     }
 
     public function updateClientContext(Request $request): void
     {
-        $request->validate([
-            'timezone' => 'nullable|string|max:64',
-            'country_code' => 'nullable|string|max:8',
-            'page_path' => 'nullable|string|max:255',
-        ]);
-
-        $visitor = VisitorAnalytic::query()
-            ->where('fingerprint', $this->fingerprint($request))
-            ->whereDate('visit_date', now()->toDateString())
-            ->first();
-
-        if (!$visitor) {
-            $visitor = new VisitorAnalytic([
-                'fingerprint' => $this->fingerprint($request),
-                'visit_date' => now()->toDateString(),
-                'visit_count' => 1,
-            ]);
-        }
-
-        $visitor->fill(array_merge(
-            $this->parseRequestContext($request),
-            [
-                'ip_address' => $request->ip(),
-                'timezone' => $request->string('timezone')->toString() ?: null,
-                'country_code' => strtoupper($request->string('country_code')->toString()) ?: null,
-                'page_path' => $request->string('page_path')->toString() ?: null,
-                'last_seen_at' => now(),
-            ]
-        ));
-
-        $visitor->save();
+        // Fully disabled local visitor tracking context updates
     }
 
     public function articleAnalyticsSummary(): array
@@ -384,174 +307,37 @@ class VisitorMetricsService
 
     public function trackArticleImpressions(Request $request, array $articleIds): void
     {
-        $articleIds = array_values(array_unique(array_filter(array_map('intval', $articleIds))));
-
-        if ($articleIds === []) {
-            return;
-        }
-
-        $fingerprint = $this->fingerprint($request);
-        $newImpressions = [];
-
-        foreach ($articleIds as $articleId) {
-            $cacheKey = "article-impression:{$fingerprint}:{$articleId}";
-
-            if (Cache::add($cacheKey, now()->toIso8601String(), now()->addSeconds($this->articleViewDedupSeconds))) {
-                $newImpressions[] = $articleId;
-            }
-        }
-
-        if ($newImpressions === []) {
-            return;
-        }
-
-        DB::transaction(function () use ($newImpressions): void {
-            DB::table('news_items')
-                ->whereIn('id', $newImpressions)
-                ->increment('views_count');
-
-            DB::table('news_items')
-                ->whereIn('id', $newImpressions)
-                ->update(['last_viewed_at' => now()]);
-
-            if (!$this->dailyMetricTableReady()) {
-                return;
-            }
-
-            foreach ($newImpressions as $articleId) {
-                $metric = NewsItemDailyMetric::query()->firstOrCreate(
-                    [
-                        'news_item_id' => $articleId,
-                        'metric_date' => now()->toDateString(),
-                    ],
-                    [
-                        'views_count' => 0,
-                        'clicks_count' => 0,
-                    ]
-                );
-
-                $metric->increment('views_count');
-            }
-        });
+        // No-op
     }
 
     public function trackArticleClick(int $articleId): void
     {
-        DB::transaction(function () use ($articleId): void {
-            DB::table('news_items')
-                ->where('id', $articleId)
-                ->increment('clicks_count');
-
-            DB::table('news_items')
-                ->where('id', $articleId)
-                ->update(['last_clicked_at' => now()]);
-
-            if (!$this->dailyMetricTableReady()) {
-                return;
-            }
-
-            $metric = NewsItemDailyMetric::query()->firstOrCreate(
-                [
-                    'news_item_id' => $articleId,
-                    'metric_date' => now()->toDateString(),
-                ],
-                [
-                    'views_count' => 0,
-                    'clicks_count' => 0,
-                ]
-            );
-
-            $metric->increment('clicks_count');
-        });
+        // No-op
     }
 
     public function trackArticleDetailView(Request $request, int $articleId): void
     {
-        $fingerprint = $this->fingerprint($request);
-        $cacheKey = "article-detail:{$fingerprint}:{$articleId}";
-
-        if (!Cache::add($cacheKey, now()->toIso8601String(), now()->addSeconds($this->articleDetailDedupSeconds))) {
-            return;
-        }
-
-        $today = now()->toDateString();
-        Setting::set(
-            'article_detail_page_views_total',
-            (string) (((int) Setting::get('article_detail_page_views_total', '0')) + 1)
-        );
-        Setting::set(
-            'article_detail_page_views_' . $today,
-            (string) (((int) Setting::get('article_detail_page_views_' . $today, '0')) + 1)
-        );
-
-        DB::table('news_items')
-            ->where('id', $articleId)
-            ->increment('detail_views_count');
-
-        DB::table('news_items')
-            ->where('id', $articleId)
-            ->update(['last_detail_viewed_at' => now()]);
+        // No-op
     }
 
     public function trackTrendPageView(string $slug): void
     {
-        $todayKey = 'trend_page_views_' . now()->toDateString() . '_' . $slug;
-        $totalKey = 'trend_page_views_total_' . $slug;
-
-        Setting::set($todayKey, (string) (((int) Setting::get($todayKey, '0')) + 1));
-        Setting::set($totalKey, (string) (((int) Setting::get($totalKey, '0')) + 1));
+        // No-op
     }
 
     public function trackLotteryPageView(?int $resultId = null): array
     {
-        $today = now()->toDateString();
-        $todayKey = 'lottery_page_views_' . $today;
-        $totalKey = 'lottery_page_views_total';
-
-        $todayViews = ((int) Setting::get($todayKey, '0')) + 1;
-        $totalViews = ((int) Setting::get($totalKey, '0')) + 1;
-
-        Setting::set($todayKey, (string) $todayViews);
-        Setting::set($totalKey, (string) $totalViews);
-
-        if ($resultId) {
-            $resultTodayKey = 'lottery_result_views_' . $today . '_' . $resultId;
-            $resultTotalKey = 'lottery_result_views_total_' . $resultId;
-
-            Setting::set($resultTodayKey, (string) (((int) Setting::get($resultTodayKey, '0')) + 1));
-            Setting::set($resultTotalKey, (string) (((int) Setting::get($resultTotalKey, '0')) + 1));
-        }
-
         return [
-            'today' => $todayViews,
-            'total' => $totalViews,
+            'today' => 0,
+            'total' => 0,
         ];
     }
 
     public function trackGoldRatePageView(?string $city = null): array
     {
-        $today = now()->toDateString();
-        $todayKey = 'gold_page_views_' . $today;
-        $totalKey = 'gold_page_views_total';
-
-        $todayViews = ((int) Setting::get($todayKey, '0')) + 1;
-        $totalViews = ((int) Setting::get($totalKey, '0')) + 1;
-
-        Setting::set($todayKey, (string) $todayViews);
-        Setting::set($totalKey, (string) $totalViews);
-
-        if ($city) {
-            $city = strtolower($city);
-            $cityTodayKey = 'gold_city_views_' . $today . '_' . $city;
-            $cityTotalKey = 'gold_city_views_total_' . $city;
-
-            Setting::set($cityTodayKey, (string) (((int) Setting::get($cityTodayKey, '0')) + 1));
-            Setting::set($cityTotalKey, (string) (((int) Setting::get($cityTotalKey, '0')) + 1));
-        }
-
         return [
-            'today' => $todayViews,
-            'total' => $totalViews,
+            'today' => 0,
+            'total' => 0,
         ];
     }
 

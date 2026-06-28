@@ -143,11 +143,10 @@ class GoldRateController extends Controller
         // Trigger news sync fallbacks
         app(AutomaticNewsSyncService::class)->maybeTriggerDueSync('Automatic fallback sync triggered from Gold Rate page request.');
         
-        $visitStats = $visitorMetrics->recordPublicVisit($request);
         $homepagePromo = app(PromotionHubService::class)->publicPayload();
 
         return [
-            'visitStats' => $visitStats,
+            'visitStats' => null,
             'tickerArticles' => collect(),
             'adsense' => [
                 'client' => config('services.adsense.client'),

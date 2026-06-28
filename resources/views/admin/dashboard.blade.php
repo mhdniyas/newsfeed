@@ -221,6 +221,66 @@
         </div>
     </div>
 
+    {{-- ── Jobs Quick Panel ── --}}
+    @if(\Illuminate\Support\Facades\Schema::hasTable('job_posts'))
+        @php
+            $jobsStats = [
+                'total' => \App\Models\JobPost::count(),
+                'remote' => \App\Models\JobPost::where('is_remote', true)->count(),
+                'clicks' => \App\Models\JobPost::sum('apply_clicks_count'),
+                'latest' => \App\Models\JobPost::latest('published_at')->first(),
+            ];
+        @endphp
+        <div class="mb-8 rounded-3xl border border-indigo-200 bg-white shadow-sm overflow-hidden">
+            <div class="px-5 py-4 border-b border-indigo-100 bg-indigo-50/40">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-[11px] font-semibold uppercase tracking-[0.24em] text-indigo-600">Daily Jobs Feed</p>
+                        <h2 class="mt-1 text-lg font-extrabold text-slate-900">Jobs Management Summary</h2>
+                        <p class="mt-1 text-xs text-slate-500">Sync latest jobs from Google search or monitor click conversions on job listings.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <form action="{{ route('admin.jobs.sync') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="inline-flex items-center gap-1.5 rounded-xl border border-indigo-300 bg-indigo-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-indigo-700">
+                                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H17"/></svg>
+                                Sync Jobs Now
+                            </button>
+                        </form>
+                        <a href="{{ route('admin.jobs.index') }}" class="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:bg-slate-50">
+                            Go to Control Panel →
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="p-5">
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                        <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">Total Listings</p>
+                        <p class="mt-1 text-2xl font-black text-slate-900">{{ number_format($jobsStats['total']) }}</p>
+                    </div>
+                    <div class="rounded-2xl border border-emerald-250 bg-emerald-50 px-4 py-3">
+                        <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700/80">Remote Opportunities</p>
+                        <p class="mt-1 text-2xl font-black text-emerald-700">{{ number_format($jobsStats['remote']) }}</p>
+                    </div>
+                    <div class="rounded-2xl border border-amber-250 bg-amber-50 px-4 py-3">
+                        <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-700/80">Application Clicks</p>
+                        <p class="mt-1 text-2xl font-black text-amber-700">{{ number_format($jobsStats['clicks']) }}</p>
+                    </div>
+                </div>
+                @if($jobsStats['latest'])
+                    <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
+                        <span class="font-bold text-slate-800">Latest Crawled:</span>
+                        <a href="{{ route('jobs.show', $jobsStats['latest']->slug) }}" target="_blank" class="font-semibold text-indigo-650 hover:underline">
+                            {{ $jobsStats['latest']->title }}
+                        </a>
+                        at {{ $jobsStats['latest']->company }} ({{ $jobsStats['latest']->published_at->diffForHumans() }})
+                    </div>
+                @endif
+            </div>
+        </div>
+    @endif
+
     {{-- ── Kerala Lottery Admin Panel ── --}}
     @if(\Illuminate\Support\Facades\Schema::hasTable('lottery_results'))
     <div class="mb-8 rounded-3xl border border-emerald-200/80 bg-white shadow-sm overflow-hidden">

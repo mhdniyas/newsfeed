@@ -129,12 +129,22 @@ class KeralaLotteryTest extends TestCase
         $this->get(route('kerala-lottery.today'))->assertOk();
         $this->get(route('kerala-lottery.show', $result))->assertOk();
 
+        // Run the analytics aggregation command
+        $this->artisan('analytics:aggregate');
+
         $today = now()->toDateString();
 
-        $this->assertSame('3', Setting::get('lottery_page_views_' . $today));
-        $this->assertSame('3', Setting::get('lottery_page_views_total'));
-        $this->assertSame('2', Setting::get('lottery_result_views_' . $today . '_' . $result->id));
-        $this->assertSame('2', Setting::get('lottery_result_views_total_' . $result->id));
+        $this->assertDatabaseHas('analytics_lottery', [
+            'lottery_result_id' => null,
+            'date' => $today,
+            'views_count' => 2,
+        ]);
+
+        $this->assertDatabaseHas('analytics_lottery', [
+            'lottery_result_id' => $result->id,
+            'date' => $today,
+            'views_count' => 1,
+        ]);
     }
 
     public function test_sync_service_fetches_listing_downloads_pdf_and_parses_top_prizes(): void

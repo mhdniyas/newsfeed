@@ -4,6 +4,8 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\KeralaLotteryController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\GoldRateController;
+use App\Http\Controllers\JobController;
+use App\Http\Controllers\AnalyticsController;
 use Illuminate\Support\Facades\Route;
 
 // Public News Explorer Routes
@@ -20,6 +22,12 @@ Route::get('/kerala-lottery/{result:slug}', [KeralaLotteryController::class, 'sh
 // Public Gold Rate Routes
 Route::get('/gold-rate-today', [GoldRateController::class, 'index'])->name('news.gold-rate.index');
 Route::get('/gold-rate/{city}', [GoldRateController::class, 'show'])->name('news.gold-rate');
+
+// Public Jobs Board Routes
+Route::get('/jobs', [JobController::class, 'index'])->name('jobs.index');
+Route::get('/jobs/remote', [JobController::class, 'remote'])->name('jobs.remote');
+Route::get('/jobs/{slug}', [JobController::class, 'show'])->name('jobs.show');
+Route::get('/jobs/{slug}/apply', [JobController::class, 'apply'])->name('jobs.apply');
 
 Route::get('/world-cup-news/top-stories', [NewsController::class, 'topStories'])->name('news.top');
 Route::get('/world-cup-news/trending', [NewsController::class, 'trending'])->name('news.trending');
@@ -96,4 +104,17 @@ Route::middleware(\App\Http\Middleware\AdminAuth::class)->group(function () {
     Route::post('/admin/gold-rates/sync', [AdminController::class, 'goldRatesSync'])->name('admin.gold-rates.sync');
     Route::post('/admin/gold-rates/approve/{id}', [AdminController::class, 'goldRatesApprove'])->name('admin.gold-rates.approve');
     Route::post('/admin/gold-rates/reject/{id}', [AdminController::class, 'goldRatesReject'])->name('admin.gold-rates.reject');
+
+    // Jobs Admin
+    Route::get('/admin/jobs', [AdminController::class, 'jobsIndex'])->name('admin.jobs.index');
+    Route::post('/admin/jobs/sync', [AdminController::class, 'jobsSync'])->name('admin.jobs.sync');
+    Route::post('/admin/jobs/delete/{id}', [AdminController::class, 'jobsDelete'])->name('admin.jobs.delete');
+
+    // High-Performance Analytics Admin Routes
+    Route::get('/admin/analytics', [AnalyticsController::class, 'index'])->name('admin.analytics.index');
+    Route::get('/admin/analytics/realtime', [AnalyticsController::class, 'realtime'])->name('admin.analytics.realtime');
+    Route::get('/admin/analytics/realtime/data', [AnalyticsController::class, 'realtimeData'])->name('admin.analytics.realtime.data');
+    Route::get('/admin/analytics/modules', [AnalyticsController::class, 'modules'])->name('admin.analytics.modules');
+    Route::get('/admin/analytics/bots', [AnalyticsController::class, 'bots'])->name('admin.analytics.bots');
+    Route::get('/admin/analytics/performance', [AnalyticsController::class, 'performance'])->name('admin.analytics.performance');
 });

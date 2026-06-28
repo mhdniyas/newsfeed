@@ -11,7 +11,9 @@ use App\Models\LotteryResult;
 use App\Models\Setting;
 use App\Models\User;
 use App\Models\GoldRate;
+use App\Models\JobPost;
 use App\Services\GoldRateFetchService;
+use App\Services\JobFetchService;
 use App\Services\AutomaticNewsSyncService;
 use App\Services\AutomaticTrendSyncService;
 use App\Services\KeralaLotteryService;
@@ -845,10 +847,10 @@ class AdminController extends Controller
             'parse_failed_results' => LotteryResult::query()->whereIn('status', ['parse_failed', 'failed'])->count(),
             'pdf_waiting_results' => LotteryResult::query()->whereIn('status', ['waiting', 'pdf_available'])->count(),
             'today_result_count' => LotteryResult::query()->whereDate('result_date', $today)->count(),
-            'page_views_total' => (int) Setting::get('lottery_page_views_total', '0'),
-            'page_views_today' => (int) Setting::get('lottery_page_views_' . $today, '0'),
-            'today_result_views_total' => $todayResult ? (int) Setting::get('lottery_result_views_total_' . $todayResult->id, '0') : 0,
-            'today_result_views_today' => $todayResult ? (int) Setting::get('lottery_result_views_' . $today . '_' . $todayResult->id, '0') : 0,
+            'page_views_total' => (int) (Schema::hasTable('analytics_lottery') ? DB::table('analytics_lottery')->sum('views_count') : 0),
+            'page_views_today' => (int) (Schema::hasTable('analytics_lottery') ? DB::table('analytics_lottery')->where('date', $today)->sum('views_count') : 0),
+            'today_result_views_total' => $todayResult && Schema::hasTable('analytics_lottery') ? (int) DB::table('analytics_lottery')->where('lottery_result_id', $todayResult->id)->sum('views_count') : 0,
+            'today_result_views_today' => $todayResult && Schema::hasTable('analytics_lottery') ? (int) DB::table('analytics_lottery')->where('lottery_result_id', $todayResult->id)->where('date', $today)->sum('views_count') : 0,
             'today_status' => $todayResult?->status ?? $lastStatus,
             'last_attempt_at' => $lastAttemptAt ? Carbon::parse($lastAttemptAt) : null,
             'last_status' => $lastStatus,
@@ -1379,5 +1381,59 @@ class AdminController extends Controller
         $rate->delete();
 
         return back()->with('success', 'Rejected and deleted the flagged gold rate entry.');
+    }
+
+    /**
+     * Display a listing of job posts in the admin panel.
+     */
+    public function jobsIndex(Request $request)
+    {
+        $search = trim((string) $request->input('q', ''));
+        $query = JobPost::query();
+
+        if ($search !== '') {
+            $like = '%' . $search . '%';
+            $query->where(function ($q) use ($like) {
+                $q->where('title', 'like', $like)
+                  ->orWhere('company', 'like', $like)
+                  ->orWhere('category', 'like', $like)
+                  ->orWhere('location', 'like', $like);
+            });
+        }
+
+        $jobs = $query->orderByDesc('published_at')->paginate(20)->withQueryString();
+        
+        $jobsStats = [
+            'total' => JobPost::count(),
+            'remote' => JobPost::where('is_remote', true)->count(),
+            'clicks' => JobPost::sum('apply_clicks_count'),
+            'views' => JobPost::sum('views_count'),
+        ];
+
+        return view('admin.jobs', compact('jobs', 'jobsStats', 'search'));
+    }
+
+    /**
+     * Trigger manual sync of job listings.
+     */
+    public function jobsSync(JobFetchService $fetchService)
+    {
+        try {
+            $results = $fetchService->sync();
+            return back()->with('success', "Jobs synchronization completed. Added {$results['new_jobs']} new jobs, skipped {$results['skipped_duplicates']} duplicates.");
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Failed to synchronize jobs: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Delete a job post from the database.
+     */
+    public function jobsDelete(int $id)
+    {
+        $job = JobPost::findOrFail($id);
+        $job->delete();
+
+        return back()->with('success', 'Job post deleted successfully.');
     }
 }

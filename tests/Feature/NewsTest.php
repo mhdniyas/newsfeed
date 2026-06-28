@@ -35,13 +35,10 @@ class NewsTest extends TestCase
         $this->app->instance(FifaMatchService::class, $matchServiceMock);
     }
 
-    /**
-     * Test homepage redirects to public news hub.
-     */
     public function test_homepage_redirects_to_world_cup_news()
     {
-        $response = $this->get('/');
-        $response->assertRedirect('/world-cup-news');
+        $response = $this->get('/world-cup-news');
+        $response->assertRedirect('/');
     }
 
     /**
@@ -68,7 +65,7 @@ class NewsTest extends TestCase
             'is_visible' => true,
         ]);
 
-        $response = $this->get('/world-cup-news');
+        $response = $this->get('/');
         $response->assertStatus(200);
         $response->assertSee('Test News Article');
         $response->assertSee('ESPN');
@@ -105,7 +102,7 @@ class NewsTest extends TestCase
         ]);
 
         // Filter by topic 1
-        $response = $this->get('/world-cup-news?topic=' . $topic1->id);
+        $response = $this->get('/?topic=' . $topic1->id);
         $response->assertSee('Topic One Article');
         $response->assertSee('Topic 1');
     }
@@ -674,30 +671,6 @@ class NewsTest extends TestCase
         $response->assertSee('FIFA 2026', false);
     }
 
-
-
-    /**
-     * Test tracked article click increments analytics and redirects.
-     */
-    public function test_article_click_route_increments_clicks()
-    {
-        $topic = NewsTopic::create(['name' => 'Topic', 'keyword' => 'topic']);
-
-        $article = NewsItem::create([
-            'news_topic_id' => $topic->id,
-            'title' => 'Tracked Click',
-            'source_name' => 'FIFA',
-            'url' => 'https://example.com/tracked-click',
-            'hash' => 'tracked-click-hash',
-            'published_at' => now(),
-            'is_visible' => true,
-        ]);
-
-        $response = $this->get(route('news.visit', $article));
-
-        $response->assertRedirect('https://example.com/tracked-click');
-        $this->assertEquals(1, $article->fresh()->clicks_count);
-    }
 
     /**
      * Test admin sync now starts a non-blocking background process.

@@ -51,3 +51,18 @@ Schedule::command('gold:fetch-rates')
     ->timezone('Asia/Kolkata')
     ->at('20:30')
     ->withoutOverlapping();
+
+// Fetch Jobs from Google News RSS (Every 10 minutes)
+Schedule::command('jobs:fetch')
+    ->everyTenMinutes()
+    ->withoutOverlapping();
+
+// High-Performance Analytics Schedules
+Schedule::command('analytics:flush')
+    ->everyMinute()
+    ->withoutOverlapping();
+
+Schedule::command('analytics:aggregate')
+    ->hourly()
+    ->withoutOverlapping();
+

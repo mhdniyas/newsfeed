@@ -89,6 +89,7 @@
                 <a href="{{ route('pages.affiliate') }}" class="hover:text-slate-950 transition font-medium">Affiliate Disclosure</a>
                 <a href="{{ route('kerala-lottery.index') }}" class="hover:text-slate-950 transition font-medium">Kerala Lottery</a>
                 <a href="{{ route('news.gold-rate.index') }}" class="hover:text-slate-950 transition font-medium">Gold Rates</a>
+                <a href="{{ route('jobs.index') }}" class="hover:text-slate-950 transition font-medium">Jobs Feed</a>
             </div>
         </div>
     </div>

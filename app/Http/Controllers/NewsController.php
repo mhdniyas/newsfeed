@@ -211,7 +211,6 @@ class NewsController extends Controller
     {
         return $this->renderCuratedFeed(
             $request,
-            $visitorMetrics,
             [
                 'eyebrow' => 'Featured Feed',
                 'title' => 'Top Stories',
@@ -233,7 +232,6 @@ class NewsController extends Controller
     {
         return $this->renderCuratedFeed(
             $request,
-            $visitorMetrics,
             [
                 'eyebrow' => 'Latest Feed',
                 'title' => 'Trending',
@@ -260,7 +258,6 @@ class NewsController extends Controller
 
         return $this->renderCuratedFeed(
             $request,
-            $visitorMetrics,
             [
                 'eyebrow' => 'Sports Feed',
                 'title' => 'FIFA',

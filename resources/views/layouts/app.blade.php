@@ -157,6 +157,9 @@
         $showAdminSidebar = session('admin_authenticated') && request()->routeIs('admin.*');
         $adminSidebarItems = [
             ['label' => 'Dashboard', 'href' => route('admin.dashboard'), 'active' => request()->routeIs('admin.dashboard'), 'tone' => 'emerald'],
+            ['label' => 'Analytics', 'href' => route('admin.analytics.index'), 'active' => request()->routeIs('admin.analytics*'), 'tone' => 'indigo'],
+            ['label' => 'Jobs', 'href' => route('admin.jobs.index'), 'active' => request()->routeIs('admin.jobs*'), 'tone' => 'violet'],
+            ['label' => 'Gold Rates', 'href' => route('admin.gold-rates.index'), 'active' => request()->routeIs('admin.gold-rates*'), 'tone' => 'amber'],
             ['label' => 'Trends', 'href' => route('admin.trends'), 'active' => request()->routeIs('admin.trends*'), 'tone' => 'sky'],
             ['label' => 'Promotions', 'href' => route('admin.promotions'), 'active' => request()->routeIs('admin.promotions*'), 'tone' => 'violet'],
             ['label' => 'Destroy', 'href' => route('admin.destroy'), 'active' => request()->routeIs('admin.destroy*'), 'tone' => 'rose'],
@@ -327,6 +330,9 @@
                         <a href="{{ route('admin.dashboard') }}" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-950 text-white border border-slate-950 transition-all duration-200 hover:bg-slate-800">
                             Admin
                         </a>
+                        <a href="{{ route('jobs.index') }}" class="hidden text-xs font-semibold px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 transition-all duration-200 hover:bg-indigo-100 sm:inline-flex">
+                            Jobs
+                        </a>
                         <a href="{{ route('news.gold-rate.index') }}" class="hidden text-xs font-semibold px-3 py-1.5 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 transition-all duration-200 hover:bg-amber-100 sm:inline-flex">
                             Gold Rates
                         </a>
@@ -337,6 +343,9 @@
                             Logout
                         </a>
                     @else
+                        <a href="{{ route('jobs.index') }}" class="hidden rounded-full border border-indigo-200 bg-indigo-50 px-3.5 py-2 text-xs font-bold text-indigo-700 transition hover:bg-indigo-100 sm:inline-flex">
+                            Jobs
+                        </a>
                         <a href="{{ route('news.gold-rate.index') }}" class="hidden rounded-full border border-amber-200 bg-amber-50 px-3.5 py-2 text-xs font-bold text-amber-700 transition hover:bg-amber-100 sm:inline-flex">
                             Gold Rates
                         </a>

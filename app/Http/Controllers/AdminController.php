@@ -18,7 +18,6 @@ use App\Services\KeralaLotteryService;
 use App\Services\NewsRetentionService;
 use App\Services\PromotionHubService;
 use App\Services\TrendingNewsService;
-use App\Services\VisitorMetricsService;
 use Illuminate\Bus\UniqueLock;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -77,7 +76,7 @@ class AdminController extends Controller
     /**
      * Display the admin dashboard.
      */
-    public function index(Request $request, VisitorMetricsService $visitorMetrics, AutomaticNewsSyncService $automaticNewsSync)
+    public function index(Request $request, AutomaticNewsSyncService $automaticNewsSync)
     {
         $automaticNewsSync->maybeTriggerDueSync('Automatic fallback sync triggered from admin dashboard request.');
 
@@ -102,41 +101,6 @@ class AdminController extends Controller
         $fetchStats = $this->fetchStats();
 
         return view('admin.dashboard', compact('sections', 'articles', 'selectedTopicId', 'selectedSectionId', 'search', 'adminName', 'sort', 'syncState', 'fetchStats'));
-    }
-
-    /**
-     * Display the dedicated analytics page.
-     */
-    public function analytics(VisitorMetricsService $visitorMetrics)
-    {
-        $visitStats = $visitorMetrics->getPublicStats();
-        $visitorSnapshot = $visitorMetrics->adminAnalyticsSnapshot();
-        $analyticsSummary = $this->analyticsSummary($visitorMetrics);
-        $contentAnalytics = $this->contentAnalyticsSummary(app(NewsRetentionService::class));
-        $articlePageAnalytics = $this->articlePageAnalyticsSummary();
-        $trendsAnalyticsSummary = $visitorMetrics->trendsAnalyticsSummary();
-        $lotteryAnalyticsSummary = $this->keralaLotteryAnalyticsSummary();
-        $goldAnalyticsSummary = $this->goldRatesAnalyticsSummary();
-        $analyticsCharts = [
-            'live_users' => $this->liveUserChart(),
-            'news_total' => $this->newsTotalChart(),
-        ];
-        $contentCharts = [
-            'hourly_publish' => $this->hourlyPublishChart(),
-            'daily_publish' => $this->newsTotalChart(),
-        ];
-        $fetchStats = $this->fetchStats();
-
-        return view('admin.analytics', compact('visitStats', 'analyticsSummary', 'contentAnalytics', 'articlePageAnalytics', 'trendsAnalyticsSummary', 'lotteryAnalyticsSummary', 'goldAnalyticsSummary', 'visitorSnapshot', 'analyticsCharts', 'contentCharts', 'fetchStats'));
-    }
-
-    public function rankingAnalytics(VisitorMetricsService $visitorMetrics)
-    {
-        $visitStats = $visitorMetrics->getPublicStats();
-        $xpDashboard = $visitorMetrics->adminXpDashboard();
-        $fetchStats = $this->fetchStats();
-
-        return view('admin.analytics-ranking', compact('visitStats', 'xpDashboard', 'fetchStats'));
     }
 
     public function destroyPage(Request $request, NewsRetentionService $newsRetention)
@@ -661,7 +625,7 @@ class AdminController extends Controller
         return $automaticNewsSync->fetchStats();
     }
 
-    protected function analyticsSummary(VisitorMetricsService $visitorMetrics): array
+    protected function analyticsSummary(): array
     {
         $today = now()->toDateString();
         $masterPointExpression = '(FLOOR(views_count / 1000) * 1000) + (clicks_count * 25) + (CASE WHEN views_count > 0 AND ((clicks_count * 100.0) / views_count) > 5 THEN 100 ELSE 0 END)';

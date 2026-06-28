@@ -42,7 +42,7 @@
                     @endif
                     <p><span class="font-bold text-slate-900">Published:</span> {{ optional($article->published_at)->format('M d, Y H:i') ?? 'Unknown' }}</p>
                 </div>
-                <a href="{{ route('news.visit', $article) }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white transition hover:bg-slate-800">
+                <a href="{{ $article->url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center rounded-xl bg-slate-950 px-4 py-3 text-sm font-bold text-white transition hover:bg-slate-800">
                     Read Original Source
                 </a>
             </div>
@@ -66,7 +66,7 @@
             @if($article->canonical_url)
                 <div class="mt-8 rounded-[1.5rem] border border-slate-200 bg-white px-5 py-4">
                     <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Courtesy Link</p>
-                    <a href="{{ route('news.visit', $article) }}" target="_blank" rel="noopener noreferrer" class="mt-2 block break-all text-sm font-semibold text-emerald-700 hover:text-emerald-800">
+                    <a href="{{ $article->canonical_url }}" target="_blank" rel="noopener noreferrer" class="mt-2 block break-all text-sm font-semibold text-emerald-700 hover:text-emerald-800">
                         {{ $article->canonical_url }}
                     </a>
                 </div>

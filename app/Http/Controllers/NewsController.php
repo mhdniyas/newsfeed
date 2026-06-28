@@ -12,7 +12,6 @@ use App\Services\FifaMatchService;
 use App\Services\FifaPlaceholderImageService;
 use App\Services\PromotionHubService;
 use App\Services\TrendLandingService;
-use App\Services\VisitorMetricsService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -31,7 +30,7 @@ class NewsController extends Controller
     /**
      * Display the public World Cup News Explorer.
      */
-    public function index(Request $request, VisitorMetricsService $visitorMetrics, FifaMatchService $fifaMatchService)
+    public function index(Request $request, FifaMatchService $fifaMatchService)
     {
         if (!$this->publicNewsSchemaReady()) {
             return $this->renderUnavailableHomepage($request);
@@ -109,7 +108,7 @@ class NewsController extends Controller
             ]);
         }
 
-        $sharedPublicData = $this->publicPageContext($request, $visitorMetrics);
+        $sharedPublicData = $this->publicPageContext($request);
         $homepageSections = $sections->map(function (NewsSection $section) {
             $section->setRelation('latestArticles', NewsItem::query()
                 ->visible()
@@ -129,7 +128,7 @@ class NewsController extends Controller
 
     protected function publicNewsSchemaReady(): bool
     {
-        foreach (['news_items', 'news_sections', 'news_topics', 'settings', 'visitor_analytics'] as $table) {
+        foreach (['news_items', 'news_sections', 'news_topics', 'settings'] as $table) {
             if (!Schema::hasTable($table)) {
                 return false;
             }
@@ -157,7 +156,7 @@ class NewsController extends Controller
         return view('news.index', array_merge($this->publicFallbackContext(), compact('articles', 'sections', 'topics', 'selectedTopicId', 'selectedSection', 'search', 'featuredCount', 'homepageSections', 'showSectionLanding', 'trendPages')));
     }
 
-    public function showArticle(Request $request, NewsItem $article, VisitorMetricsService $visitorMetrics, ArticleContentExtractionService $extractionService)
+    public function showArticle(Request $request, NewsItem $article, ArticleContentExtractionService $extractionService)
     {
         if (!$this->publicNewsSchemaReady() || !$article->is_visible) {
             abort(404);
@@ -170,8 +169,7 @@ class NewsController extends Controller
             $article->loadMissing(['newsTopic', 'newsSection']);
         }
 
-        $pageContext = $this->publicPageContext($request, $visitorMetrics);
-        $visitorMetrics->trackArticleDetailView($request, $article->id);
+        $pageContext = $this->publicPageContext($request);
         $relatedArticles = NewsItem::visible()
             ->with(['newsTopic', 'newsSection'])
             ->where('id', '!=', $article->id)
@@ -186,7 +184,7 @@ class NewsController extends Controller
         return view('news.article', array_merge($pageContext, compact('article', 'relatedArticles')));
     }
 
-    public function trendPage(string $slug, Request $request, VisitorMetricsService $visitorMetrics, TrendLandingService $trendLandingService)
+    public function trendPage(string $slug, Request $request, TrendLandingService $trendLandingService)
     {
         $page = $trendLandingService->resolve($slug);
 
@@ -196,21 +194,20 @@ class NewsController extends Controller
 
         $articles = $trendLandingService->articlesFor($page);
         $this->trackArticleViews($request, $articles->pluck('id')->all());
-        $pageContext = $this->publicPageContext($request, $visitorMetrics);
-        $visitorMetrics->trackTrendPageView($slug);
+        $pageContext = $this->publicPageContext($request);
 
         return view('news.trend-page', array_merge($pageContext, compact('page', 'articles')));
     }
 
-    public function fixtures(Request $request, VisitorMetricsService $visitorMetrics, FifaMatchService $fifaMatchService)
+    public function fixtures(Request $request, FifaMatchService $fifaMatchService)
     {
         return view('news.fixtures', array_merge(
-            $this->publicPageContext($request, $visitorMetrics),
+            $this->publicPageContext($request),
             ['scoreboard' => $this->safeScoreboard($fifaMatchService)]
         ));
     }
 
-    public function topStories(Request $request, VisitorMetricsService $visitorMetrics)
+    public function topStories(Request $request)
     {
         return $this->renderCuratedFeed(
             $request,
@@ -232,7 +229,7 @@ class NewsController extends Controller
         );
     }
 
-    public function trending(Request $request, VisitorMetricsService $visitorMetrics)
+    public function trending(Request $request)
     {
         return $this->renderCuratedFeed(
             $request,
@@ -254,7 +251,7 @@ class NewsController extends Controller
         );
     }
 
-    public function fifa(Request $request, VisitorMetricsService $visitorMetrics)
+    public function fifa(Request $request)
     {
         $sportsSection = NewsSection::query()
             ->where('slug', 'sports')
@@ -287,15 +284,15 @@ class NewsController extends Controller
         );
     }
 
-    public function scores(Request $request, VisitorMetricsService $visitorMetrics, FifaMatchService $fifaMatchService)
+    public function scores(Request $request, FifaMatchService $fifaMatchService)
     {
         return view('news.scores', array_merge(
-            $this->publicPageContext($request, $visitorMetrics),
+            $this->publicPageContext($request),
             ['scoreboard' => $this->safeScoreboard($fifaMatchService)]
         ));
     }
 
-    public function gallery(Request $request, VisitorMetricsService $visitorMetrics)
+    public function gallery(Request $request)
     {
         $articles = NewsItem::visible()
             ->whereNotNull('image_url')
@@ -314,12 +311,12 @@ class NewsController extends Controller
         ];
 
         return view('news.gallery', array_merge(
-            $this->publicPageContext($request, $visitorMetrics),
+            $this->publicPageContext($request),
             compact('articles', 'galleryStats')
         ));
     }
 
-    public function aiNews(Request $request, VisitorMetricsService $visitorMetrics)
+    public function aiNews(Request $request)
     {
         $aiSection = NewsSection::query()
             ->where('slug', 'ai')
@@ -345,14 +342,13 @@ class NewsController extends Controller
             : collect();
 
         return view('news.ai', array_merge(
-            $this->publicPageContext($request, $visitorMetrics),
+            $this->publicPageContext($request),
             compact('articles', 'aiSection', 'aiTopics')
         ));
     }
 
     protected function renderCuratedFeed(
         Request $request,
-        VisitorMetricsService $visitorMetrics,
         array $feedMeta,
         callable $scope
     ) {
@@ -368,7 +364,7 @@ class NewsController extends Controller
         $feedMeta['stat_value'] = max($articles->total(), $articles->count());
 
         return view('news.feed', array_merge(
-            $this->publicPageContext($request, $visitorMetrics),
+            $this->publicPageContext($request),
             [
                 'articles' => $articles,
                 'feedMeta' => $feedMeta,
@@ -395,7 +391,7 @@ class NewsController extends Controller
         }
     }
 
-    protected function publicPageContext(Request $request, VisitorMetricsService $visitorMetrics): array
+    protected function publicPageContext(Request $request): array
     {
         app(AutomaticNewsSyncService::class)->maybeTriggerDueSync('Automatic fallback sync triggered from public page request.');
 
@@ -506,19 +502,7 @@ class NewsController extends Controller
         }
     }
 
-    public function trackArticleClick(NewsItem $article): RedirectResponse
-    {
-        app(VisitorMetricsService::class)->trackArticleClick($article->id);
 
-        return redirect()->away($article->url);
-    }
-
-    public function updateVisitorContext(Request $request, VisitorMetricsService $visitorMetrics): JsonResponse
-    {
-        $visitorMetrics->updateClientContext($request);
-
-        return response()->json(['ok' => true]);
-    }
 
     public function refreshScoreboard(FifaMatchService $fifaMatchService): JsonResponse
     {
@@ -535,7 +519,7 @@ class NewsController extends Controller
 
     protected function trackArticleViews(Request $request, array $articleIds): void
     {
-        app(VisitorMetricsService::class)->trackArticleImpressions($request, $articleIds);
+        
     }
 
     protected function nextScheduledFetchAt(int $intervalMinutes): \Illuminate\Support\Carbon
@@ -575,7 +559,7 @@ class NewsController extends Controller
     /**
      * Display a static policy or info page.
      */
-    public function staticPage(string $page, Request $request, VisitorMetricsService $visitorMetrics)
+    public function staticPage(string $page, Request $request)
     {
         $allowedPages = [
             'about-us' => 'about',
@@ -591,7 +575,7 @@ class NewsController extends Controller
         }
 
         $viewName = 'news.' . $allowedPages[$page];
-        $pageContext = $this->publicPageContext($request, $visitorMetrics);
+        $pageContext = $this->publicPageContext($request);
 
         return view($viewName, $pageContext);
     }

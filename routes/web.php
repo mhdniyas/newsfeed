@@ -31,8 +31,6 @@ Route::get('/world-cup-news/gallery', [NewsController::class, 'gallery'])->name(
 Route::post('/world-cup-news/scoreboard/refresh', [NewsController::class, 'refreshScoreboard'])->name('news.scoreboard.refresh');
 Route::get('/media/fifa-placeholder/{seed}.svg', [NewsController::class, 'placeholderImage'])->name('media.placeholder');
 Route::get('/media/news-image/{article}', [NewsController::class, 'articleImage'])->name('media.news-image');
-Route::get('/news/{article}/visit', [NewsController::class, 'trackArticleClick'])->name('news.visit');
-Route::post('/analytics/visitor-context', [NewsController::class, 'updateVisitorContext'])->name('analytics.visitor-context');
 Route::get('/api/section/{section}/more', [NewsController::class, 'sectionMoreArticles'])->name('news.section.more');
 
 // Static Informational Pages
@@ -51,8 +49,6 @@ Route::any('/admin/logout', [AdminController::class, 'logout'])->name('admin.log
 // Admin Dashboard Routes
 Route::middleware(\App\Http\Middleware\AdminAuth::class)->group(function () {
     Route::get('/admin', [AdminController::class, 'index'])->name('admin.dashboard');
-    Route::get('/admin/analytics', [AdminController::class, 'analytics'])->name('admin.analytics');
-    Route::get('/admin/analytics/ranking', [AdminController::class, 'rankingAnalytics'])->name('admin.analytics.ranking');
     Route::get('/admin/trends', [AdminController::class, 'trends'])->name('admin.trends');
     Route::get('/admin/trends/sync-status', [AdminController::class, 'trendsSyncStatus'])->name('admin.trends.sync-status');
     Route::get('/admin/destroy', [AdminController::class, 'destroyPage'])->name('admin.destroy');

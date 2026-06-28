@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\GoldRate;
 use App\Services\AutomaticNewsSyncService;
 use App\Services\PromotionHubService;
-use App\Services\VisitorMetricsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
@@ -26,15 +25,15 @@ class GoldRateController extends Controller
     /**
      * Display today's gold rates for India (national fallback).
      */
-    public function index(Request $request, VisitorMetricsService $visitorMetrics)
+    public function index(Request $request)
     {
-        return $this->show($request, $visitorMetrics, 'india');
+        return $this->show($request, 'india');
     }
 
     /**
      * Display gold rates for a specific city.
      */
-    public function show(Request $request, VisitorMetricsService $visitorMetrics, string $citySlug)
+    public function show(Request $request, string $citySlug)
     {
         $citySlug = strtolower(trim($citySlug));
         
@@ -49,9 +48,6 @@ class GoldRateController extends Controller
 
         $cityMeta = $this->supportedCities[$citySlug];
         $cityName = $cityMeta['name'];
-
-        // Track page view
-        $visitorMetrics->trackGoldRatePageView($cityName);
 
         // Fetch schema status
         $schemaReady = Schema::hasTable('gold_rates');
@@ -120,7 +116,7 @@ class GoldRateController extends Controller
             }
         }
 
-        $pageContext = $this->publicPageContext($request, $visitorMetrics);
+        $pageContext = $this->publicPageContext($request);
 
         return view('news.gold-rate', array_merge($pageContext, [
             'cityMeta' => $cityMeta,
@@ -138,7 +134,7 @@ class GoldRateController extends Controller
     /**
      * Provide common public page context, adsense parameters, and promotion payload.
      */
-    protected function publicPageContext(Request $request, VisitorMetricsService $visitorMetrics): array
+    protected function publicPageContext(Request $request): array
     {
         // Trigger news sync fallbacks
         app(AutomaticNewsSyncService::class)->maybeTriggerDueSync('Automatic fallback sync triggered from Gold Rate page request.');

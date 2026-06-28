@@ -157,8 +157,6 @@
         $showAdminSidebar = session('admin_authenticated') && request()->routeIs('admin.*');
         $adminSidebarItems = [
             ['label' => 'Dashboard', 'href' => route('admin.dashboard'), 'active' => request()->routeIs('admin.dashboard'), 'tone' => 'emerald'],
-            ['label' => 'Analytics', 'href' => route('admin.analytics'), 'active' => request()->routeIs('admin.analytics') || request()->routeIs('admin.analytics.ranking'), 'tone' => 'amber'],
-            ['label' => 'Ranking', 'href' => route('admin.analytics.ranking'), 'active' => request()->routeIs('admin.analytics.ranking'), 'tone' => 'amber'],
             ['label' => 'Trends', 'href' => route('admin.trends'), 'active' => request()->routeIs('admin.trends*'), 'tone' => 'sky'],
             ['label' => 'Promotions', 'href' => route('admin.promotions'), 'active' => request()->routeIs('admin.promotions*'), 'tone' => 'violet'],
             ['label' => 'Destroy', 'href' => route('admin.destroy'), 'active' => request()->routeIs('admin.destroy*'), 'tone' => 'rose'],
@@ -321,7 +319,6 @@
                 <div class="flex items-center gap-2 sm:gap-3 shrink-0">
                     @if($showAdminSidebar)
                         <span class="hidden rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.16em] text-emerald-700 sm:inline-flex">Admin Live</span>
-                        <a href="{{ route('admin.analytics') }}" class="hidden rounded-[1rem] border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100 sm:inline-flex">Analytics</a>
                         <a href="{{ route('admin.destroy') }}" class="hidden rounded-[1rem] border border-rose-200 bg-rose-50 px-3.5 py-2 text-xs font-bold text-rose-700 transition hover:bg-rose-100 sm:inline-flex">Destroy</a>
                         <a href="{{ route('admin.logout') }}" class="inline-flex items-center justify-center rounded-[1rem] border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50">
                             Logout

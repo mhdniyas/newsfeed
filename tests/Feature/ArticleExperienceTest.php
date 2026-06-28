@@ -69,26 +69,6 @@ class ArticleExperienceTest extends TestCase
         $response->assertSee(route('news.article', ['article' => $article->slug]), false);
     }
 
-    public function test_source_click_route_still_redirects_and_tracks_clicks(): void
-    {
-        [$section, $topic] = $this->makeContext();
-
-        $article = NewsItem::create([
-            'news_topic_id' => $topic->id,
-            'news_section_id' => $section->id,
-            'title' => 'Tracked Source Story',
-            'source_name' => 'Example News',
-            'url' => 'https://example.com/tracked-source-story',
-            'hash' => NewsItem::generateHash('Tracked Source Story', 'https://example.com/tracked-source-story'),
-            'published_at' => now(),
-            'is_visible' => true,
-        ]);
-
-        $response = $this->get(route('news.visit', $article));
-
-        $response->assertRedirect('https://example.com/tracked-source-story');
-        $this->assertSame(1, $article->fresh()->clicks_count);
-    }
 
     public function test_article_extraction_service_saves_cleaned_source_content(): void
     {

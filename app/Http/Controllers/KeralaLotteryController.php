@@ -6,7 +6,6 @@ use App\Models\LotteryResult;
 use App\Services\AutomaticNewsSyncService;
 use App\Services\KeralaLotteryService;
 use App\Services\PromotionHubService;
-use App\Services\VisitorMetricsService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
@@ -15,10 +14,9 @@ use Illuminate\Support\Facades\Storage;
 
 class KeralaLotteryController extends Controller
 {
-    public function index(Request $request, VisitorMetricsService $visitorMetrics)
+    public function index(Request $request)
     {
-        $pageContext = $this->publicPageContext($request, $visitorMetrics);
-        $visitorMetrics->trackLotteryPageView();
+        $pageContext = $this->publicPageContext($request);
         $todayResult = $this->todayResult();
         $search      = trim((string) $request->input('q', ''));
 
@@ -44,11 +42,10 @@ class KeralaLotteryController extends Controller
         return view('lottery.index', array_merge($pageContext, compact('todayResult', 'results', 'search')));
     }
 
-    public function today(Request $request, VisitorMetricsService $visitorMetrics)
+    public function today(Request $request)
     {
-        $pageContext = $this->publicPageContext($request, $visitorMetrics);
+        $pageContext = $this->publicPageContext($request);
         $result = $this->todayResult();
-        $visitorMetrics->trackLotteryPageView($result?->id);
 
         return view('lottery.show', array_merge($pageContext, [
             'result' => $result,
@@ -56,12 +53,11 @@ class KeralaLotteryController extends Controller
         ]));
     }
 
-    public function show(LotteryResult $result, Request $request, VisitorMetricsService $visitorMetrics)
+    public function show(LotteryResult $result, Request $request)
     {
         abort_unless($this->schemaReady(), 404);
-        $visitorMetrics->trackLotteryPageView($result->id);
 
-        return view('lottery.show', array_merge($this->publicPageContext($request, $visitorMetrics), [
+        return view('lottery.show', array_merge($this->publicPageContext($request), [
             'result' => $result,
             'isTodayPage' => false,
         ]));
@@ -300,7 +296,7 @@ class KeralaLotteryController extends Controller
         return Schema::hasTable('lottery_results');
     }
 
-    protected function publicPageContext(Request $request, VisitorMetricsService $visitorMetrics): array
+    protected function publicPageContext(Request $request): array
     {
         app(AutomaticNewsSyncService::class)->maybeTriggerDueSync('Automatic fallback sync triggered from Kerala lottery page request.');
         $homepagePromo = app(PromotionHubService::class)->publicPayload();

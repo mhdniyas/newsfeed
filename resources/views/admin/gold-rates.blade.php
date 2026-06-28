@@ -13,10 +13,6 @@
             <p class="mt-2 text-sm text-slate-500">Trigger crawl updates, review price spikes flagged by safety checks, and inspect complete price logs.</p>
         </div>
         <div class="flex flex-wrap gap-2">
-            <a href="{{ route('admin.analytics') }}?tab=gold" class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold transition shadow-sm">
-                View Traffic Analytics
-            </a>
-            
             <form action="{{ route('admin.gold-rates.sync') }}" method="POST">
                 @csrf
                 <button type="submit" class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-slate-950 text-white hover:bg-slate-800 text-xs font-bold transition shadow-md">

@@ -767,21 +767,6 @@
                     }
                 };
 
-                const sendVisitorHeartbeat = (currentRegion) => {
-                    fetch(`{{ route('analytics.visitor-context') }}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                        },
-                        body: JSON.stringify({
-                            timezone: timezone,
-                            country_code: currentRegion || region,
-                            page_path: window.location.pathname,
-                        }),
-                    }).catch(() => {});
-                };
-
                 // Initialize local time and default language-based country
                 setLocalTime();
                 updateCountryText(region);
@@ -796,17 +781,9 @@
                             if (data.timezone) {
                                 setLocalTime(data.timezone);
                             }
-                            sendVisitorHeartbeat(data.country_code);
-                        } else {
-                            sendVisitorHeartbeat(region);
                         }
                     })
-                    .catch(() => {
-                        sendVisitorHeartbeat(region);
-                    });
-
-                // Heartbeat interval (every 60s)
-                window.setInterval(() => sendVisitorHeartbeat(region), 60000);
+                    .catch(() => {});
             }
         });
     </script>
